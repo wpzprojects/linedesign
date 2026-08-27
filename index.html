@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html lang="es">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="theme-color" content="#0f172a" />
+    <title>LineDesign HTML</title>
+    <link rel="manifest" href="./manifest.webmanifest" />
+    <link rel="stylesheet" href="./styles.css" />
+  </head>
+  <body>
+    <div class="app-shell">
+      <aside class="sidebar">
+        <div class="brand-block">
+          <span class="brand-badge">LD</span>
+          <div>
+            <h1>LineDesign HTML</h1>
+            <p>Fase 1 · Simulación</p>
+          </div>
+        </div>
+
+        <div class="card">
+          <h2>Proyecto</h2>
+          <div class="project-meta">
+            <span>Nombre</span>
+            <strong id="project-name">Línea de prueba</strong>
+          </div>
+          <div class="project-meta">
+            <span>Unidades</span>
+            <strong>SI métrico</strong>
+          </div>
+        </div>
+
+        <div class="card">
+          <h2>Resumen</h2>
+          <ul id="summary-list" class="stack-list"></ul>
+        </div>
+
+        <div class="card">
+          <h2>Hipótesis</h2>
+          <ul id="hypothesis-list" class="stack-list"></ul>
+        </div>
+      </aside>
+
+      <main class="main-panel">
+        <section class="panel">
+          <div class="panel-head">
+            <h2>Planta</h2>
+            <span>alineación y estructuras</span>
+          </div>
+          <svg id="plan-svg" viewBox="0 0 700 260" role="img" aria-label="Vista en planta"></svg>
+        </section>
+
+        <section class="panel">
+          <div class="panel-head">
+            <h2>Perfil</h2>
+            <span>distancia acumulada vs. elevación</span>
+          </div>
+          <svg id="profile-svg" viewBox="0 0 700 260" role="img" aria-label="Vista del perfil"></svg>
+        </section>
+      </main>
+    </div>
+
+    <script src="./src/data/simulatedData.js"></script>
+    <script src="./src/engine/geometry.js"></script>
+    <script src="./src/ui/app.js"></script>
+    <script>
+      if ('serviceWorker' in navigator) {
+        window.addEventListener('load', () => {
+          navigator.serviceWorker.register('./sw.js').catch((error) => {
+            console.warn('Service worker registration failed:', error);
+          });
+        });
+      }
+    </script>
+  </body>
+</html>
