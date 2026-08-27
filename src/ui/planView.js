@@ -1,17 +1,27 @@
 /**
- * planView.js — Vista en Planta: alineamiento + estructuras, con arrastre.
+ * planView.js — Vista en Planta: alineamiento + estructuras, con arrastre,
+ * zoom (rueda) y pan (arrastrar el fondo). Reporta la posición del cursor y
+ * el nivel de zoom para que app.js los muestre en la barra de estado.
  *
- * Estrategia de arrastre: durante el drag se redibuja localmente (sin tocar
- * el store) usando un proyector fijo calculado al iniciar el gesto, para que
- * el trazo no salte al recalcular límites en cada frame. El cambio se
- * confirma al store (y dispara el re-render completo de toda la app, incl.
- * el perfil) recién al soltar el puntero (pointerup).
+ * Estrategia de arrastre de vértices/estructuras: durante el drag se
+ * redibuja localmente (sin tocar el store) usando el proyector vigente
+ * (`current.projector`, fijo mientras dura el gesto), para que el trazo no
+ * salte al recalcular límites en cada frame. El cambio se confirma al store
+ * (dispara el re-render completo, incl. el perfil) recién al soltar el
+ * puntero.
+ *
+ * Los listeners a nivel <svg> (wheel para zoom, pointermove/leave para el
+ * hover de coordenadas) se registran UNA SOLA VEZ al crear la vista, no en
+ * cada render() — <svg> es el único nodo que persiste entre renders
+ * (render() limpia y reconstruye sus hijos en cada llamada). Registrarlos
+ * dentro de render() los iría acumulando en cada re-render.
  */
 (function (global) {
-  const { svgEl, clear, toSvgPoint } = global.LineDesignSvgUtil;
+  const { svgEl, clear, toSvgPoint, buildRulerGrid } = global.LineDesignSvgUtil;
   const stationing = global.LineDesignStationing;
+  const { createViewport } = global.LineDesignViewport;
 
-  const PADDING = 36;
+  const PADDING = 40;
   const MIN_SIZE = 200;
 
   function pathFromPoints(points) {
@@ -19,8 +29,60 @@
   }
 
   function createPlanView(svg, callbacks) {
+    const viewport = createViewport();
+    // Referencias mutables al render vigente, para que los listeners
+    // registrados una sola vez (wheel, hover) siempre operen sobre el
+    // proyector/zoomLayer actuales y no sobre los de un render anterior.
+    const current = { project: null, selection: null, projector: null, zoomLayer: null };
+
+    const pan = viewport.attach(svg, {
+      onChange: () => {
+        if (current.zoomLayer) current.zoomLayer.setAttribute('transform', viewport.transformAttr());
+        callbacks.onZoomChange(viewport.state.scale);
+      },
+      onBackgroundClick: () => callbacks.onDeselect()
+    });
+
+    svg.addEventListener('pointermove', (evt) => {
+      if (!current.projector) return;
+      const svgPoint = toSvgPoint(svg, evt.clientX, evt.clientY);
+      const unzoomed = viewport.toUnzoomed(svgPoint);
+      const dataPoint = current.projector.toData(unzoomed.x, unzoomed.y);
+      callbacks.onHover({ x: dataPoint.x, y: dataPoint.y });
+    });
+    svg.addEventListener('pointerleave', () => callbacks.onHover(null));
+
+    function zoomBy(factor) {
+      const rect = svg.getBoundingClientRect();
+      viewport.zoomAt({ x: rect.width / 2, y: rect.height / 2 }, factor);
+      current.zoomLayer && current.zoomLayer.setAttribute('transform', viewport.transformAttr());
+      callbacks.onZoomChange(viewport.state.scale);
+    }
+
+    function resetZoom() {
+      viewport.reset();
+      current.zoomLayer && current.zoomLayer.setAttribute('transform', viewport.transformAttr());
+      callbacks.onZoomChange(viewport.state.scale);
+    }
+
+    function showSyncMarker(station) {
+      if (!current.projector || !current.vertices || !current.syncMarker) return;
+      const pos = stationing.pointAtStation(current.vertices, station);
+      const p = current.projector.toScreen(pos.x, pos.y);
+      current.syncMarker.setAttribute('cx', p.x);
+      current.syncMarker.setAttribute('cy', p.y);
+      current.syncMarker.classList.add('is-visible');
+    }
+
+    function hideSyncMarker() {
+      if (current.syncMarker) current.syncMarker.classList.remove('is-visible');
+    }
+
     function render(project, selection) {
+      current.project = project;
+      current.selection = selection;
       clear(svg);
+
       // El viewBox se ajusta al tamaño real renderizado del <svg> (que llena
       // el panel vía flexbox) para que el lienzo aproveche todo el espacio
       // disponible en vez de quedar recortado a una relación de aspecto fija.
@@ -30,35 +92,31 @@
       svg.setAttribute('viewBox', `0 0 ${WIDTH} ${HEIGHT}`);
 
       const vertices = project.alignment.vertices;
+      current.vertices = vertices;
       const bounds = stationing.planBounds(vertices);
       const projector = stationing.makeProjector(bounds, WIDTH, HEIGHT, PADDING);
-      const resolvedStructures = stationing.resolveStructures(vertices, project.structures);
+      current.projector = projector;
 
-      const root = svgEl('g');
-      svg.appendChild(root);
+      // Fondo NO transformado (fuera de la capa de zoom): así el pan se
+      // puede iniciar arrastrando en cualquier parte visible del lienzo.
+      const background = svgEl('rect', { x: 0, y: 0, width: WIDTH, height: HEIGHT, class: 'canvas-background' });
+      background.addEventListener('pointerdown', pan.startPan);
+      svg.appendChild(background);
 
-      // Fondo clicable para deseleccionar.
-      root.appendChild(svgEl('rect', {
-        x: 0, y: 0, width: WIDTH, height: HEIGHT, fill: 'transparent'
-      }, {
-        pointerdown: () => callbacks.onDeselect()
-      }));
+      const zoomLayer = svgEl('g', { transform: viewport.transformAttr() });
+      svg.appendChild(zoomLayer);
+      current.zoomLayer = zoomLayer;
 
-      root.appendChild(svgEl('line', {
-        class: 'grid-line', x1: PADDING, y1: HEIGHT - PADDING, x2: WIDTH - PADDING, y2: HEIGHT - PADDING
-      }));
-      root.appendChild(svgEl('line', {
-        class: 'grid-line', x1: PADDING, y1: PADDING, x2: PADDING, y2: HEIGHT - PADDING
-      }));
+      zoomLayer.appendChild(buildRulerGrid({ svgEl, niceStep: stationing.niceStep, projector, bounds, height: HEIGHT, padding: PADDING }));
 
       const alignmentPath = svgEl('path', {
         class: 'alignment-line',
         d: pathFromPoints(vertices.map((v) => projector.toScreen(v.x, v.y)))
       });
-      root.appendChild(alignmentPath);
+      zoomLayer.appendChild(alignmentPath);
 
       const structureLayer = svgEl('g');
-      root.appendChild(structureLayer);
+      zoomLayer.appendChild(structureLayer);
 
       function redrawStructures(vertexList) {
         clear(structureLayer);
@@ -80,14 +138,6 @@
 
       redrawStructures(vertices);
 
-      // La captura de puntero y los listeners de move/up se ponen en el
-      // <svg> raíz (persiste entre renders), no en el círculo arrastrado.
-      // Y callbacks.onSelect() se llama recién en pointerup, no en
-      // pointerdown: onSelect dispara un re-render completo de toda la app
-      // (clear(svg) + reconstrucción), y si eso ocurriera al iniciar el
-      // gesto, todas las referencias capturadas en este closure (circle,
-      // alignmentPath, structureLayer) quedarían huérfanas —el arrastre
-      // seguiría escribiendo en nodos ya desmontados, invisible hasta soltar.
       function attachVertexDrag(circle, vertexId) {
         circle.addEventListener('pointerdown', (evt) => {
           evt.stopPropagation();
@@ -96,7 +146,8 @@
 
           function onMove(moveEvt) {
             const svgPoint = toSvgPoint(svg, moveEvt.clientX, moveEvt.clientY);
-            const dataPoint = projector.toData(svgPoint.x, svgPoint.y);
+            const unzoomed = viewport.toUnzoomed(svgPoint);
+            const dataPoint = projector.toData(unzoomed.x, unzoomed.y);
             const draftVertex = draft.find((v) => v.id === vertexId);
             draftVertex.x = dataPoint.x;
             draftVertex.y = dataPoint.y;
@@ -128,7 +179,8 @@
 
           function onMove(moveEvt) {
             const svgPoint = toSvgPoint(svg, moveEvt.clientX, moveEvt.clientY);
-            const dataPoint = projector.toData(svgPoint.x, svgPoint.y);
+            const unzoomed = viewport.toUnzoomed(svgPoint);
+            const dataPoint = projector.toData(unzoomed.x, unzoomed.y);
             lastStation = stationing.nearestStation(vertices, dataPoint);
             const pos = stationing.pointAtStation(vertices, lastStation);
             const p = projector.toScreen(pos.x, pos.y);
@@ -162,13 +214,19 @@
         });
         const label = svgEl('text', { class: 'annotation-label vertex-label', x: p.x + 8, y: p.y + 18 });
         label.textContent = vertex.id;
-        root.appendChild(circle);
-        root.appendChild(label);
+        zoomLayer.appendChild(circle);
+        zoomLayer.appendChild(label);
         attachVertexDrag(circle, vertex.id);
       });
+
+      const syncMarker = svgEl('circle', { class: 'sync-marker', r: 9, cx: -9999, cy: -9999 });
+      zoomLayer.appendChild(syncMarker);
+      current.syncMarker = syncMarker;
+
+      callbacks.onZoomChange(viewport.state.scale);
     }
 
-    return { render };
+    return { render, zoomBy, resetZoom, showSyncMarker, hideSyncMarker };
   }
 
   global.LineDesignPlanView = { createPlanView };

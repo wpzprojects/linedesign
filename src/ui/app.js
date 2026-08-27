@@ -1,8 +1,8 @@
 /**
  * app.js — Orquestador de la aplicación: estado de UI (selección, pantalla
- * activa, hipótesis mostrada en el perfil), wiring de la barra lateral y
- * de la barra de herramientas, y disparo de render de cada vista al cambiar
- * el proyecto (patrón: store.subscribe(render)).
+ * activa, hipótesis mostrada en el perfil), wiring de la barra lateral,
+ * la barra de herramientas y la barra de estado, y disparo de render de
+ * cada vista al cambiar el proyecto (patrón: store.subscribe(render)).
  */
 (function () {
   const store = window.LineDesignStore;
@@ -15,16 +15,26 @@
   const summaryList = document.getElementById('summary-list');
   const projectNameInput = document.getElementById('project-name-input');
   const themeToggle = document.getElementById('theme-toggle');
-  const selectionPanel = document.getElementById('selection-panel');
+  const inspectorPanel = document.getElementById('inspector-panel');
+  const explorerVertices = document.getElementById('explorer-vertices');
+  const explorerStructures = document.getElementById('explorer-structures');
+  const explorerVerticesCount = document.getElementById('explorer-vertices-count');
+  const explorerStructuresCount = document.getElementById('explorer-structures-count');
   const newStructureType = document.getElementById('new-structure-type');
   const newStructureStation = document.getElementById('new-structure-station');
   const planHypothesisSelect = document.getElementById('plan-hypothesis-select');
   const shell = document.getElementById('shell');
   const sidebarToggle = document.getElementById('sidebar-toggle');
   const screenTitle = document.getElementById('screen-title');
+  const statusCoords = document.getElementById('status-coords');
+  const statusSummary = document.getElementById('status-summary');
+  const statusZoom = document.getElementById('status-zoom');
+  const statusMessage = document.getElementById('status-message');
 
   let selection = null;
   let planHypothesisId = null;
+  const zoomLevels = { plan: 1, profile: 1 };
+  let statusMessageTimer = null;
 
   function onSelect(sel) {
     selection = sel;
@@ -36,28 +46,67 @@
     render(store.getProject());
   }
 
+  function showStatusMessage(text) {
+    statusMessage.textContent = text;
+    window.clearTimeout(statusMessageTimer);
+    statusMessageTimer = window.setTimeout(() => { statusMessage.textContent = ''; }, 2500);
+  }
+
+  function updateStatusZoom() {
+    statusZoom.textContent = `Planta ${Math.round(zoomLevels.plan * 100)}% · Perfil ${Math.round(zoomLevels.profile * 100)}%`;
+  }
+
   const planView = window.LineDesignPlanView.createPlanView(planSvg, {
     onSelect,
     onDeselect,
     onCommitVertexMove: (id, x, y) => store.moveVertex(id, x, y),
-    onCommitStructureMove: (id, station) => store.moveStructure(id, station)
+    onCommitStructureMove: (id, station) => store.moveStructure(id, station),
+    onZoomChange: (scale) => { zoomLevels.plan = scale; updateStatusZoom(); },
+    onHover: (dataPoint) => {
+      if (!dataPoint) {
+        statusCoords.textContent = '—';
+        profileView.hideSyncMarker();
+        return;
+      }
+      statusCoords.textContent = `X: ${dataPoint.x.toFixed(1)} m · Y: ${dataPoint.y.toFixed(1)} m`;
+      const station = stationing.nearestStation(store.getProject().alignment.vertices, dataPoint);
+      profileView.showSyncMarker(station);
+    }
   });
 
-  const profileView = window.LineDesignProfileView.createProfileView(profileSvg, { onSelect, onDeselect });
+  const profileView = window.LineDesignProfileView.createProfileView(profileSvg, {
+    onSelect,
+    onDeselect,
+    onZoomChange: (scale) => { zoomLevels.profile = scale; updateStatusZoom(); },
+    onHover: (data) => {
+      if (!data) {
+        statusCoords.textContent = '—';
+        planView.hideSyncMarker();
+        return;
+      }
+      statusCoords.textContent = `Station: ${data.station.toFixed(1)} m · Elevación: ${data.elevation.toFixed(1)} m`;
+      planView.showSyncMarker(data.station);
+    }
+  });
+
   const catalogView = window.LineDesignCatalogView.createCatalogView(document.getElementById('catalog-container'), store);
   const hypothesesView = window.LineDesignHypothesesView.createHypothesesView(document.getElementById('hypotheses-container'), store);
   const loadTreeView = window.LineDesignLoadTreeView.createLoadTreeView(document.getElementById('loadtree-container'));
 
   function renderSummary(project) {
     const { spans } = stationing.computeSpans(project.structures);
+    const totalLength = stationing.totalLength(project.alignment.vertices);
     summaryList.innerHTML = '';
     [
       `Vértices: ${project.alignment.vertices.length}`,
       `Estructuras: ${project.structures.length}`,
       `Vanos: ${spans.length}`,
+      `Longitud: ${totalLength.toFixed(1)} m`,
       `Conductor: ${project.conductor.name}`,
       `Hipótesis: ${project.hypotheses.length}`
     ].forEach((text) => summaryList.appendChild(el('li', {}, text)));
+
+    statusSummary.textContent = `Vértices ${project.alignment.vertices.length} · Estructuras ${project.structures.length} · Vanos ${spans.length} · ${totalLength.toFixed(1)} m`;
   }
 
   function syncStructureTypeOptions(project) {
@@ -79,62 +128,111 @@
     });
   }
 
-  function renderSelectionPanel(project) {
+  function goToPlanScreen() {
+    const planBtn = document.querySelector('.nav-btn[data-screen="plan"]');
+    if (planBtn && !planBtn.classList.contains('is-active')) planBtn.click();
+  }
+
+  function renderExplorer(project) {
+    explorerVerticesCount.textContent = `(${project.alignment.vertices.length})`;
+    explorerStructuresCount.textContent = `(${project.structures.length})`;
+
+    clear(explorerVertices);
+    project.alignment.vertices.forEach((vertex) => {
+      const isSelected = selection && selection.type === 'vertex' && selection.id === vertex.id;
+      explorerVertices.appendChild(el('li', {
+        class: `explorer-item${isSelected ? ' is-active' : ''}`,
+        onClick: () => { selection = { type: 'vertex', id: vertex.id }; goToPlanScreen(); render(store.getProject()); }
+      }, [
+        el('span', { class: 'explorer-item-id' }, vertex.id),
+        el('span', { class: 'explorer-item-meta' }, `z=${vertex.z.toFixed(1)}`)
+      ]));
+    });
+
+    clear(explorerStructures);
+    const sorted = [...project.structures].sort((a, b) => a.station - b.station);
+    sorted.forEach((structure) => {
+      const isSelected = selection && selection.type === 'structure' && selection.id === structure.id;
+      explorerStructures.appendChild(el('li', {
+        class: `explorer-item${isSelected ? ' is-active' : ''}`,
+        onClick: () => { selection = { type: 'structure', id: structure.id }; goToPlanScreen(); render(store.getProject()); }
+      }, [
+        el('span', { class: 'explorer-item-id' }, structure.id),
+        el('span', { class: 'explorer-item-meta' }, `${structure.station.toFixed(0)} m`)
+      ]));
+    });
+  }
+
+  function renderInspector(project) {
     if (selection && selection.type === 'vertex' && !project.alignment.vertices.some((v) => v.id === selection.id)) selection = null;
     if (selection && selection.type === 'structure' && !project.structures.some((s) => s.id === selection.id)) selection = null;
 
-    clear(selectionPanel);
+    clear(inspectorPanel);
+    inspectorPanel.appendChild(el('h2', {}, 'Propiedades'));
+
     if (!selection) {
-      selectionPanel.hidden = true;
+      inspectorPanel.appendChild(el('p', { class: 'muted inspector-hint' },
+        'Selecciona un vértice o una estructura en el lienzo (o en el Explorador) para ver y editar sus propiedades aquí.'));
       return;
     }
-    selectionPanel.hidden = false;
 
     if (selection.type === 'vertex') {
       const vertex = project.alignment.vertices.find((v) => v.id === selection.id);
-      selectionPanel.appendChild(el('strong', {}, `Vértice ${vertex.id}`));
-      selectionPanel.appendChild(el('span', { class: 'muted' }, ` · x=${vertex.x.toFixed(1)} y=${vertex.y.toFixed(1)}`));
-      selectionPanel.appendChild(el('label', {}, 'Elevación z (m)'));
-      selectionPanel.appendChild(el('input', {
+      inspectorPanel.appendChild(el('div', { class: 'inspector-title' }, `Vértice ${vertex.id}`));
+      inspectorPanel.appendChild(el('div', { class: 'inspector-row' }, [
+        el('span', {}, 'X'), el('strong', {}, `${vertex.x.toFixed(2)} m`)
+      ]));
+      inspectorPanel.appendChild(el('div', { class: 'inspector-row' }, [
+        el('span', {}, 'Y'), el('strong', {}, `${vertex.y.toFixed(2)} m`)
+      ]));
+      inspectorPanel.appendChild(el('label', {}, 'Elevación z (m)'));
+      inspectorPanel.appendChild(el('input', {
         type: 'number', step: '0.5', value: vertex.z,
         onChange: (e) => store.setVertexElevation(vertex.id, parseFloat(e.target.value) || 0)
       }));
-      selectionPanel.appendChild(el('button', {
-        class: 'btn btn-small btn-danger', type: 'button',
+      inspectorPanel.appendChild(el('button', {
+        class: 'btn btn-small btn-danger inspector-delete', type: 'button',
         onClick: () => {
           const result = store.removeVertex(vertex.id);
-          if (result && !result.ok) alert(result.reason);
-          else { selection = null; render(store.getProject()); }
+          if (result && !result.ok) { alert(result.reason); return; }
+          showStatusMessage(`Vértice ${vertex.id} eliminado.`);
+          selection = null;
+          render(store.getProject());
         }
       }, 'Eliminar vértice'));
     } else {
       const structure = project.structures.find((s) => s.id === selection.id);
       const type = project.structureCatalog.find((t) => t.typeId === structure.typeId);
 
-      selectionPanel.appendChild(el('strong', {}, `Estructura ${structure.id}`));
+      inspectorPanel.appendChild(el('div', { class: 'inspector-title' }, `Estructura ${structure.id}`));
 
-      selectionPanel.appendChild(el('label', {}, 'Tipo'));
-      selectionPanel.appendChild(el('select', {
+      inspectorPanel.appendChild(el('label', {}, 'Tipo'));
+      inspectorPanel.appendChild(el('select', {
         onChange: (e) => {
           const newType = project.structureCatalog.find((t) => t.typeId === e.target.value);
           store.updateStructure(structure.id, { typeId: newType.typeId, height: newType.heightOptions[0] });
         }
       }, project.structureCatalog.map((t) => el('option', { value: t.typeId, selected: t.typeId === structure.typeId }, t.name))));
 
-      selectionPanel.appendChild(el('label', {}, 'Altura (m)'));
-      selectionPanel.appendChild(el('select', {
+      inspectorPanel.appendChild(el('label', {}, 'Altura (m)'));
+      inspectorPanel.appendChild(el('select', {
         onChange: (e) => store.updateStructure(structure.id, { height: parseFloat(e.target.value) })
       }, (type ? type.heightOptions : [structure.height]).map((h) => el('option', { value: h, selected: h === structure.height }, `${h} m`))));
 
-      selectionPanel.appendChild(el('label', {}, 'Station (m)'));
-      selectionPanel.appendChild(el('input', {
+      inspectorPanel.appendChild(el('label', {}, 'Station (m)'));
+      inspectorPanel.appendChild(el('input', {
         type: 'number', step: '1', value: structure.station.toFixed(1),
         onChange: (e) => store.moveStructure(structure.id, parseFloat(e.target.value) || 0)
       }));
 
-      selectionPanel.appendChild(el('button', {
-        class: 'btn btn-small btn-danger', type: 'button',
-        onClick: () => { store.removeStructure(structure.id); selection = null; render(store.getProject()); }
+      inspectorPanel.appendChild(el('button', {
+        class: 'btn btn-small btn-danger inspector-delete', type: 'button',
+        onClick: () => {
+          store.removeStructure(structure.id);
+          showStatusMessage(`Estructura ${structure.id} eliminada.`);
+          selection = null;
+          render(store.getProject());
+        }
       }, 'Eliminar estructura'));
     }
   }
@@ -144,7 +242,8 @@
     renderSummary(project);
     syncStructureTypeOptions(project);
     syncPlanHypothesisOptions(project);
-    renderSelectionPanel(project);
+    renderExplorer(project);
+    renderInspector(project);
 
     planView.render(project, selection);
     profileView.render(project, planHypothesisId, selection);
@@ -154,7 +253,10 @@
   }
 
   function wireToolbar() {
-    document.getElementById('add-vertex-btn').addEventListener('click', () => store.addVertex());
+    document.getElementById('add-vertex-btn').addEventListener('click', () => {
+      const vertex = store.addVertex();
+      showStatusMessage(`Vértice ${vertex.id} agregado.`);
+    });
 
     document.getElementById('add-structure-btn').addEventListener('click', () => {
       const typeId = newStructureType.value;
@@ -162,6 +264,7 @@
       const structure = store.addStructure({ typeId, station: stationValue });
       selection = { type: 'structure', id: structure.id };
       newStructureStation.value = '';
+      showStatusMessage(`Estructura ${structure.id} agregada.`);
       render(store.getProject());
     });
 
@@ -187,6 +290,15 @@
       });
     });
 
+    document.querySelectorAll('.icon-btn--tiny[data-zoom]').forEach((btn) => {
+      btn.addEventListener('click', () => {
+        const view = btn.dataset.view === 'plan' ? planView : profileView;
+        if (btn.dataset.zoom === 'in') view.zoomBy(1.3);
+        else if (btn.dataset.zoom === 'out') view.zoomBy(1 / 1.3);
+        else view.resetZoom();
+      });
+    });
+
     sidebarToggle.addEventListener('click', () => {
       const collapsed = shell.dataset.sidebar === 'collapsed';
       shell.dataset.sidebar = collapsed ? 'expanded' : 'collapsed';
@@ -204,6 +316,7 @@
     document.getElementById('export-btn').addEventListener('click', () => {
       const project = store.getProject();
       downloadFile(`${project.name.replace(/\s+/g, '_')}.json`, store.exportJSON());
+      showStatusMessage('Proyecto exportado.');
     });
 
     const importFile = document.getElementById('import-file');
@@ -214,6 +327,7 @@
       const text = await file.text();
       const result = store.importJSON(text);
       if (!result.ok) alert(result.reason);
+      else showStatusMessage('Proyecto importado.');
       importFile.value = '';
     });
 
@@ -221,6 +335,7 @@
       if (confirm('¿Reiniciar el proyecto a los datos de ejemplo? Se perderán los cambios actuales.')) {
         selection = null;
         store.resetToSample();
+        showStatusMessage('Proyecto reiniciado a los datos de ejemplo.');
       }
     });
   }
@@ -247,6 +362,7 @@
     initSidebar();
     wireToolbar();
     wireResize();
+    updateStatusZoom();
     store.subscribe(render);
     store.load();
   }

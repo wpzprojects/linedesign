@@ -85,23 +85,52 @@
     };
   }
 
-  /** Crea un proyector data->SVG y su inverso SVG->data para un viewport dado. */
+  /**
+   * "Paso agradable" para marcas de regla (1/2/5 × 10^n) dado un rango de
+   * datos y una cantidad objetivo de divisiones — algoritmo estándar de
+   * ejes de gráficos (ver p.ej. D3 array.ticks).
+   */
+  function niceStep(span, targetDivisions = 6) {
+    if (!Number.isFinite(span) || span <= 0) return 1;
+    const rough = span / targetDivisions;
+    const magnitude = 10 ** Math.floor(Math.log10(rough));
+    const residual = rough / magnitude;
+    let niceResidual;
+    if (residual > 5) niceResidual = 10;
+    else if (residual > 2) niceResidual = 5;
+    else if (residual > 1) niceResidual = 2;
+    else niceResidual = 1;
+    return niceResidual * magnitude;
+  }
+
+  /**
+   * Crea un proyector data->SVG y su inverso SVG->data para un viewport
+   * dado ("zoom extents": ajusta y CENTRA el contenido dentro del área con
+   * padding, igual que cualquier CAD/GIS). Si la proporción de los datos no
+   * coincide con la del panel, el excedente se reparte como margen a ambos
+   * lados del eje limitante — no se ancla el contenido a una esquina, que
+   * dejaría todo el espacio libre acumulado de un solo lado.
+   */
   function makeProjector(bounds, width, height, padding) {
     const spanX = Math.max(bounds.maxX - bounds.minX, 1e-6);
     const spanY = Math.max(bounds.maxY - bounds.minY, 1e-6);
-    const scale = Math.min((width - padding * 2) / spanX, (height - padding * 2) / spanY);
+    const availableW = width - padding * 2;
+    const availableH = height - padding * 2;
+    const scale = Math.min(availableW / spanX, availableH / spanY);
+    const offsetX = padding + (availableW - spanX * scale) / 2;
+    const offsetY = padding + (availableH - spanY * scale) / 2;
 
     function toScreen(dataX, dataY) {
       return {
-        x: padding + (dataX - bounds.minX) * scale,
-        y: height - padding - (dataY - bounds.minY) * scale
+        x: offsetX + (dataX - bounds.minX) * scale,
+        y: height - offsetY - (dataY - bounds.minY) * scale
       };
     }
 
     function toData(screenX, screenY) {
       return {
-        x: bounds.minX + (screenX - padding) / scale,
-        y: bounds.minY + (height - padding - screenY) / scale
+        x: bounds.minX + (screenX - offsetX) / scale,
+        y: bounds.minY + (height - offsetY - screenY) / scale
       };
     }
 
@@ -181,7 +210,8 @@
     makeProjector,
     resolveStructures,
     nearestStation,
-    computeSpans
+    computeSpans,
+    niceStep
   };
 
   if (typeof module !== 'undefined' && module.exports) {

@@ -30,15 +30,20 @@ Abrir `http://localhost:8000/`. El navegador ofrecerá el botón de instalación
 
 ## Interfaz
 
-Layout de aplicación a pantalla completa (no una página que hace scroll): un menú lateral colapsable a la izquierda (navegación por pantallas + panel de proyecto/resumen) y un área de trabajo a la derecha que aprovecha todo el espacio disponible.
+Shell de aplicación de escritorio (no una página que hace scroll), con la estructura que comparten PLS-CADD, AutoCAD, QGIS y Figma: barra de actividad fija + panel lateral contextual colapsable + lienzo central con zoom/pan + panel de propiedades + barra de estado. Ver "Fundamento de diseño" abajo.
 
-- **Menú lateral colapsable**: el botón ☰ en la esquina superior izquierda lo esconde/muestra — al esconderlo, el contenido de la derecha ocupa el espacio liberado (no queda hueco). El estado (abierto/cerrado) se recuerda entre sesiones. En pantallas angostas, el menú abierto se muestra como panel flotante sobre el contenido en vez de empujarlo.
-- **Barra superior**: siempre visible — botón de menú, título de la pantalla activa, alternar tema claro/oscuro.
-- **Planta y Perfil**: se muestran lado a lado (no apiladas), cada una llenando el alto disponible de la ventana — el `viewBox` del SVG se recalcula dinámicamente según el tamaño real del panel (al redimensionar la ventana o colapsar el menú). Arrastra vértices (círculos blancos) o estructuras (círculos verdes) para moverlos; un clic (sin arrastrar) los selecciona y muestra un panel de edición rápida (elevación del vértice, tipo/altura/station de la estructura, eliminar). La barra de herramientas permite agregar vértices/estructuras y elegir bajo qué hipótesis se dibuja la catenaria.
+- **Barra de actividad** (extremo izquierdo, ~56px, nunca se esconde): íconos para cambiar de pantalla (Planta y Perfil / Catálogo / Hipótesis / Árbol de cargas), más los toggles de menú lateral y tema al fondo. Siempre accesible aunque el panel lateral esté colapsado.
+- **Panel lateral colapsable**: Explorador (árbol de vértices y estructuras — clic para seleccionar y saltar a Planta y Perfil), tarjeta de Proyecto (nombre, exportar/importar/reiniciar) y Resumen. El botón ☰ lo esconde por completo; el contenido de la derecha ocupa el espacio liberado. Estado persistido entre sesiones.
+- **Planta y Perfil**: lado a lado, cada una llenando el alto disponible — el `viewBox` del SVG se recalcula según el tamaño real del panel. **Zoom con rueda del mouse y pan arrastrando el fondo** (independiente por lienzo, con botones +/−/ajustar en cada cabecera). El proyector centra el contenido dentro del panel (no lo ancla a una esquina) y dibuja una regla con marcas numeradas en ambos ejes. **Las dos vistas están sincronizadas**: al pasar el cursor sobre una, aparece un marcador en la posición correspondiente de la otra — igual que en PLS-CADD. Arrastra vértices o estructuras para moverlos; un clic (sin arrastrar) los selecciona.
+- **Panel de propiedades** (derecha): edición del vértice o estructura seleccionada — reemplaza cualquier formulario flotante por un inspector fijo, como en Figma/AutoCAD/QGIS.
+- **Barra de estado** (inferior, siempre visible): coordenadas en vivo bajo el cursor (X/Y en Planta, station/elevación en Perfil), resumen del proyecto, mensajes transitorios de las últimas acciones, y el zoom vigente de cada lienzo.
 - **Catálogo de estructuras**: crear/editar tipos (nombre, categoría, alturas disponibles, puntos de fijación del conductor por fase).
 - **Hipótesis de carga**: editar temperatura/viento/hielo de cada hipótesis, elegir el conductor activo y su hipótesis/tensión de referencia.
 - **Árbol de cargas**: tabla de fuerzas (vertical/transversal/longitudinal + momento estimado) por estructura y por hipótesis; botón "Exportar JSON".
-- **Panel del menú lateral**: nombre del proyecto, resumen, exportar/importar el proyecto completo como JSON, reiniciar a los datos de ejemplo.
+
+### Fundamento de diseño
+
+La distribución no es una preferencia estética: se investigó la interfaz real de PLS-CADD (menú Terreno/Estructuras/Líneas, vistas Planta/Perfil/3D sincronizadas por un marcador de cursor compartido) y el patrón que comparten AutoCAD, QGIS, Figma y VS Code — navegación fija + panel contextual colapsable + lienzo con zoom/pan + inspector de propiedades + barra de estado con lectura de coordenadas — para construir un "cascarón" de Fase 1 que ya tiene la forma de la herramienta final, no una demo que habrá que rehacer en Fase 2.
 
 ## Consideraciones PWA
 
@@ -51,7 +56,7 @@ Layout de aplicación a pantalla completa (no una página que hace scroll): un m
 
 - `src/data/` — `dataSource.js` (interfaz de datos simulados, reemplazable en Fase 2) y `projectStore.js` (estado del proyecto, mutaciones, persistencia).
 - `src/engine/` — `stationing.js` (geometría del alineamiento/perfil), `catenary.js` (sag-tension), `loadTree.js` (árbol de cargas). Sin dependencias de DOM: se pueden probar de forma aislada.
-- `src/ui/` — una vista por pantalla (`planView`, `profileView`, `catalogView`, `hypothesesView`, `loadTreeView`), más `app.js` (orquestador), `theme.js`, `domUtil.js`/`svgUtil.js` (helpers).
+- `src/ui/` — una vista por pantalla (`planView`, `profileView`, `catalogView`, `hypothesesView`, `loadTreeView`), más `app.js` (orquestador), `theme.js`, `viewport.js` (controlador de zoom/pan reutilizable), `domUtil.js`/`svgUtil.js` (helpers, incl. construcción de la regla numerada).
 - `assets/` — íconos PWA.
 - `tests/engine.test.js` — pruebas del motor de cálculo sin framework (`node tests/engine.test.js`; requiere Node.js, no incluido en este entorno de desarrollo — ver nota abajo).
 

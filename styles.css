@@ -13,7 +13,9 @@
   --danger: #dc2626;
   --shadow: 0 8px 24px rgba(16, 24, 40, 0.08);
   --focus-ring: 0 0 0 3px rgba(37, 99, 235, 0.25);
-  --sidebar-width: 288px;
+  --sidebar-width: 280px;
+  --activity-width: 56px;
+  --inspector-width: 272px;
 }
 
 :root:not([data-theme="light"]) {
@@ -101,6 +103,50 @@ button, input, select, textarea {
   overflow: hidden;
 }
 
+/* Barra de actividad: fija, siempre visible (no colapsa). Navegación entre
+   pantallas + acciones globales (menú lateral, tema) — patrón "Activity
+   Bar" de VS Code: separar la navegación (siempre accesible) del panel de
+   contenido contextual (colapsable). */
+.activity-bar {
+  flex: 0 0 var(--activity-width);
+  width: var(--activity-width);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  background: var(--panel);
+  border-right: 1px solid var(--line);
+  padding: 12px 0;
+}
+
+.activity-brand {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 34px;
+  height: 34px;
+  border-radius: 9px;
+  background: linear-gradient(135deg, var(--primary), #1d4ed8);
+  color: white;
+  font-weight: 700;
+  font-size: 0.72rem;
+  letter-spacing: 0.04em;
+  margin-bottom: 10px;
+}
+
+.activity-nav {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.activity-bottom {
+  margin-top: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
 .sidebar {
   flex: 0 0 var(--sidebar-width);
   width: var(--sidebar-width);
@@ -148,10 +194,6 @@ button, input, select, textarea {
   background: var(--panel);
 }
 
-.topbar-spacer {
-  flex: 1 1 auto;
-}
-
 .screen-title {
   margin: 0;
   font-size: 1.05rem;
@@ -170,66 +212,19 @@ button, input, select, textarea {
   flex-direction: column;
 }
 
-/* ---------- Sidebar contents ---------- */
+/* ---------- Iconos ---------- */
 
-.brand-block {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  margin-bottom: 18px;
-  min-width: calc(var(--sidebar-width) - 32px);
-}
-
-.brand-badge {
-  flex: 0 0 auto;
+.nav-btn {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  width: 40px;
-  height: 40px;
-  border-radius: 10px;
-  background: linear-gradient(135deg, var(--primary), #1d4ed8);
-  color: white;
-  font-weight: 700;
-  letter-spacing: 0.06em;
-  font-size: 0.85rem;
-}
-
-.brand-block h1 {
-  margin: 0;
-  font-size: 1.05rem;
-  white-space: nowrap;
-}
-
-.brand-block p {
-  margin: 2px 0 0;
-  color: var(--muted);
-  font-size: 0.75rem;
-  white-space: nowrap;
-}
-
-.side-nav {
-  display: flex;
-  flex-direction: column;
-  gap: 2px;
-  margin-bottom: 16px;
-  min-width: calc(var(--sidebar-width) - 32px);
-}
-
-.nav-btn {
-  display: flex;
-  align-items: center;
-  gap: 10px;
+  width: 38px;
+  height: 38px;
   border: none;
   background: transparent;
   color: var(--muted);
-  padding: 9px 10px;
-  border-radius: 8px;
+  border-radius: 9px;
   cursor: pointer;
-  font-weight: 600;
-  font-size: 0.86rem;
-  text-align: left;
-  white-space: nowrap;
 }
 
 .nav-btn:hover {
@@ -243,12 +238,9 @@ button, input, select, textarea {
 }
 
 .nav-btn .icon {
-  flex: 0 0 auto;
-  width: 18px;
-  height: 18px;
+  width: 19px;
+  height: 19px;
 }
-
-/* ---------- Iconos ---------- */
 
 .icon {
   width: 18px;
@@ -277,6 +269,23 @@ button, input, select, textarea {
 .icon-btn:hover {
   border-color: var(--primary);
   color: var(--primary);
+}
+
+.icon-btn--tiny {
+  width: 26px;
+  height: 26px;
+  border-radius: 6px;
+}
+
+.icon-btn--tiny .icon {
+  width: 14px;
+  height: 14px;
+  stroke-width: 2;
+}
+
+.panel-tools {
+  display: flex;
+  gap: 4px;
 }
 
 .icon-moon {
@@ -310,12 +319,80 @@ body.dark-theme .icon-moon {
   color: var(--muted);
 }
 
-.form-card, .catalog-card, .selection-panel {
+.form-card, .catalog-card {
   background: var(--panel-alt);
   border: 1px solid var(--line);
   border-radius: 12px;
   padding: 16px;
   margin-bottom: 16px;
+}
+
+/* ---------- Explorador (árbol de vértices/estructuras) ---------- */
+
+.explorer-section {
+  margin-bottom: 10px;
+}
+
+.explorer-section:last-child {
+  margin-bottom: 0;
+}
+
+.explorer-section h3 {
+  margin: 0 0 4px;
+  font-size: 0.74rem;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+  color: var(--muted);
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.explorer-section .count {
+  font-weight: 400;
+  opacity: 0.75;
+}
+
+.explorer-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  max-height: 160px;
+  overflow-y: auto;
+  border-radius: 8px;
+}
+
+.explorer-item {
+  display: flex;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 5px 8px;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 0.82rem;
+}
+
+.explorer-item:hover {
+  background: var(--panel);
+}
+
+.explorer-item.is-active {
+  background: var(--primary-soft);
+  color: var(--primary);
+}
+
+.explorer-item-id {
+  font-weight: 600;
+}
+
+.explorer-item-meta {
+  color: var(--muted);
+  font-variant-numeric: tabular-nums;
+}
+
+.explorer-item.is-active .explorer-item-meta {
+  color: inherit;
+  opacity: 0.75;
 }
 
 .form-card h2 {
@@ -486,32 +563,67 @@ input:focus, select:focus, button:focus-visible {
   text-transform: none;
 }
 
-.selection-panel {
+/* ---------- Área CAD: lienzos + panel de propiedades ---------- */
+
+.cad-area {
   display: flex;
-  align-items: center;
-  gap: 10px;
-  flex-wrap: wrap;
-  padding: 10px 14px;
-  margin-bottom: 0;
+  gap: 16px;
+  flex: 1 1 auto;
+  min-height: 280px;
 }
-
-.selection-panel label {
-  margin: 0;
-}
-
-.selection-panel input, .selection-panel select {
-  width: auto;
-  min-width: 90px;
-}
-
-/* ---------- Planta / Perfil lado a lado ---------- */
 
 .split-view {
   display: grid;
   grid-template-columns: 1fr 1fr;
   gap: 16px;
   flex: 1 1 auto;
-  min-height: 280px;
+  min-height: 0;
+  min-width: 0;
+}
+
+.inspector {
+  flex: 0 0 var(--inspector-width);
+  width: var(--inspector-width);
+  background: var(--panel);
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  padding: 14px;
+  overflow-y: auto;
+}
+
+.inspector h2 {
+  margin: 0 0 12px;
+  font-size: 0.85rem;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--muted);
+}
+
+.inspector-hint {
+  line-height: 1.5;
+}
+
+.inspector-title {
+  font-weight: 700;
+  font-size: 1rem;
+  margin-bottom: 10px;
+}
+
+.inspector-row {
+  display: flex;
+  justify-content: space-between;
+  padding: 4px 0;
+  font-size: 0.85rem;
+  border-bottom: 1px dashed var(--line);
+}
+
+.inspector-row:last-of-type {
+  border-bottom: none;
+}
+
+.inspector-delete {
+  margin-top: 16px;
+  width: 100%;
 }
 
 .panel {
@@ -552,6 +664,7 @@ svg#plan-svg, svg#profile-svg {
   border-radius: 8px;
   background: var(--panel-alt);
   touch-action: none;
+  user-select: none;
 }
 
 .axis-text {
@@ -624,9 +737,45 @@ svg#plan-svg, svg#profile-svg {
   opacity: 0.8;
 }
 
-.grid-line {
+.canvas-background {
+  fill: transparent;
+  cursor: grab;
+}
+
+.canvas-background:active {
+  cursor: grabbing;
+}
+
+.ruler-line {
   stroke: var(--line);
-  stroke-dasharray: 4 7;
+  stroke-width: 1;
+}
+
+.ruler-label {
+  fill: var(--muted);
+  font-size: 10px;
+  font-variant-numeric: tabular-nums;
+}
+
+.sync-marker {
+  fill: none;
+  stroke: var(--danger);
+  stroke-width: 1.5;
+  stroke-dasharray: 3 3;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.1s ease;
+}
+
+.sync-marker.is-visible {
+  opacity: 0.85;
+}
+
+circle.sync-marker {
+  fill: var(--danger);
+  stroke: var(--panel);
+  stroke-width: 1.5;
+  stroke-dasharray: none;
 }
 
 .annotation-label {
@@ -704,6 +853,48 @@ svg#plan-svg, svg#profile-svg {
   background: var(--primary-soft);
 }
 
+/* ---------- Barra de estado ---------- */
+
+.status-bar {
+  flex: 0 0 auto;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 5px 16px;
+  border-top: 1px solid var(--line);
+  background: var(--panel);
+  font-size: 0.76rem;
+  color: var(--muted);
+}
+
+.status-item {
+  white-space: nowrap;
+}
+
+.status-item--coords, .status-item--zoom {
+  font-variant-numeric: tabular-nums;
+  font-family: "Cascadia Mono", "Consolas", "SFMono-Regular", Menlo, monospace;
+}
+
+.status-item--coords {
+  min-width: 220px;
+  color: var(--text);
+}
+
+.status-item--message {
+  color: var(--primary);
+}
+
+.status-sep {
+  width: 1px;
+  height: 14px;
+  background: var(--line);
+}
+
+.status-spacer {
+  flex: 1 1 auto;
+}
+
 /* ---------- Responsive ---------- */
 
 @media (max-width: 980px) {
@@ -712,17 +903,33 @@ svg#plan-svg, svg#profile-svg {
     grid-auto-rows: 1fr;
     min-height: 520px;
   }
+
+  .cad-area {
+    flex-direction: column;
+  }
+
+  .inspector {
+    width: auto;
+    flex: 0 0 auto;
+    max-height: 240px;
+  }
+
+  .status-item--coords {
+    min-width: 0;
+  }
 }
 
 @media (max-width: 720px) {
   :root {
-    --sidebar-width: 260px;
+    --sidebar-width: 250px;
   }
 
+  /* La barra de actividad sigue siempre visible; el sidebar contextual se
+     vuelve un overlay fijo que arranca DESPUÉS de ella (no la tapa). */
   .sidebar {
     position: fixed;
     top: 0;
-    left: 0;
+    left: var(--activity-width);
     bottom: 0;
     z-index: 40;
     box-shadow: var(--shadow);
@@ -732,14 +939,11 @@ svg#plan-svg, svg#profile-svg {
     transform: translateX(-100%);
   }
 
-  /* El botón que abre/cierra el sidebar debe quedar SIEMPRE clicable, aun
-     con el sidebar abierto como overlay fijo encima del resto (arriba). */
-  .topbar {
-    position: relative;
-    z-index: 50;
-  }
-
   .workspace-body {
     padding: 14px;
+  }
+
+  .status-summary, .status-sep {
+    display: none;
   }
 }

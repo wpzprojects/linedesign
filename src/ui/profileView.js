@@ -1,14 +1,20 @@
 /**
  * profileView.js — Vista en Perfil: terreno, estructuras y catenaria del
- * conductor por vano, para la hipótesis de carga seleccionada en la UI.
+ * conductor por vano, para la hipótesis de carga seleccionada. Con zoom
+ * (rueda), pan (arrastrar fondo) y marcador de sincronización con Planta.
+ *
+ * Ver comentario equivalente en planView.js: los listeners a nivel <svg>
+ * (wheel, hover) se registran una sola vez al crear la vista, no en cada
+ * render().
  */
 (function (global) {
-  const { svgEl, clear } = global.LineDesignSvgUtil;
+  const { svgEl, clear, toSvgPoint, buildRulerGrid } = global.LineDesignSvgUtil;
   const stationing = global.LineDesignStationing;
   const catenary = global.LineDesignCatenary;
   const loadTree = global.LineDesignLoadTree;
+  const { createViewport } = global.LineDesignViewport;
 
-  const PADDING = 36;
+  const PADDING = 40;
   const MIN_SIZE = 200;
 
   function pathFromPoints(points) {
@@ -16,14 +22,58 @@
   }
 
   function createProfileView(svg, callbacks) {
+    const viewport = createViewport();
+    const current = { projector: null, zoomLayer: null, height: 0 };
+
+    const pan = viewport.attach(svg, {
+      onChange: () => {
+        if (current.zoomLayer) current.zoomLayer.setAttribute('transform', viewport.transformAttr());
+        callbacks.onZoomChange(viewport.state.scale);
+      },
+      onBackgroundClick: () => callbacks.onDeselect()
+    });
+
+    svg.addEventListener('pointermove', (evt) => {
+      if (!current.projector) return;
+      const svgPoint = toSvgPoint(svg, evt.clientX, evt.clientY);
+      const unzoomed = viewport.toUnzoomed(svgPoint);
+      const dataPoint = current.projector.toData(unzoomed.x, unzoomed.y);
+      callbacks.onHover({ station: dataPoint.x, elevation: dataPoint.y });
+    });
+    svg.addEventListener('pointerleave', () => callbacks.onHover(null));
+
+    function zoomBy(factor) {
+      const rect = svg.getBoundingClientRect();
+      viewport.zoomAt({ x: rect.width / 2, y: rect.height / 2 }, factor);
+      current.zoomLayer && current.zoomLayer.setAttribute('transform', viewport.transformAttr());
+      callbacks.onZoomChange(viewport.state.scale);
+    }
+
+    function resetZoom() {
+      viewport.reset();
+      current.zoomLayer && current.zoomLayer.setAttribute('transform', viewport.transformAttr());
+      callbacks.onZoomChange(viewport.state.scale);
+    }
+
+    function showSyncMarker(station) {
+      if (!current.projector || !current.syncMarker) return;
+      const x = current.projector.toScreen(station, 0).x;
+      current.syncMarker.setAttribute('x1', x);
+      current.syncMarker.setAttribute('x2', x);
+      current.syncMarker.classList.add('is-visible');
+    }
+
+    function hideSyncMarker() {
+      if (current.syncMarker) current.syncMarker.classList.remove('is-visible');
+    }
+
     function render(project, hypothesisId, selection) {
       clear(svg);
-      // Ver comentario equivalente en planView.js: el viewBox se ajusta al
-      // tamaño real renderizado para aprovechar todo el panel disponible.
       const rect = svg.getBoundingClientRect();
       const WIDTH = Math.max(Math.round(rect.width), MIN_SIZE);
       const HEIGHT = Math.max(Math.round(rect.height), MIN_SIZE);
       svg.setAttribute('viewBox', `0 0 ${WIDTH} ${HEIGHT}`);
+      current.height = HEIGHT;
 
       const vertices = project.alignment.vertices;
       const distances = stationing.cumulativeDistances(vertices);
@@ -31,18 +81,20 @@
         .sort((a, b) => a.station - b.station);
       const bounds = stationing.profileBounds(vertices, resolved);
       const projector = stationing.makeProjector(bounds, WIDTH, HEIGHT, PADDING);
+      current.projector = projector;
 
-      const root = svgEl('g');
-      svg.appendChild(root);
+      const background = svgEl('rect', { x: 0, y: 0, width: WIDTH, height: HEIGHT, class: 'canvas-background' });
+      background.addEventListener('pointerdown', pan.startPan);
+      svg.appendChild(background);
 
-      root.appendChild(svgEl('rect', { x: 0, y: 0, width: WIDTH, height: HEIGHT, fill: 'transparent' }, {
-        pointerdown: () => callbacks.onDeselect()
-      }));
-      root.appendChild(svgEl('line', { class: 'grid-line', x1: PADDING, y1: HEIGHT - PADDING, x2: WIDTH - PADDING, y2: HEIGHT - PADDING }));
-      root.appendChild(svgEl('line', { class: 'grid-line', x1: PADDING, y1: PADDING, x2: PADDING, y2: HEIGHT - PADDING }));
+      const zoomLayer = svgEl('g', { transform: viewport.transformAttr() });
+      svg.appendChild(zoomLayer);
+      current.zoomLayer = zoomLayer;
+
+      zoomLayer.appendChild(buildRulerGrid({ svgEl, niceStep: stationing.niceStep, projector, bounds, height: HEIGHT, padding: PADDING }));
 
       const terrainPoints = vertices.map((v, i) => projector.toScreen(distances[i], v.z));
-      root.appendChild(svgEl('path', { class: 'profile-line', d: pathFromPoints(terrainPoints) }));
+      zoomLayer.appendChild(svgEl('path', { class: 'profile-line', d: pathFromPoints(terrainPoints) }));
 
       const hypothesis = project.hypotheses.find((h) => h.id === hypothesisId) || project.hypotheses[0];
       const referenceHypothesis = loadTree.getReferenceHypothesis(project);
@@ -64,12 +116,12 @@
         });
 
         const screenPoints = curve.points.map((p) => projector.toScreen(from.station + p.x, fromTop + p.y));
-        root.appendChild(svgEl('path', { class: 'conductor-line', d: pathFromPoints(screenPoints) }));
+        zoomLayer.appendChild(svgEl('path', { class: 'conductor-line', d: pathFromPoints(screenPoints) }));
 
         const midScreen = projector.toScreen(from.station + spanLength / 2, Math.min(fromTop, toTop));
         const sagLabel = svgEl('text', { class: 'sag-label', x: midScreen.x, y: midScreen.y + 16 });
         sagLabel.textContent = `flecha ${curve.sag.toFixed(2)} m`;
-        root.appendChild(sagLabel);
+        zoomLayer.appendChild(sagLabel);
       }
 
       resolved.forEach((structure) => {
@@ -86,20 +138,30 @@
             callbacks.onSelect({ type: 'structure', id: structure.id });
           }
         });
-        root.appendChild(pole);
-        root.appendChild(svgEl('circle', { class: 'structure-point', cx: topScreen.x, cy: topScreen.y, r: 6 }));
+        zoomLayer.appendChild(pole);
+        zoomLayer.appendChild(svgEl('circle', { class: 'structure-point', cx: topScreen.x, cy: topScreen.y, r: 6 }));
         const label = svgEl('text', { class: 'annotation-label', x: topScreen.x + 8, y: topScreen.y - 8 });
         label.textContent = structure.id;
-        root.appendChild(label);
+        zoomLayer.appendChild(label);
       });
 
-      root.appendChild(svgEl('text', { class: 'axis-text', x: WIDTH / 2 - 60, y: HEIGHT - 6 }, {})).textContent = 'Distancia acumulada (m)';
+      const syncMarker = svgEl('line', { class: 'sync-marker sync-marker--line', x1: -9999, y1: 0, x2: -9999, y2: HEIGHT });
+      zoomLayer.appendChild(syncMarker);
+      current.syncMarker = syncMarker;
+
+      // Fuera de zoomLayer a propósito: los títulos de eje deben quedar
+      // fijos en el margen del panel, no moverse/escalar con el zoom/pan.
+      const xLabel = svgEl('text', { class: 'axis-text', x: WIDTH / 2 - 60, y: HEIGHT - 6 });
+      xLabel.textContent = 'Distancia acumulada (m)';
+      svg.appendChild(xLabel);
       const yLabel = svgEl('text', { class: 'axis-text', x: 10, y: HEIGHT / 2, transform: `rotate(-90 10 ${HEIGHT / 2})` });
       yLabel.textContent = 'Elevación (m)';
-      root.appendChild(yLabel);
+      svg.appendChild(yLabel);
+
+      callbacks.onZoomChange(viewport.state.scale);
     }
 
-    return { render };
+    return { render, zoomBy, resetZoom, showSyncMarker, hideSyncMarker };
   }
 
   global.LineDesignProfileView = { createProfileView };
