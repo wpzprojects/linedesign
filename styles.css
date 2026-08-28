@@ -634,18 +634,6 @@ input:focus, select:focus, button:focus-visible {
   margin-bottom: 10px;
 }
 
-.inspector-row {
-  display: flex;
-  justify-content: space-between;
-  padding: 4px 0;
-  font-size: 0.85rem;
-  border-bottom: 1px dashed var(--line);
-}
-
-.inspector-row:last-of-type {
-  border-bottom: none;
-}
-
 .inspector-delete {
   margin-top: 16px;
   width: 100%;

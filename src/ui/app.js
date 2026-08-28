@@ -37,6 +37,10 @@
   const zoomLevels = { plan: 1, profile: 1 };
   let statusMessageTimer = null;
 
+  function roundTo4(value) {
+    return Math.round(value * 10000) / 10000;
+  }
+
   function onSelect(sel) {
     selection = sel;
     render(store.getProject());
@@ -210,12 +214,16 @@
     if (selection.type === 'vertex') {
       const vertex = project.alignment.vertices.find((v) => v.id === selection.id);
       inspectorPanel.appendChild(el('div', { class: 'inspector-title' }, `Vértice ${vertex.id}`));
-      inspectorPanel.appendChild(el('div', { class: 'inspector-row' }, [
-        el('span', {}, 'X'), el('strong', {}, `${vertex.x.toFixed(2)} m`)
-      ]));
-      inspectorPanel.appendChild(el('div', { class: 'inspector-row' }, [
-        el('span', {}, 'Y'), el('strong', {}, `${vertex.y.toFixed(2)} m`)
-      ]));
+      inspectorPanel.appendChild(el('label', {}, 'X (m)'));
+      inspectorPanel.appendChild(el('input', {
+        type: 'number', step: '0.5', value: roundTo4(vertex.x),
+        onChange: (e) => store.moveVertex(vertex.id, parseFloat(e.target.value) || 0, vertex.y)
+      }));
+      inspectorPanel.appendChild(el('label', {}, 'Y (m)'));
+      inspectorPanel.appendChild(el('input', {
+        type: 'number', step: '0.5', value: roundTo4(vertex.y),
+        onChange: (e) => store.moveVertex(vertex.id, vertex.x, parseFloat(e.target.value) || 0)
+      }));
       inspectorPanel.appendChild(el('label', {}, 'Elevación z (m)'));
       inspectorPanel.appendChild(el('input', {
         type: 'number', step: '0.5', value: vertex.z,
@@ -255,6 +263,22 @@
         type: 'number', step: '1', value: structure.station.toFixed(1),
         onChange: (e) => store.moveStructure(structure.id, parseFloat(e.target.value) || 0)
       }));
+
+      inspectorPanel.appendChild(el('button', {
+        class: 'btn btn-small', type: 'button',
+        onClick: () => {
+          const vertices = project.alignment.vertices;
+          const distances = stationing.cumulativeDistances(vertices);
+          let nearestIndex = 0;
+          let nearestDiff = Infinity;
+          distances.forEach((d, i) => {
+            const diff = Math.abs(d - structure.station);
+            if (diff < nearestDiff) { nearestDiff = diff; nearestIndex = i; }
+          });
+          store.moveStructure(structure.id, distances[nearestIndex]);
+          showStatusMessage(`Estructura ${structure.id} ajustada al vértice ${vertices[nearestIndex].id}.`);
+        }
+      }, 'Ajustar al vértice más cercano'));
 
       inspectorPanel.appendChild(el('button', {
         class: 'btn btn-small btn-danger inspector-delete', type: 'button',
