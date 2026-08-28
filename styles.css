@@ -680,11 +680,6 @@ svg#plan-svg, svg#profile-svg {
   user-select: none;
 }
 
-.axis-text {
-  fill: var(--muted);
-  font-size: 12px;
-}
-
 .alignment-line {
   stroke: var(--primary);
   stroke-width: 4;

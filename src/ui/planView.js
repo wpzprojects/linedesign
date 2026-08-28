@@ -107,7 +107,7 @@
       svg.appendChild(zoomLayer);
       current.zoomLayer = zoomLayer;
 
-      zoomLayer.appendChild(buildRulerGrid({ svgEl, niceStep: stationing.niceStep, projector, bounds, height: HEIGHT, padding: PADDING }));
+      zoomLayer.appendChild(buildRulerGrid({ svgEl, niceStep: stationing.niceStep, projector, bounds, padding: PADDING }));
 
       const alignmentPath = svgEl('path', {
         class: 'alignment-line',

@@ -43,7 +43,7 @@
    * (dentro de la capa de zoom), así que la grilla se mueve/escala junto
    * con el dibujo — comportamiento estándar en herramientas CAD.
    */
-  function buildRulerGrid({ svgEl: makeEl, niceStep, projector, bounds, height, padding }) {
+  function buildRulerGrid({ svgEl: makeEl, niceStep, projector, bounds, padding }) {
     const group = makeEl('g', { class: 'ruler-grid' });
     const spanX = bounds.maxX - bounds.minX;
     const spanY = bounds.maxY - bounds.minY;
@@ -56,7 +56,7 @@
         const p1 = projector.toScreen(x, bounds.minY);
         const p2 = projector.toScreen(x, bounds.maxY);
         group.appendChild(makeEl('line', { class: 'ruler-line', x1: p1.x, y1: p1.y, x2: p2.x, y2: p2.y }));
-        const label = makeEl('text', { class: 'ruler-label', x: p1.x + 3, y: height - padding + 14 });
+        const label = makeEl('text', { class: 'ruler-label', x: p1.x + 3, y: p1.y + 14 });
         label.textContent = formatTick(x, stepX);
         group.appendChild(label);
       }

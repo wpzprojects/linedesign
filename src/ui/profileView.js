@@ -93,7 +93,7 @@
       svg.appendChild(zoomLayer);
       current.zoomLayer = zoomLayer;
 
-      zoomLayer.appendChild(buildRulerGrid({ svgEl, niceStep: stationing.niceStep, projector, bounds, height: HEIGHT, padding: PADDING }));
+      zoomLayer.appendChild(buildRulerGrid({ svgEl, niceStep: stationing.niceStep, projector, bounds, padding: PADDING }));
 
       const terrainPoints = vertices.map((v, i) => projector.toScreen(distances[i], v.z));
       zoomLayer.appendChild(svgEl('path', { class: 'profile-line', d: pathFromPoints(terrainPoints) }));
@@ -185,17 +185,6 @@
       const syncMarker = svgEl('line', { class: 'sync-marker sync-marker--line', x1: -9999, y1: 0, x2: -9999, y2: HEIGHT });
       zoomLayer.appendChild(syncMarker);
       current.syncMarker = syncMarker;
-
-      // Fuera de zoomLayer a propósito: los títulos de eje deben quedar
-      // fijos en el margen del panel, no moverse/escalar con el zoom/pan.
-      const xLabel = svgEl('text', { class: 'axis-text', x: WIDTH / 2 - 60, y: HEIGHT - 6 });
-      xLabel.textContent = 'Distancia acumulada (m)';
-      svg.appendChild(xLabel);
-      const yLabel = svgEl('text', { class: 'axis-text', x: 10, y: HEIGHT / 2, transform: `rotate(-90 10 ${HEIGHT / 2})` });
-      yLabel.textContent = current.vExaggeration !== 1
-        ? `Elevación (m) — escala vertical ${current.vExaggeration}×`
-        : 'Elevación (m)';
-      svg.appendChild(yLabel);
 
       callbacks.onZoomChange(viewport.state.scale);
     }
