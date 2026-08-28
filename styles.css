@@ -285,7 +285,32 @@ button, input, select, textarea {
 
 .panel-tools {
   display: flex;
+  align-items: center;
   gap: 4px;
+}
+
+.panel-tools select {
+  width: auto;
+  height: 26px;
+  padding: 0 6px;
+  font-size: 0.78rem;
+  border-radius: 6px;
+}
+
+.panel-tools .toolbar-label {
+  white-space: nowrap;
+}
+
+.panel-tools .toolbar-label--stacked {
+  font-size: 0.62rem;
+  line-height: 1.05;
+  text-align: right;
+  white-space: normal;
+}
+
+.panel-tools .toolbar-sep {
+  height: 20px;
+  width: 1px;
 }
 
 .icon-moon {
@@ -714,7 +739,7 @@ svg#plan-svg, svg#profile-svg {
 .structure-pole {
   stroke: var(--accent);
   stroke-width: 4;
-  cursor: pointer;
+  cursor: grab;
 }
 
 .structure-pole.is-selected {

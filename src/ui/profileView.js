@@ -1,7 +1,9 @@
 /**
  * profileView.js — Vista en Perfil: terreno, estructuras y catenaria del
  * conductor por vano, para la hipótesis de carga seleccionada. Con zoom
- * (rueda), pan (arrastrar fondo) y marcador de sincronización con Planta.
+ * (rueda), pan (arrastrar fondo), arrastre de estructuras (reubica su
+ * station, con reflejo en vivo en Planta) y marcador de sincronización con
+ * Planta.
  *
  * Ver comentario equivalente en planView.js: los listeners a nivel <svg>
  * (wheel, hover) se registran una sola vez al crear la vista, no en cada
@@ -23,7 +25,7 @@
 
   function createProfileView(svg, callbacks) {
     const viewport = createViewport();
-    const current = { projector: null, zoomLayer: null, height: 0 };
+    const current = { projector: null, zoomLayer: null, height: 0, vExaggeration: 1 };
 
     const pan = viewport.attach(svg, {
       onChange: () => {
@@ -80,7 +82,7 @@
       const resolved = stationing.resolveStructures(vertices, project.structures)
         .sort((a, b) => a.station - b.station);
       const bounds = stationing.profileBounds(vertices, resolved);
-      const projector = stationing.makeProjector(bounds, WIDTH, HEIGHT, PADDING);
+      const projector = stationing.makeProjector(bounds, WIDTH, HEIGHT, PADDING, current.vExaggeration);
       current.projector = projector;
 
       const background = svgEl('rect', { x: 0, y: 0, width: WIDTH, height: HEIGHT, class: 'canvas-background' });
@@ -124,6 +126,45 @@
         zoomLayer.appendChild(sagLabel);
       }
 
+      // Arrastre horizontal de estructuras (mueve su station a lo largo del
+      // alineamiento): a diferencia del arrastre en Planta/vértices, aquí no
+      // se parcha el DOM localmente porque mover una estructura cambia la
+      // forma de la catenaria de sus dos vanos adyacentes — se reusa esta
+      // misma render() con un proyecto borrador en cada pointermove (project,
+      // hypothesisId y selection quedan fijos, capturados del cierre de esta
+      // llamada). El eje X del perfil ES la station acumulada, así que la
+      // conversión pantalla->dato ya da directamente el valor a usar.
+      function attachStructureDrag(pole, structureId) {
+        pole.addEventListener('pointerdown', (evt) => {
+          evt.stopPropagation();
+          svg.setPointerCapture(evt.pointerId);
+          let lastStation = project.structures.find((s) => s.id === structureId).station;
+
+          function onMove(moveEvt) {
+            const svgPoint = toSvgPoint(svg, moveEvt.clientX, moveEvt.clientY);
+            const unzoomed = viewport.toUnzoomed(svgPoint);
+            const dataPoint = current.projector.toData(unzoomed.x, unzoomed.y);
+            lastStation = Math.min(Math.max(dataPoint.x, bounds.minX), bounds.maxX);
+            if (callbacks.onStructureDragMove) callbacks.onStructureDragMove(structureId, lastStation);
+            const draftProject = {
+              ...project,
+              structures: project.structures.map((s) => (s.id === structureId ? { ...s, station: lastStation } : s))
+            };
+            render(draftProject, hypothesisId, selection);
+          }
+
+          function onUp() {
+            svg.removeEventListener('pointermove', onMove);
+            svg.removeEventListener('pointerup', onUp);
+            callbacks.onSelect({ type: 'structure', id: structureId });
+            if (callbacks.onCommitStructureMove) callbacks.onCommitStructureMove(structureId, lastStation);
+          }
+
+          svg.addEventListener('pointermove', onMove);
+          svg.addEventListener('pointerup', onUp);
+        });
+      }
+
       resolved.forEach((structure) => {
         const baseScreen = projector.toScreen(structure.station, structure.z);
         const topScreen = projector.toScreen(structure.station, structure.z + structure.height);
@@ -132,13 +173,9 @@
         const pole = svgEl('line', {
           class: `structure-pole${isSelected ? ' is-selected' : ''}`,
           x1: baseScreen.x, y1: baseScreen.y, x2: topScreen.x, y2: topScreen.y, 'data-id': structure.id
-        }, {
-          pointerdown: (evt) => {
-            evt.stopPropagation();
-            callbacks.onSelect({ type: 'structure', id: structure.id });
-          }
         });
         zoomLayer.appendChild(pole);
+        attachStructureDrag(pole, structure.id);
         zoomLayer.appendChild(svgEl('circle', { class: 'structure-point', cx: topScreen.x, cy: topScreen.y, r: 6 }));
         const label = svgEl('text', { class: 'annotation-label', x: topScreen.x + 8, y: topScreen.y - 8 });
         label.textContent = structure.id;
@@ -155,13 +192,23 @@
       xLabel.textContent = 'Distancia acumulada (m)';
       svg.appendChild(xLabel);
       const yLabel = svgEl('text', { class: 'axis-text', x: 10, y: HEIGHT / 2, transform: `rotate(-90 10 ${HEIGHT / 2})` });
-      yLabel.textContent = 'Elevación (m)';
+      yLabel.textContent = current.vExaggeration !== 1
+        ? `Elevación (m) — escala vertical ${current.vExaggeration}×`
+        : 'Elevación (m)';
       svg.appendChild(yLabel);
 
       callbacks.onZoomChange(viewport.state.scale);
     }
 
-    return { render, zoomBy, resetZoom, showSyncMarker, hideSyncMarker };
+    function setVerticalExaggeration(factor) {
+      current.vExaggeration = factor;
+    }
+
+    function getVerticalExaggeration() {
+      return current.vExaggeration;
+    }
+
+    return { render, zoomBy, resetZoom, showSyncMarker, hideSyncMarker, setVerticalExaggeration, getVerticalExaggeration };
   }
 
   global.LineDesignProfileView = { createProfileView };

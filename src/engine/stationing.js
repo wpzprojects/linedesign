@@ -110,31 +110,44 @@
    * coincide con la del panel, el excedente se reparte como margen a ambos
    * lados del eje limitante — no se ancla el contenido a una esquina, que
    * dejaría todo el espacio libre acumulado de un solo lado.
+   *
+   * `verticalExaggeration` desacopla la escala vertical de la horizontal
+   * (uso normal en vistas de Perfil: la escala horizontal siempre ajusta al
+   * ancho disponible, y la vertical se multiplica por este factor para
+   * aprovechar el alto del panel en vez de heredar la misma escala diminuta
+   * que exige el rango horizontal, típicamente mucho mayor). Con el valor
+   * por defecto (1) el eje Y usa la misma escala que el eje X, que es el
+   * comportamiento original de esta función (usado tal cual por la vista en
+   * Planta, donde X e Y deben conservar la misma escala para no distorsionar
+   * la geometría).
    */
-  function makeProjector(bounds, width, height, padding) {
+  function makeProjector(bounds, width, height, padding, verticalExaggeration = 1) {
     const spanX = Math.max(bounds.maxX - bounds.minX, 1e-6);
     const spanY = Math.max(bounds.maxY - bounds.minY, 1e-6);
     const availableW = width - padding * 2;
     const availableH = height - padding * 2;
-    const scale = Math.min(availableW / spanX, availableH / spanY);
-    const offsetX = padding + (availableW - spanX * scale) / 2;
-    const offsetY = padding + (availableH - spanY * scale) / 2;
+    const scaleX = verticalExaggeration === 1
+      ? Math.min(availableW / spanX, availableH / spanY)
+      : availableW / spanX;
+    const scaleY = scaleX * verticalExaggeration;
+    const offsetX = padding + (availableW - spanX * scaleX) / 2;
+    const offsetY = padding + (availableH - spanY * scaleY) / 2;
 
     function toScreen(dataX, dataY) {
       return {
-        x: offsetX + (dataX - bounds.minX) * scale,
-        y: height - offsetY - (dataY - bounds.minY) * scale
+        x: offsetX + (dataX - bounds.minX) * scaleX,
+        y: height - offsetY - (dataY - bounds.minY) * scaleY
       };
     }
 
     function toData(screenX, screenY) {
       return {
-        x: bounds.minX + (screenX - offsetX) / scale,
-        y: bounds.minY + (height - offsetY - screenY) / scale
+        x: bounds.minX + (screenX - offsetX) / scaleX,
+        y: bounds.minY + (height - offsetY - screenY) / scaleY
       };
     }
 
-    return { toScreen, toData, scale };
+    return { toScreen, toData, scale: scaleX };
   }
 
   /**

@@ -156,6 +156,7 @@
             circle.setAttribute('cx', projector.toScreen(draftVertex.x, draftVertex.y).x);
             circle.setAttribute('cy', projector.toScreen(draftVertex.x, draftVertex.y).y);
             redrawStructures(draft);
+            if (callbacks.onVertexDragMove) callbacks.onVertexDragMove(vertexId, draftVertex.x, draftVertex.y);
           }
 
           function onUp() {
@@ -191,6 +192,7 @@
               label.setAttribute('x', p.x + 10);
               label.setAttribute('y', p.y - 10);
             }
+            if (callbacks.onStructureDragMove) callbacks.onStructureDragMove(structureId, lastStation);
           }
 
           function onUp() {

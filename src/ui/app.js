@@ -23,6 +23,7 @@
   const newStructureType = document.getElementById('new-structure-type');
   const newStructureStation = document.getElementById('new-structure-station');
   const planHypothesisSelect = document.getElementById('plan-hypothesis-select');
+  const profileVExagSelect = document.getElementById('profile-vexag-select');
   const shell = document.getElementById('shell');
   const sidebarToggle = document.getElementById('sidebar-toggle');
   const screenTitle = document.getElementById('screen-title');
@@ -61,6 +62,22 @@
     onDeselect,
     onCommitVertexMove: (id, x, y) => store.moveVertex(id, x, y),
     onCommitStructureMove: (id, station) => store.moveStructure(id, station),
+    onStructureDragMove: (id, station) => {
+      const project = store.getProject();
+      const draftProject = { ...project, structures: project.structures.map((s) => (s.id === id ? { ...s, station } : s)) };
+      profileView.render(draftProject, planHypothesisId, { type: 'structure', id });
+    },
+    onVertexDragMove: (id, x, y) => {
+      const project = store.getProject();
+      const draftProject = {
+        ...project,
+        alignment: {
+          ...project.alignment,
+          vertices: project.alignment.vertices.map((v) => (v.id === id ? { ...v, x, y } : v))
+        }
+      };
+      profileView.render(draftProject, planHypothesisId, { type: 'vertex', id });
+    },
     onZoomChange: (scale) => { zoomLevels.plan = scale; updateStatusZoom(); },
     onHover: (dataPoint) => {
       if (!dataPoint) {
@@ -77,6 +94,12 @@
   const profileView = window.LineDesignProfileView.createProfileView(profileSvg, {
     onSelect,
     onDeselect,
+    onCommitStructureMove: (id, station) => store.moveStructure(id, station),
+    onStructureDragMove: (id, station) => {
+      const project = store.getProject();
+      const draftProject = { ...project, structures: project.structures.map((s) => (s.id === id ? { ...s, station } : s)) };
+      planView.render(draftProject, { type: 'structure', id });
+    },
     onZoomChange: (scale) => { zoomLevels.profile = scale; updateStatusZoom(); },
     onHover: (data) => {
       if (!data) {
@@ -88,6 +111,14 @@
       planView.showSyncMarker(data.station);
     }
   });
+
+  try {
+    const savedVExag = parseFloat(localStorage.getItem('linedesign-profile-vexag'));
+    if (Number.isFinite(savedVExag) && savedVExag > 0) profileView.setVerticalExaggeration(savedVExag);
+  } catch (error) {
+    console.warn('No se pudo leer la exageración vertical guardada:', error);
+  }
+  profileVExagSelect.value = String(profileView.getVerticalExaggeration());
 
   const catalogView = window.LineDesignCatalogView.createCatalogView(document.getElementById('catalog-container'), store);
   const hypothesesView = window.LineDesignHypothesesView.createHypothesesView(document.getElementById('hypotheses-container'), store);
@@ -270,6 +301,17 @@
 
     planHypothesisSelect.addEventListener('change', (e) => {
       planHypothesisId = e.target.value;
+      render(store.getProject());
+    });
+
+    profileVExagSelect.addEventListener('change', (e) => {
+      const factor = parseFloat(e.target.value);
+      profileView.setVerticalExaggeration(factor);
+      try {
+        localStorage.setItem('linedesign-profile-vexag', String(factor));
+      } catch (error) {
+        console.warn('No se pudo guardar la exageración vertical:', error);
+      }
       render(store.getProject());
     });
 

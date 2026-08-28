@@ -249,3 +249,88 @@ La Fase 1 se considera lista cuando, con datos simulados, se puede de principio 
 - `Archivos_Referenciales/Manuales PLS CADD/PLS-CADD ESP v19.pdf` (manual en español)
 - `Archivos_Referenciales/Manuales PLS CADD/PLS-CADD ENG v20.pdf` (manual en inglés, más reciente)
 - `Archivos_Referenciales/Manuales PLS CADD/Integración con Google Earth.pdf` (referencia para la futura integración con KMZ/mapas de la Fase 2)
+
+---
+
+## Apéndice A — Fase 2: mapa base y perfil altimétrico real (notas de arquitectura)
+
+> Este apéndice amplía la sección 7 (Fase 2). No es para implementar en Fase 1 — es guía para cuando se llegue a esa etapa, y para que el diseño de Fase 1 no cierre puertas que después haya que reabrir a la fuerza.
+
+### A.1 Mapa base en la vista de Planta
+
+- Librería recomendada: **Leaflet.js** (liviana, estándar de facto, se integra bien como capa adicional sobre la vista de planta existente).
+- Capas de teselas (tiles) gratuitas, sin necesidad de backend propio:
+  - **Calles**: OpenStreetMap — gratis, sin API key, pero requiere mostrar la atribución "© OpenStreetMap contributors" visible en el mapa.
+  - **Satélite**: Esri World Imagery (tiles públicas sin key) como primera opción; alternativamente MapTiler o Mapbox (tier gratuito con límite mensual, requieren API key).
+- Agregar un control de capas para alternar entre "calles" y "satélite".
+- El mapa es una capa de **renderizado**, no una fuente de datos: debe dibujar el mismo alineamiento/estructuras que ya maneja `planView.js`, ahora en coordenadas lat/lon en vez de X/Y locales. Sugerencia de módulo: `src/ui/mapRenderer.js` (o `src/pwa` si se prefiere agrupar por si trae su propia lógica de caché), que consuma las mismas coordenadas sin que el motor de cálculo (`src/engine`) se entere de que existe un mapa.
+
+### A.2 Perfil altimétrico real (elevación de terreno)
+
+- Servicios gratuitos de elevación, sin backend propio:
+  - **Open-Elevation** (API pública sin key; puede ser lenta/inestable bajo carga — útil para prototipar).
+  - **OpenTopoData** (similar, varios datasets como SRTM/ASTER, sin key para uso moderado).
+  - **Mapbox Terrain-RGB** o **MapTiler Elevation** (más confiables, requieren key con tier gratuito limitado).
+- Flujo sugerido: muestrear N puntos a lo largo del alineamiento (cada X metros según precisión deseada), consultar su elevación (en lote si el servicio lo permite), y construir el arreglo `{distanciaAcumulada, elevación}` que ya consume `profileView.js` hoy con datos simulados.
+- Mantener esto detrás de la misma abstracción de `dataSource.js` (ej. una función `getElevationProfile(alignmentPoints)`) para que Fase 1 y Fase 2 solo difieran en qué función se invoca, sin tocar la UI.
+- **Cachear localmente** (localStorage/IndexedDB) las elevaciones ya consultadas por coordenada, para no repetir llamadas cada vez que se recalcula el perfil y para respetar los límites de uso de los servicios gratuitos.
+
+### A.3 Interacción con el requisito de PWA offline
+
+- Los tiles de mapa y las consultas de elevación requieren conexión a internet la primera vez que se piden. El Service Worker puede cachear tiles ya vistos (para que un área ya explorada se pueda revisar offline), pero no puede pre-cachear mapas de zonas nunca visitadas.
+- Documentar en `README.md` que el **cálculo** (catenaria, esfuerzos, árbol de cargas) sigue funcionando 100% offline una vez cargado el proyecto, pero que el mapa/elevación en vivo requiere conexión la primera vez que se consulta cada zona nueva.
+
+### A.4 Consideraciones si la app se publica en GitHub Pages
+
+- GitHub Pages sirve HTTPS automáticamente, lo cual es compatible con el requisito de Service Worker/PWA — no hay problema estructural para esta Fase 2.
+- **Ruta base**: si se publica como sitio de proyecto (`usuario.github.io/nombre-repo/`), la app vive bajo una subcarpeta. Usar rutas **relativas** (no absolutas) en el manifest, en `<link rel="manifest">`, en el registro del Service Worker (`navigator.serviceWorker.register('./sw.js', {scope: './'})`) y en todas las referencias a assets, para que el registro y el scope del SW funcionen correctamente.
+- **API keys expuestas**: como todo el código corre en el navegador, cualquier API key (Mapbox, MapTiler) queda visible en el código fuente/DevTools. Preferir servicios sin key (OpenStreetMap, Esri World Imagery, Open-Elevation/OpenTopoData) cuando sea posible; si se usa un servicio con key, restringirla por dominio (referrer) en el panel del proveedor.
+- **CORS**: los servicios recomendados están diseñados para consumirse desde el navegador (CORS habilitado). Aun así, probar la integración temprano en Fase 2, ya que un servicio mal configurado en CORS falla silenciosamente y puede no ser obvio de diagnosticar.
+
+---
+
+## Apéndice B — Fase 2: importación de KMZ para el alineamiento (notas de arquitectura)
+
+> Este apéndice amplía la sección 7 (Fase 2). El objetivo es leer un archivo KMZ/KML que el usuario ya tiene (ej. exportado de Google Earth) y convertirlo en un `alignment.vertices` compatible con lo que el motor de cálculo ya consume desde la Fase 1 — sin depender de mapas ni servicios externos para este paso, ya que el KMZ ya trae las coordenadas.
+
+### B.1 Qué es un KMZ y qué hay que extraer de él
+
+- Un **KMZ es un archivo ZIP** que contiene, como mínimo, un archivo **KML** (XML) y opcionalmente recursos asociados (íconos, overlays). Para el alineamiento solo interesa el KML interior — el resto se puede ignorar.
+- Dentro del KML, la traza de interés normalmente es un elemento `<Placemark>` con una geometría `<LineString>`, cuyo `<coordinates>` trae una lista de tuplas `longitud,latitud,altitud` (altitud opcional, y en algunos exports viene en 0 o ausente).
+- Un mismo KML puede traer **varias geometrías** (carpetas, puntos de referencia, otras líneas). Si hay más de un `LineString`/`Placemark` candidato, la app debe listarlos y dejar que el usuario elija cuál es el alineamiento, en vez de asumir el primero.
+- Algunos usuarios subirán directamente un `.kml` suelto (sin comprimir) en vez de `.kmz` — vale la pena aceptar ambos formatos desde el inicio.
+
+### B.2 Librerías sugeridas (vía CDN, cacheadas por el Service Worker)
+
+- **JSZip**: para descomprimir el KMZ en el navegador y extraer el `.kml` interno (un KMZ es un ZIP estándar).
+- **DOMParser nativo** (ya disponible en el navegador, sin librería) o **@tmcw/togeojson**: para parsear el XML del KML. `togeojson` es útil porque convierte directamente a GeoJSON, un formato más simple de recorrer que el árbol KML crudo.
+- **proj4js**: para reproyectar de lat/lon (WGS84, el sistema que usa KML) a un sistema métrico local (ver B.3).
+- **turf.js** (`turf.simplify`) o **simplify-js**: para reducir la cantidad de vértices cuando el KML viene sobre-muestreado (ver B.4).
+- Igual que con el mapa (Apéndice A), cualquiera de estas libs que se cargue por CDN debe quedar cacheada en `sw.js` para no romper el funcionamiento offline de la app ya instalada.
+
+### B.3 Reproyección de coordenadas (lat/lon → métrico local)
+
+- El motor de cálculo (`src/engine`) trabaja en coordenadas métricas locales (X, Y en metros), no en grados de lat/lon — es necesario reproyectar tras importar el KMZ.
+- Enfoque sugerido: determinar automáticamente la zona UTM correspondiente al punto medio del alineamiento importado y reproyectar todos los vértices a esa zona con `proj4js` (o, si se prefiere evitar esa dependencia, implementar una proyección local simple tipo "plano tangente" centrado en el primer vértice — menos precisa en trazas muy largas, pero suficiente para líneas de transmisión de longitud típica).
+- Documentar en `DATA_MODEL.md` qué proyección/zona se usó para ese proyecto importado, ya que es información que se debe conservar si luego se exporta o se compara con otro alineamiento.
+- La altitud que trae el KML (si la trae) **no debe usarse como perfil del terreno** — el perfil altimétrico real se obtiene del servicio de elevación (Apéndice A.2), no del KMZ, salvo que el usuario indique explícitamente que quiere usar la altitud del archivo como referencia.
+
+### B.4 Simplificación de vértices
+
+- Los KML exportados desde Google Earth suelen traer el trazado **sobre-muestreado** (cientos de puntos muy juntos siguiendo el trazo dibujado a mano), muy distinto de un alineamiento de diseño real, que se define por unos pocos PIs (vértices en los quiebres de ángulo).
+- Aplicar una simplificación tipo **Douglas-Peucker** (disponible en turf.js/simplify-js) con una tolerancia configurable, y mostrarle al usuario un preview antes/después con el conteo de vértices resultante, para que pueda ajustar la tolerancia si el resultado le parece muy simplificado o insuficiente.
+- Tras la simplificación, el usuario debe poder seguir editando manualmente los vértices con las herramientas que ya existen en la vista de Planta (mover, agregar, eliminar) — la importación es un punto de partida, no un resultado final e inmutable.
+
+### B.5 Validaciones y manejo de errores
+
+- Archivo corrupto, vacío, o sin ningún `LineString` dentro del KML: mostrar un error claro, no fallar en silencio.
+- Múltiples namespaces/versiones de KML (2.0, 2.1, 2.2): el parser debe tolerarlos (`togeojson` ya maneja esto razonablemente bien).
+- Coordenadas fuera de rango válido (lat fuera de [-90, 90], lon fuera de [-180, 180]): rechazar con mensaje explicativo.
+- Orden de los vértices invertido (algunos exports empiezan por el extremo "equivocado" del trazo): permitir invertir el alineamiento con un botón, en vez de exigir reexportar el KMZ.
+- Límite de tamaño razonable de archivo (los KMZ con imágenes/overlays pesados no aportan nada al alineamiento) — se puede descartar todo lo que no sea el KML antes de procesar.
+
+### B.6 Encaje con el resto de la arquitectura
+
+- El resultado final de este flujo (una lista de vértices en metros, ya simplificada y validada) debe entrar al mismo `alignment.vertices` que ya define el modelo de datos de la sección 5 — el resto del sistema (planta, perfil, distribución de estructuras, cálculo) no debería necesitar ningún cambio para aceptar un alineamiento importado en vez de uno simulado o manual.
+- Sugerencia de módulo: `src/data/kmzImport.js`, expuesto a través de `dataSource.js` como una función de origen adicional (ej. `importAlignmentFromKmz(file)`) que conviva con `getAlignmentData()` en vez de reemplazarla — el usuario debe poder elegir entre alineamiento simulado, manual o importado.
+- Este flujo es 100% local al navegador (no depende de internet, a diferencia del mapa/elevación del Apéndice A), lo cual es una ventaja para el funcionamiento offline de la PWA.
