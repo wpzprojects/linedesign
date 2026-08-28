@@ -643,6 +643,10 @@ input:focus, select:focus, button:focus-visible {
   border-radius: 0;
   padding: 14px;
   overflow-y: auto;
+  /* Pegado también arriba, contra la barra de herramientas: cancela el
+     gap de 16px que .screen deja entre .toolbar y .cad-area (el resto de
+     .cad-area, Planta/Perfil, se resuelve aparte). */
+  margin-top: -16px;
 }
 
 .inspector h2 {
