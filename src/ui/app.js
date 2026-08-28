@@ -15,7 +15,9 @@
   const summaryList = document.getElementById('summary-list');
   const projectNameInput = document.getElementById('project-name-input');
   const themeToggle = document.getElementById('theme-toggle');
-  const inspectorPanel = document.getElementById('inspector-panel');
+  const inspectorPanel = document.getElementById('inspector-body');
+  const inspectorAside = document.getElementById('inspector-panel');
+  const inspectorToggle = document.getElementById('inspector-toggle');
   const explorerVertices = document.getElementById('explorer-vertices');
   const explorerStructures = document.getElementById('explorer-structures');
   const explorerVerticesCount = document.getElementById('explorer-vertices-count');
@@ -201,7 +203,6 @@
     if (selection && selection.type === 'structure' && !project.structures.some((s) => s.id === selection.id)) selection = null;
 
     clear(inspectorPanel);
-    inspectorPanel.appendChild(el('h2', {}, 'Propiedades'));
 
     if (!selection) {
       inspectorPanel.appendChild(el('p', { class: 'muted inspector-hint' },
@@ -398,8 +399,40 @@
     });
   }
 
+  function setInspectorCollapsed(collapsed) {
+    inspectorAside.classList.toggle('is-collapsed', collapsed);
+    const label = collapsed ? 'Mostrar panel de propiedades' : 'Colapsar panel de propiedades';
+    inspectorToggle.setAttribute('aria-label', label);
+    inspectorToggle.setAttribute('title', label);
+  }
+
+  function initInspectorCollapse() {
+    let collapsed = false;
+    try {
+      collapsed = localStorage.getItem('linedesign-inspector-collapsed') === 'true';
+    } catch (error) {
+      console.warn('No se pudo leer el estado del panel de propiedades:', error);
+    }
+    setInspectorCollapsed(collapsed);
+
+    inspectorToggle.addEventListener('click', () => {
+      const next = !inspectorAside.classList.contains('is-collapsed');
+      setInspectorCollapsed(next);
+      try {
+        localStorage.setItem('linedesign-inspector-collapsed', String(next));
+      } catch (error) {
+        console.warn('No se pudo guardar el estado del panel de propiedades:', error);
+      }
+      // planView/profileView ajustan su viewBox al ancho real del panel;
+      // se re-renderiza al terminar la transición CSS del colapso (200ms)
+      // para que los lienzos tomen el espacio recién liberado/ocupado.
+      window.setTimeout(() => render(store.getProject()), 220);
+    });
+  }
+
   function init() {
     window.LineDesignTheme.initTheme(themeToggle);
+    initInspectorCollapse();
     wireToolbar();
     wireResize();
     updateStatusZoom();
