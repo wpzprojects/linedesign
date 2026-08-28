@@ -10,7 +10,7 @@ Cumple los 8 criterios de aceptación de Fase 1 del prompt maestro (`Archivos_Re
 2. ✅ Mover vértices por arrastre (drag) en planta; planta y perfil se recalculan (la posición de las estructuras se deriva de la station sobre el alineamiento, no se almacena fija).
 3. ✅ Pantalla "Catálogo de estructuras": crear/editar/eliminar tipos, alturas y puntos de fijación.
 4. ✅ Pantalla "Planta y Perfil": agregar/mover (drag)/eliminar estructuras sobre el alineamiento; los vanos se recalculan solos.
-5. ✅ Pantalla "Hipótesis de carga": 4 hipótesis precargadas (Everyday, máxima flecha, viento máximo, manguito de hielo), totalmente editables/añadibles/eliminables.
+5. ✅ Hipótesis de carga (pantalla "Criterios"): 4 hipótesis precargadas (Everyday, máxima flecha, viento máximo, manguito de hielo), totalmente editables/añadibles/eliminables.
 6. ✅ Catenaria del conductor calculada (forma exacta, no parabólica) y dibujada en el perfil para la hipótesis seleccionada en el selector de la barra de herramientas.
 7. ✅ Árbol de cargas por estructura y por hipótesis en tabla, exportable a JSON.
 8. ✅ PWA instalable: manifest + Service Worker + íconos reales (192/512) + funcionamiento offline con datos persistidos en localStorage.
@@ -32,14 +32,13 @@ Abrir `http://localhost:8000/`. El navegador ofrecerá el botón de instalación
 
 Shell de aplicación de escritorio (no una página que hace scroll), con la estructura que comparten PLS-CADD, AutoCAD, QGIS y Figma: barra de actividad fija + pantallas por función + lienzo central con zoom/pan + panel de propiedades + barra de estado. Ver "Fundamento de diseño" abajo.
 
-- **Barra de actividad** (extremo izquierdo, ~56px, nunca se esconde): íconos para cambiar de pantalla (Resumen / Planta y Perfil / Catálogo / Hipótesis / Árbol de cargas), más el engranaje de Configuración y el toggle de tema al fondo.
-- **Resumen**: Explorador (árbol de vértices y estructuras — clic para seleccionar y saltar a Planta y Perfil), tarjeta de Proyecto (nombre, exportar/importar/reiniciar) y Resumen del proyecto.
-- **Configuración**: por ahora, el sistema de unidades; pensada para ir sumando más ajustes globales.
+- **Barra de actividad** (extremo izquierdo, ~56px, nunca se esconde): íconos para cambiar de pantalla (Criterios / Planta y Perfil / Catálogo / Árbol de cargas / Resumen), más el toggle de tema al fondo.
+- **Criterios**: nombre del proyecto, sistema de unidades y las hipótesis de carga (conductor, hipótesis de referencia, tabla de hipótesis) — todo lo que condiciona el cálculo, agrupado en un solo lugar; pensada para ir sumando más ajustes globales.
+- **Resumen**: Explorador (árbol de vértices y estructuras — clic para seleccionar y saltar a Planta y Perfil), tarjeta de Proyecto (exportar/importar/reiniciar) y Resumen del proyecto.
 - **Planta y Perfil**: lado a lado, cada una llenando el alto disponible — el `viewBox` del SVG se recalcula según el tamaño real del panel. **Zoom con rueda del mouse y pan arrastrando el fondo** (independiente por lienzo, con botones +/−/ajustar en cada cabecera). El proyector centra el contenido dentro del panel (no lo ancla a una esquina) y dibuja una regla con marcas numeradas en ambos ejes. **Las dos vistas están sincronizadas**: al pasar el cursor sobre una, aparece un marcador en la posición correspondiente de la otra — igual que en PLS-CADD. Arrastra vértices o estructuras para moverlos; un clic (sin arrastrar) los selecciona.
 - **Panel de propiedades** (derecha): edición del vértice o estructura seleccionada — reemplaza cualquier formulario flotante por un inspector fijo, como en Figma/AutoCAD/QGIS.
 - **Barra de estado** (inferior, siempre visible): coordenadas en vivo bajo el cursor (X/Y en Planta, station/elevación en Perfil), resumen del proyecto, mensajes transitorios de las últimas acciones, y el zoom vigente de cada lienzo.
 - **Catálogo de estructuras**: crear/editar tipos (nombre, categoría, alturas disponibles, puntos de fijación del conductor por fase).
-- **Hipótesis de carga**: editar temperatura/viento/hielo de cada hipótesis, elegir el conductor activo y su hipótesis/tensión de referencia.
 - **Árbol de cargas**: tabla de fuerzas (vertical/transversal/longitudinal + momento estimado) por estructura y por hipótesis; botón "Exportar JSON".
 
 ### Fundamento de diseño

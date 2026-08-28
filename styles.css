@@ -521,11 +521,25 @@ input:focus, select:focus, button:focus-visible {
   display: flex;
 }
 
-/* Pantallas tipo formulario angosto (Resumen, Configuración): una sola
-   columna de tarjetas en vez de estirarse al ancho completo del workspace. */
+/* Pantalla tipo formulario angosto (Resumen): una sola columna de
+   tarjetas en vez de estirarse al ancho completo del workspace. */
 .screen--narrow {
   max-width: 360px;
   width: 100%;
+}
+
+/* Criterios: Nombre del proyecto y Unidades como tarjetas angostas en
+   fila (no toda la pantalla, que también aloja la tabla de hipótesis,
+   más ancha). */
+.criteria-top-cards {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 16px;
+}
+
+.criteria-top-cards .card {
+  flex: 0 1 300px;
+  margin-bottom: 0;
 }
 
 /* Solo la pantalla Planta y Perfil llena el alto disponible (para que el
