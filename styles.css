@@ -284,16 +284,19 @@ button, input, select, textarea {
   width: 1px;
 }
 
-.icon-moon {
+/* El ícono muestra el tema al que se cambiaría al hacer clic (destino),
+   no el tema activo: sol en modo oscuro ("pasar a claro"), luna en modo
+   claro ("pasar a oscuro") — convención habitual de este tipo de toggle. */
+.icon-sun {
   display: none;
 }
 
 body.dark-theme .icon-sun {
-  display: none;
+  display: block;
 }
 
 body.dark-theme .icon-moon {
-  display: block;
+  display: none;
 }
 
 /* ---------- Componentes generales ---------- */
