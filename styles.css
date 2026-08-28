@@ -125,13 +125,13 @@ button, input, select, textarea {
   justify-content: center;
   width: 34px;
   height: 34px;
-  border-radius: 9px;
-  background: linear-gradient(135deg, var(--primary), #1d4ed8);
-  color: white;
-  font-weight: 700;
-  font-size: 0.72rem;
-  letter-spacing: 0.04em;
   margin-bottom: 10px;
+}
+
+.activity-brand img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
 }
 
 .activity-nav {

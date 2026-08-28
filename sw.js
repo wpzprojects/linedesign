@@ -10,7 +10,7 @@
  * vez de quedar atascados en la caché vieja. Esta es una tarea recurrente en
  * cada fase del proyecto (ver README.md).
  */
-const CACHE_NAME = 'linedesign-html-v13';
+const CACHE_NAME = 'linedesign-html-v14';
 const APP_SHELL = [
   './',
   './index.html',
@@ -18,6 +18,7 @@ const APP_SHELL = [
   './manifest.webmanifest',
   './assets/icon-192.png',
   './assets/icon-512.png',
+  './assets/logo-mark.png',
   './src/ui/domUtil.js',
   './src/ui/svgUtil.js',
   './src/ui/viewport.js',

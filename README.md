@@ -47,7 +47,7 @@ La distribución no es una preferencia estética: se investigó la interfaz real
 
 ## Consideraciones PWA
 
-- `manifest.webmanifest` define nombre, íconos (192/512, generados con `generate_icons.py`), `display: standalone`.
+- `manifest.webmanifest` define nombre, íconos (192/512, generados con `generate_icons.py` a partir del logo fuente `assets/Logo.jfif`; el mismo script produce `assets/logo-mark.png`, un recorte circular con fondo transparente para la marca dentro de la UI), `display: standalone`.
 - `sw.js` cachea el app-shell completo (HTML/CSS/JS/íconos) con estrategia cache-first y versión de caché (`CACHE_NAME`).
 - **Tarea recurrente**: cada vez que se agregue un archivo nuevo al proyecto (nueva vista, librería, etc.), hay que añadirlo a `APP_SHELL` en `sw.js` **y** subir `CACHE_NAME`, o los usuarios con la app instalada quedarán en una versión vieja.
 - Fase 2 (mapas/KMZ reales) probablemente sume una librería de mapas vía CDN: si no se cachea una copia local, la app instalada no funcionará offline para esa parte — evaluarlo en su momento.
