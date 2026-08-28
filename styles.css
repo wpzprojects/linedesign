@@ -147,35 +147,6 @@ button, input, select, textarea {
   gap: 6px;
 }
 
-.sidebar {
-  flex: 0 0 var(--sidebar-width);
-  width: var(--sidebar-width);
-  display: flex;
-  flex-direction: column;
-  background: var(--panel);
-  border-right: 1px solid var(--line);
-  overflow: hidden;
-  transition: flex-basis 0.2s ease, width 0.2s ease, opacity 0.15s ease, padding 0.2s ease;
-  padding: 18px 16px;
-}
-
-.shell[data-sidebar="collapsed"] .sidebar {
-  flex-basis: 0;
-  width: 0;
-  padding-left: 0;
-  padding-right: 0;
-  opacity: 0;
-  pointer-events: none;
-  border-right-color: transparent;
-}
-
-.sidebar-scroll {
-  overflow-y: auto;
-  overflow-x: hidden;
-  flex: 1 1 auto;
-  min-width: calc(var(--sidebar-width) - 32px);
-}
-
 .workspace {
   flex: 1 1 auto;
   min-width: 0;
@@ -548,6 +519,13 @@ input:focus, select:focus, button:focus-visible {
 
 .screen.is-active {
   display: flex;
+}
+
+/* Pantallas tipo formulario angosto (Resumen, Configuración): una sola
+   columna de tarjetas en vez de estirarse al ancho completo del workspace. */
+.screen--narrow {
+  max-width: 360px;
+  width: 100%;
 }
 
 /* Solo la pantalla Planta y Perfil llena el alto disponible (para que el
@@ -928,25 +906,6 @@ circle.sync-marker {
 }
 
 @media (max-width: 720px) {
-  :root {
-    --sidebar-width: 250px;
-  }
-
-  /* La barra de actividad sigue siempre visible; el sidebar contextual se
-     vuelve un overlay fijo que arranca DESPUÉS de ella (no la tapa). */
-  .sidebar {
-    position: fixed;
-    top: 0;
-    left: var(--activity-width);
-    bottom: 0;
-    z-index: 40;
-    box-shadow: var(--shadow);
-  }
-
-  .shell[data-sidebar="collapsed"] .sidebar {
-    transform: translateX(-100%);
-  }
-
   .workspace-body {
     padding: 14px;
   }

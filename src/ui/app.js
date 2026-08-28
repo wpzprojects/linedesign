@@ -1,8 +1,8 @@
 /**
  * app.js — Orquestador de la aplicación: estado de UI (selección, pantalla
- * activa, hipótesis mostrada en el perfil), wiring de la barra lateral,
- * la barra de herramientas y la barra de estado, y disparo de render de
- * cada vista al cambiar el proyecto (patrón: store.subscribe(render)).
+ * activa, hipótesis mostrada en el perfil), wiring de la navegación entre
+ * pantallas, la barra de herramientas y la barra de estado, y disparo de
+ * render de cada vista al cambiar el proyecto (patrón: store.subscribe(render)).
  */
 (function () {
   const store = window.LineDesignStore;
@@ -24,8 +24,6 @@
   const newStructureStation = document.getElementById('new-structure-station');
   const planHypothesisSelect = document.getElementById('plan-hypothesis-select');
   const profileVExagSelect = document.getElementById('profile-vexag-select');
-  const shell = document.getElementById('shell');
-  const sidebarToggle = document.getElementById('sidebar-toggle');
   const screenTitle = document.getElementById('screen-title');
   const statusCoords = document.getElementById('status-coords');
   const statusSummary = document.getElementById('status-summary');
@@ -365,20 +363,6 @@
       });
     });
 
-    sidebarToggle.addEventListener('click', () => {
-      const collapsed = shell.dataset.sidebar === 'collapsed';
-      shell.dataset.sidebar = collapsed ? 'expanded' : 'collapsed';
-      try {
-        localStorage.setItem('linedesign-sidebar', shell.dataset.sidebar);
-      } catch (error) {
-        console.warn('No se pudo guardar el estado del menú lateral:', error);
-      }
-      // planView/profileView ajustan su viewBox al tamaño real del panel;
-      // se re-renderiza al terminar la transición CSS del sidebar (220ms)
-      // para que el lienzo tome el nuevo ancho disponible.
-      window.setTimeout(() => render(store.getProject()), 240);
-    });
-
     document.getElementById('export-btn').addEventListener('click', () => {
       const project = store.getProject();
       downloadFile(`${project.name.replace(/\s+/g, '_')}.json`, store.exportJSON());
@@ -406,15 +390,6 @@
     });
   }
 
-  function initSidebar() {
-    try {
-      const saved = localStorage.getItem('linedesign-sidebar');
-      if (saved === 'collapsed' || saved === 'expanded') shell.dataset.sidebar = saved;
-    } catch (error) {
-      console.warn('No se pudo leer el estado del menú lateral:', error);
-    }
-  }
-
   function wireResize() {
     let resizeTimer = null;
     window.addEventListener('resize', () => {
@@ -425,7 +400,6 @@
 
   function init() {
     window.LineDesignTheme.initTheme(themeToggle);
-    initSidebar();
     wireToolbar();
     wireResize();
     updateStatusZoom();
