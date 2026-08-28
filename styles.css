@@ -572,6 +572,11 @@ input:focus, select:focus, button:focus-visible {
 #screen-plan.screen.is-active {
   flex: 1 1 auto;
   min-height: 0;
+  /* Se "escapa" del padding superior/derecho de .workspace-body (18px/20px)
+     para que la barra de herramientas quede pegada arriba y el panel de
+     Propiedades pegado al borde derecho, como paneles anclados de una app
+     CAD — el resto de pantallas conserva el margen tipo tarjeta. */
+  margin: -18px -20px 0 0;
 }
 
 .toolbar {
