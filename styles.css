@@ -353,7 +353,7 @@ body.dark-theme .icon-moon {
   list-style: none;
   margin: 0;
   padding: 0;
-  max-height: 160px;
+  max-height: 340px;
   overflow-y: auto;
   border-radius: 8px;
 }
@@ -521,13 +521,6 @@ input:focus, select:focus, button:focus-visible {
   display: flex;
 }
 
-/* Pantalla tipo formulario angosto (Resumen): una sola columna de
-   tarjetas en vez de estirarse al ancho completo del workspace. */
-.screen--narrow {
-  max-width: 360px;
-  width: 100%;
-}
-
 /* Criterios: Nombre del proyecto y Unidades como tarjetas angostas en
    fila (no toda la pantalla, que también aloja la tabla de hipótesis,
    más ancha). */
@@ -535,6 +528,33 @@ input:focus, select:focus, button:focus-visible {
   display: flex;
   flex-wrap: wrap;
   gap: 16px;
+}
+
+/* Resumen: Proyecto y Resumen como tarjetas angostas en fila arriba,
+   Explorador ocupando el ancho completo debajo con sus dos listas
+   (alineamiento/estructuras) lado a lado en vez de apiladas — antes esta
+   pantalla vivía en un panel lateral de 280px y quedaba comprimida en
+   una sola columna aunque ahora tiene toda la pantalla disponible. */
+.summary-top-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 16px;
+}
+
+.summary-top-row .card {
+  flex: 1 1 280px;
+  margin-bottom: 0;
+}
+
+.explorer-columns {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 24px;
+}
+
+.explorer-columns .explorer-section {
+  flex: 1 1 280px;
+  margin-bottom: 0;
 }
 
 .criteria-top-cards .card {
