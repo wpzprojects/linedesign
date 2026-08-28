@@ -582,6 +582,10 @@ input:focus, select:focus, button:focus-visible {
      para no correr también el lienzo de Planta hacia la barra de
      actividad. */
   margin: -18px -20px -28px 0;
+  /* Separación uniforme de 10px entre la barra de herramientas y el resto
+     (Planta/Perfil/Propiedades) — reemplaza el gap genérico de 16px que
+     usan las demás pantallas, sin afectarlas (selector scoped a esta). */
+  gap: 10px;
 }
 
 .toolbar {
@@ -621,7 +625,7 @@ input:focus, select:focus, button:focus-visible {
 
 .cad-area {
   display: flex;
-  gap: 16px;
+  gap: 10px;
   flex: 1 1 auto;
   min-height: 280px;
 }
@@ -629,13 +633,15 @@ input:focus, select:focus, button:focus-visible {
 .split-view {
   display: grid;
   grid-template-columns: 1fr 1fr;
-  gap: 16px;
+  gap: 10px;
   flex: 1 1 auto;
   min-height: 0;
   min-width: 0;
   /* A diferencia de .inspector, Planta/Perfil no quedan pegados del todo
-     contra la barra de estado — un pequeño margen para no tocarla. */
-  margin-bottom: 10px;
+     a sus bordes — un margen de 10px uniforme (arriba ya lo da el gap de
+     #screen-plan; abajo y a la izquierda se ajustan aquí; a la derecha,
+     contra Propiedades, lo da el gap de .cad-area). */
+  margin: 0 0 10px -10px;
 }
 
 .inspector {
@@ -647,9 +653,9 @@ input:focus, select:focus, button:focus-visible {
   padding: 14px;
   overflow-y: auto;
   /* Pegado también arriba, contra la barra de herramientas: cancela el
-     gap de 16px que .screen deja entre .toolbar y .cad-area (el resto de
-     .cad-area, Planta/Perfil, se resuelve aparte). */
-  margin-top: -16px;
+     gap de 10px que #screen-plan deja entre .toolbar y .cad-area (el
+     resto de .cad-area, Planta/Perfil, se resuelve aparte, con margen). */
+  margin-top: -10px;
 }
 
 .inspector h2 {
