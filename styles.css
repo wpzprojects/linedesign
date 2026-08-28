@@ -575,7 +575,10 @@ input:focus, select:focus, button:focus-visible {
   /* Se "escapa" del padding superior/derecho de .workspace-body (18px/20px)
      para que la barra de herramientas quede pegada arriba y el panel de
      Propiedades pegado al borde derecho, como paneles anclados de una app
-     CAD — el resto de pantallas conserva el margen tipo tarjeta. */
+     CAD — el resto de pantallas conserva el margen tipo tarjeta. El lado
+     izquierdo de la barra de herramientas se resuelve aparte (ver .toolbar
+     más abajo) para no correr también el lienzo de Planta hacia la barra
+     de actividad. */
   margin: -18px -20px 0 0;
 }
 
@@ -586,8 +589,12 @@ input:focus, select:focus, button:focus-visible {
   flex-wrap: wrap;
   background: var(--panel);
   border: 1px solid var(--line);
-  border-radius: 10px;
+  border-radius: 0;
   padding: 10px 14px;
+  /* Bleed adicional por el lado izquierdo (el derecho ya lo hereda del
+     margen negativo de #screen-plan): pegada de lado a lado, sin correr
+     el lienzo de Planta que está debajo. */
+  margin-left: -20px;
 }
 
 .toolbar select, .toolbar input {
@@ -631,7 +638,7 @@ input:focus, select:focus, button:focus-visible {
   width: var(--inspector-width);
   background: var(--panel);
   border: 1px solid var(--line);
-  border-radius: 12px;
+  border-radius: 0;
   padding: 14px;
   overflow-y: auto;
 }
