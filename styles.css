@@ -633,6 +633,9 @@ input:focus, select:focus, button:focus-visible {
   flex: 1 1 auto;
   min-height: 0;
   min-width: 0;
+  /* A diferencia de .inspector, Planta/Perfil no quedan pegados del todo
+     contra la barra de estado — un pequeño margen para no tocarla. */
+  margin-bottom: 10px;
 }
 
 .inspector {
