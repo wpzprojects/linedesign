@@ -456,7 +456,6 @@ label {
   display: block;
   color: var(--muted);
   font-size: 0.72rem;
-  text-transform: uppercase;
   letter-spacing: 0.04em;
   margin: 10px 0 4px;
 }
