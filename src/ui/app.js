@@ -87,31 +87,45 @@
     statusZoom.textContent = `Planta ${Math.round(zoomLevels.plan * 100)}% · Perfil ${Math.round(zoomLevels.profile * 100)}%`;
   }
 
-  // Avisa cuando "Tensiones de tendido" tiene filas cargadas pero ninguna
-  // aplica al conductor + caso climático de referencia vigentes (el que
-  // define conductor.referenceHypothesisId en la tarjeta Conductor, NO el
+  // Si "Tensiones de tendido" tiene filas cargadas pero ninguna aplica al
+  // conductor + caso climático de referencia vigentes (el que define
+  // conductor.referenceHypothesisId en la tarjeta Conductor, NO el
   // selector "Catenaria bajo hipótesis" de Planta y Perfil — ese solo
-  // cambia qué hipótesis se VE dibujada, la tensión instalada de partida
-  // siempre sale de la hipótesis de referencia). Si la tabla está vacía
-  // del todo no avisa nada: eso es "no estoy usando este criterio", no un
-  // caso a medio configurar. Se avisa una sola vez por combinación
-  // conductor+hipótesis rota, no en cada render (arrastrar un vértice
-  // dispara render() en cada pointermove).
+  // cambia qué hipótesis se VE dibujada), NO se usa la tensión horizontal
+  // de referencia manual como respaldo silencioso: se busca otra hipótesis
+  // que sí tenga fila para este conductor y se cambia la referencia a esa
+  // automáticamente (store.updateConductor dispara notify() -> render(),
+  // así que este mismo chequeo se vuelve a correr y ya coincidirá). Solo
+  // si NINGUNA hipótesis tiene fila para el conductor se cae al valor
+  // manual y se avisa — ahí sí no hay otra opción. Si la tabla está vacía
+  // del todo no hace nada: eso es "no estoy usando este criterio".
   function checkStringingCriteria(project) {
     if (!project.stringingTensions.length) {
       lastStringingWarningKey = null;
       return;
     }
     const referenceHypothesis = loadTree.getReferenceHypothesis(project);
-    const key = `${project.conductor.id}|${referenceHypothesis.id}`;
-    const matched = catenary.findStringingRows(project.conductor, referenceHypothesis, project.stringingTensions).length > 0;
-    if (matched) {
+    const currentMatched = catenary.findStringingRows(project.conductor, referenceHypothesis, project.stringingTensions).length > 0;
+    if (currentMatched) {
       lastStringingWarningKey = null;
       return;
     }
+
+    const candidate = project.hypotheses.find((h) =>
+      h.id !== referenceHypothesis.id &&
+      catenary.findStringingRows(project.conductor, h, project.stringingTensions).length > 0
+    );
+    if (candidate) {
+      lastStringingWarningKey = null;
+      store.updateConductor({ referenceHypothesisId: candidate.id });
+      showStatusMessage(`Hipótesis de referencia cambiada automáticamente a "${candidate.name}" — es la que tiene datos en "Tensiones de tendido" para "${project.conductor.name}".`);
+      return;
+    }
+
+    const key = project.conductor.id;
     if (lastStringingWarningKey === key) return;
     lastStringingWarningKey = key;
-    alert(`"Tensiones de tendido" no tiene ninguna fila que aplique al conductor "${project.conductor.name}" bajo el caso climático de referencia "${referenceHypothesis.name}" — ese caso/conductor no está totalmente configurado, se usará la tensión horizontal de referencia manual en su lugar.`);
+    alert(`Ningún caso climático tiene una fila en "Tensiones de tendido" para el conductor "${project.conductor.name}" — no se puede calcular su tensión instalada automáticamente, se usará la tensión horizontal de referencia manual en su lugar.`);
   }
 
   const planView = window.LineDesignPlanView.createPlanView(planSvg, planMapContainer, {
