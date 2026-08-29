@@ -111,7 +111,7 @@
       const rows = project.hypotheses.map((h) => renderRow(h, project));
       return el('div', { class: 'card' }, [
         el('h2', {}, 'Casos climáticos'),
-        el('p', { class: 'muted' }, 'Mínimo 1 hipótesis. La app requiere al menos 3 para el criterio de aceptación de Fase 1 (everyday, temperatura alta, viento).'),
+        el('p', { class: 'muted' }, 'Mínimo 1 hipótesis.'),
         el('div', { class: 'table-wrap' }, [
           el('table', { class: 'data-table' }, [
             el('thead', {}, el('tr', {}, [
