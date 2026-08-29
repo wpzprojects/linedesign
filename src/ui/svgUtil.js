@@ -51,15 +51,23 @@
    * `MIN_LABEL_GAP` px de la última dibujada, se salta (línea + etiqueta
    * juntas, no solo el texto — una línea sin su número no aporta), en vez
    * de reducir el tamaño de letra o el paso de datos.
+   *
+   * `dataBounds` (opcional, por defecto `bounds`): el paso se calcula a
+   * partir de ESTE rango, no del que realmente se dibuja (`bounds`).
+   * Cuando el llamador extiende `bounds` un paso más allá de los datos
+   * reales (stationing.padBoundsByStep, para que el plano no quede pegado
+   * a los extremos del alineamiento), recalcular el paso con el rango YA
+   * extendido puede caer en un paso distinto (p. ej. 200 → 500) que no
+   * alinea con el borde extendido, dejando un hueco sin marca ahí. Con
+   * `dataBounds` el paso es siempre el mismo que sin extender, y el rango
+   * más ancho de `bounds` simplemente agrega una marca más a cada lado.
    */
-  function buildRulerGrid({ svgEl: makeEl, niceStep, projector, bounds, padding }) {
+  function buildRulerGrid({ svgEl: makeEl, niceStep, projector, bounds, dataBounds = bounds, padding }) {
     const MIN_LABEL_GAP_X = 34;
     const MIN_LABEL_GAP_Y = 16;
     const group = makeEl('g', { class: 'ruler-grid' });
-    const spanX = bounds.maxX - bounds.minX;
-    const spanY = bounds.maxY - bounds.minY;
-    const stepX = niceStep(spanX);
-    const stepY = niceStep(spanY);
+    const stepX = niceStep(dataBounds.maxX - dataBounds.minX);
+    const stepY = niceStep(dataBounds.maxY - dataBounds.minY);
 
     if (stepX > 0) {
       const startX = Math.ceil(bounds.minX / stepX) * stepX;

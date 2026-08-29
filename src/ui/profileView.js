@@ -130,7 +130,7 @@
       svg.appendChild(zoomLayer);
       current.zoomLayer = zoomLayer;
 
-      zoomLayer.appendChild(buildRulerGrid({ svgEl, niceStep: stationing.niceStep, projector, bounds: viewBounds, padding: PADDING }));
+      zoomLayer.appendChild(buildRulerGrid({ svgEl, niceStep: stationing.niceStep, projector, bounds: viewBounds, dataBounds: bounds, padding: PADDING }));
 
       // Con terreno real consultado (Fase 2, botón "Ajustar al terreno
       // real"), se dibuja el perfil denso en vez de la interpolación lineal

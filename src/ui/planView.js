@@ -149,8 +149,11 @@
       const rightOfWayWidth = project.rightOfWayWidth || 0;
       // Un paso de regla más allá del rango real en las cuatro direcciones,
       // para que el plano no quede pegado exactamente a los extremos del
-      // alineamiento (ver stationing.padBoundsByStep).
-      const bounds = stationing.padBoundsByStep(stationing.planBounds(vertices, rightOfWayWidth / 2));
+      // alineamiento (ver stationing.padBoundsByStep). dataBounds (sin
+      // extender) se conserva para que buildRulerGrid calcule el paso del
+      // rango real, no del ya extendido — ver comentario en svgUtil.js.
+      const dataBounds = stationing.planBounds(vertices, rightOfWayWidth / 2);
+      const bounds = stationing.padBoundsByStep(dataBounds);
       current.bounds = bounds;
       const projector = stationing.makeProjector(bounds, WIDTH, HEIGHT, PADDING);
       current.projector = projector;
@@ -167,7 +170,7 @@
       svg.appendChild(zoomLayer);
       current.zoomLayer = zoomLayer;
 
-      zoomLayer.appendChild(buildRulerGrid({ svgEl, niceStep: stationing.niceStep, projector, bounds, padding: PADDING }));
+      zoomLayer.appendChild(buildRulerGrid({ svgEl, niceStep: stationing.niceStep, projector, bounds, dataBounds, padding: PADDING }));
 
       // Franja de servidumbre (Parámetros de entrada § Terreno): dos líneas
       // punteadas paralelas al alineamiento, cada una a la mitad del ancho
