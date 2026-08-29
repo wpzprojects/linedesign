@@ -167,6 +167,7 @@ button, input, select, textarea {
 }
 
 .topbar {
+  position: relative;
   flex: 0 0 auto;
   display: flex;
   align-items: center;
@@ -177,9 +178,15 @@ button, input, select, textarea {
 }
 
 /* El toggle de tema vive en la barra de título, no en la barra de
-   actividad (ver comentario en index.html) — pegado al borde derecho. */
+   actividad (ver comentario en index.html) — posición absoluta (no
+   participa del flujo flex) para que su propia altura de botón (36px)
+   no infle la altura de .topbar, que antes solo tenía que acomodar el
+   texto del título. */
 .topbar #theme-toggle {
-  margin-left: auto;
+  position: absolute;
+  right: 20px;
+  top: 50%;
+  transform: translateY(-50%);
 }
 
 .screen-title {
