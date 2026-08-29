@@ -620,8 +620,23 @@ input:focus, select:focus, button:focus-visible {
   margin-top: 12px;
 }
 
+/* Solo la usan los 3 botones de la tarjeta Proyecto (Exportar/Importar
+   JSON, Reiniciar ejemplo): en vez de envolver a una segunda fila
+   cuando la tarjeta se angosta, cada botón se encoge (flex + fuente
+   más chica, con ellipsis de respaldo) para seguir cabiendo los tres
+   juntos. */
 .row-actions--wrap {
-  flex-wrap: wrap;
+  flex-wrap: nowrap;
+}
+
+.row-actions--wrap .btn {
+  flex: 1 1 0;
+  min-width: 0;
+  padding: 6px 4px;
+  font-size: 0.72rem;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .muted {
