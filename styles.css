@@ -349,6 +349,16 @@ body.dark-theme .icon-moon {
   min-width: calc(var(--sidebar-width) - 32px);
 }
 
+/* Prueba: más énfasis para las tarjetas de Parámetros de entrada — hoy
+   var(--panel-alt) casi no se distingue del fondo de la app (--app-bg),
+   sobre todo en oscuro. var(--panel) es más clara + sombra para que se
+   despeguen del fondo. Reversible: si no convence, basta con quitar
+   esta regla y las tarjetas vuelven al estilo genérico de .card. */
+#screen-criteria .card {
+  background: var(--panel);
+  box-shadow: var(--shadow);
+}
+
 .card h2 {
   margin: 0 0 10px;
   font-size: 0.85rem;
