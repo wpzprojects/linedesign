@@ -13,6 +13,10 @@
     // hypotheses-container porque conceptualmente es parte de esa tarjeta,
     // no una tarjeta propia.
     const unitSystemContainer = document.getElementById('unit-system-container');
+    // Mismo criterio: la tarjeta Conductor se movió a la fila de arriba
+    // (Parámetros de entrada), en el lugar que antes ocupaba "Importar
+    // alineamiento" — vive fuera de `container` (hypotheses-container).
+    const conductorCardContainer = document.getElementById('conductor-card');
 
     // Unidad de INTERFAZ (kgF/kg-km o N/N-m) para mostrar y editar fuerza y
     // peso por longitud — puramente de despliegue, ver
@@ -43,8 +47,8 @@
 
     function render(project) {
       renderUnitSystemSelect(project);
+      renderConductorCard(project);
       clear(container);
-      container.appendChild(renderConductorCard(project));
       container.appendChild(renderHypothesesCard(project));
       container.appendChild(renderStringingTensionsCard(project));
     }
@@ -85,7 +89,8 @@
         onChange: (e) => store.updateConductor({ referenceHorizontalTension: fromDisplayForce(project, parseFloat(e.target.value) || 0) })
       });
 
-      return el('div', { class: 'card' }, [
+      clear(conductorCardContainer);
+      conductorCardContainer.append(...[
         el('h2', {}, 'Conductor'),
         el('label', {}, 'Catálogo'),
         conductorSelect,
@@ -103,7 +108,7 @@
           ? el('div', { class: 'stringing-warning' },
             `Se está usando esta tensión de referencia manual: ningún caso climático tiene una fila en "Tensiones de tendido" para "${project.conductor.name}".`)
           : null
-      ]);
+      ].filter(Boolean));
     }
 
     function renderHypothesesCard(project) {
