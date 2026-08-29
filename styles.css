@@ -1825,6 +1825,20 @@ body:not(.screen-plan-active) .status-bar {
     display: none;
   }
 
+  /* El botón de Visualización se muda acá (ver layoutPlanVisibilityField
+     en app.js) dejando su tarjeta propia vacía/oculta. El select de
+     Hipótesis se encoge para dejarle espacio en el mismo renglón — sin
+     esto, el nombre de la hipótesis podía empujar el ancho del select
+     más allá de lo que cabe junto al botón. */
+  #plan-hypothesis-field {
+    flex: 1 1 auto;
+    min-width: 0;
+  }
+
+  #plan-hypothesis-select {
+    width: 100%;
+  }
+
   /* Separación entre la barra de herramientas y el resto (Planta/Perfil)
      — 10px en escritorio — se achica en móvil (0 quedaba demasiado
      pegado, la tarjeta Hipótesis se veía incrustada contra Planta). */
