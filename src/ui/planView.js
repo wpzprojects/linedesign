@@ -49,18 +49,24 @@
     // stroke). La etiqueta de cada marcador vive DENTRO del mismo <g> que
     // su círculo, con un desplazamiento local fijo — así se mueve/escala
     // junto con él sin necesidad de actualizarla aparte.
-    function markerTransform(x, y) {
-      return `translate(${x} ${y}) scale(${1 / viewport.state.scale})`;
+    // `angle` (grados, opcional): además de la posición, rota el marcador
+    // sobre su propio origen — usado por las etiquetas de vano (ver
+    // updateCircuit más abajo) para seguir la inclinación de su tramo. El
+    // resto de marcadores no lo usan (queda en 0, sin rotate() en el
+    // transform — mismo resultado que antes de agregarlo).
+    function markerTransform(x, y, angle = 0) {
+      return `translate(${x} ${y}) scale(${1 / viewport.state.scale})${angle ? ` rotate(${angle})` : ''}`;
     }
 
-    function setMarkerPos(marker, x, y) {
+    function setMarkerPos(marker, x, y, angle) {
       marker.x = x;
       marker.y = y;
-      marker.el.setAttribute('transform', markerTransform(x, y));
+      if (angle !== undefined) marker.angle = angle;
+      marker.el.setAttribute('transform', markerTransform(x, y, marker.angle || 0));
     }
 
     function updateMarkers() {
-      current.markers.forEach((m) => m.el.setAttribute('transform', markerTransform(m.x, m.y)));
+      current.markers.forEach((m) => m.el.setAttribute('transform', markerTransform(m.x, m.y, m.angle || 0)));
     }
 
     function updateMapView() {
@@ -198,14 +204,55 @@
       // (un vértice sin estructura no es un punto de apoyo real) — así,
       // si hay un vértice sin estructura ahí, el circuito se despega
       // visiblemente del alineamiento en vez de seguirlo, alertando de
-      // que ese vértice necesita una estructura.
-      if (project.structures.length >= 2) {
-        const circuitPoints = [...project.structures]
-          .sort((a, b) => a.station - b.station)
-          .map((s) => stationing.pointAtStation(vertices, s.station))
-          .map((p) => projector.toScreen(p.x, p.y));
-        zoomLayer.appendChild(svgEl('path', { class: 'circuit-line', d: pathFromPoints(circuitPoints) }));
+      // que ese vértice necesita una estructura. Cada tramo lleva además
+      // la medida del vano (station a station, igual que "Vano adelante"
+      // en Resumen), rotada para seguir la inclinación del tramo y
+      // debajo de la línea (y="14" en el marco local, ya rotado).
+      //
+      // circuitPath y las etiquetas se crean UNA VEZ acá y se actualizan
+      // en el lugar (updateCircuit) durante el arrastre de un vértice o
+      // una estructura — ver attachVertexDrag/attachStructureDrag más
+      // abajo — en vez de re-renderizar todo, igual que ya hacía
+      // alignmentPath con los vértices.
+      const circuitPath = svgEl('path', { class: 'circuit-line' });
+      zoomLayer.appendChild(circuitPath);
+      const vanoLabelMarkers = Array.from({ length: Math.max(project.structures.length - 1, 0) }, () => {
+        const labelEl = svgEl('text', { class: 'vano-label', x: 0, y: 14, 'text-anchor': 'middle' });
+        zoomLayer.appendChild(labelEl);
+        const record = { el: labelEl, x: 0, y: 0, angle: 0, type: 'vano-label' };
+        current.markers.push(record);
+        return record;
+      });
+
+      // `structureList`/`vertexList` se reciben aparte de los closures
+      // `project.structures`/`vertices` para poder llamarse también con
+      // datos de borrador durante el arrastre, sin tocar el store.
+      function updateCircuit(structureList, vertexList) {
+        const sorted = [...structureList].sort((a, b) => a.station - b.station);
+        if (sorted.length < 2) {
+          circuitPath.setAttribute('d', '');
+          return;
+        }
+        const screenPoints = sorted.map((s) => {
+          const pos = stationing.pointAtStation(vertexList, s.station);
+          return projector.toScreen(pos.x, pos.y);
+        });
+        circuitPath.setAttribute('d', pathFromPoints(screenPoints));
+
+        for (let i = 0; i < sorted.length - 1; i += 1) {
+          const p1 = screenPoints[i];
+          const p2 = screenPoints[i + 1];
+          let angle = Math.atan2(p2.y - p1.y, p2.x - p1.x) * 180 / Math.PI;
+          // Evita texto "de cabeza" cuando el tramo va de derecha a
+          // izquierda — mismo criterio que una cota de CAD.
+          if (angle > 90 || angle < -90) angle += 180;
+          const record = vanoLabelMarkers[i];
+          record.el.textContent = `${(sorted[i + 1].station - sorted[i].station).toFixed(1)} m`;
+          setMarkerPos(record, (p1.x + p2.x) / 2, (p1.y + p2.y) / 2, angle);
+        }
       }
+
+      updateCircuit(project.structures, vertices);
 
       // structureLayer se crea aquí (redrawStructures y el arrastre de
       // vértices ya lo necesitan) pero se agrega al DOM más abajo, DESPUÉS
@@ -264,6 +311,7 @@
             alignmentPath.setAttribute('d', pathFromPoints(draft.map((v) => projector.toScreen(v.x, v.y))));
             setMarkerPos(markerRecord, screenPos.x, screenPos.y);
             redrawStructures(draft);
+            updateCircuit(project.structures, draft);
             if (callbacks.onVertexDragMove) callbacks.onVertexDragMove(vertexId, draftVertex.x, draftVertex.y);
           }
 
@@ -294,6 +342,10 @@
             const pos = stationing.pointAtStation(vertices, lastStation);
             const p = projector.toScreen(pos.x, pos.y);
             setMarkerPos(markerRecord, p.x, p.y);
+            updateCircuit(
+              project.structures.map((s) => (s.id === structureId ? { ...s, station: lastStation } : s)),
+              vertices
+            );
             if (callbacks.onStructureDragMove) callbacks.onStructureDragMove(structureId, lastStation);
           }
 

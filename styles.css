@@ -1281,6 +1281,15 @@ svg#plan-svg {
   pointer-events: none;
 }
 
+/* Medida del vano entre dos estructuras consecutivas (.circuit-line):
+   mismo color que esa línea, debajo de ella y rotada a su inclinación
+   (transform + x/y locales — ver updateCircuit en planView.js). */
+.vano-label {
+  fill: var(--conductor-color);
+  font-size: 10px;
+  pointer-events: none;
+}
+
 .profile-line {
   stroke: var(--accent);
   stroke-width: 3;
