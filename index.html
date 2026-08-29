@@ -357,10 +357,23 @@
                 navegador.
               </p>
               <p class="muted">
-                Es una herramienta de Fase 1/2 con simplificaciones deliberadas frente a un software de diseño
-                real (documentadas en cada sección de esta ayuda con el texto "Simplificación"). Úsala para
+                Herramienta de Fase 3, con simplificaciones deliberadas que se mantienen frente a un software de
+                diseño real (documentadas en cada sección de esta ayuda con el texto "Simplificación"). Úsala para
                 estudios preliminares y aprendizaje, no para el diseño final de una línea real.
               </p>
+            </div>
+
+            <div class="card">
+              <h2>Primeros pasos</h2>
+              <p>El orden típico para armar un proyecto desde cero:</p>
+              <ol class="help-quickstart">
+                <li><strong>Parámetros de entrada</strong> — nombra el proyecto y carga la ruta: un archivo KMZ/KML (exportado de Google Earth, por ejemplo) para partir de un trazado real, o simplemente sigue al paso siguiente y dibuja el alineamiento a mano. De una vez define el conductor, las hipótesis climáticas y, si las vas a usar, las tensiones de tendido.</li>
+                <li><strong>Catálogo de estructuras</strong> — revisa o crea los tipos de poste/torre que vas a distribuir (Suspensión, Ángulo, Retención, Paso), con sus alturas y resistencias disponibles.</li>
+                <li><strong>Planta y Perfil</strong> — agrega vértices y estructuras a lo largo del alineamiento, ajusta sus posiciones arrastrando en el lienzo o editando en Propiedades. Si no cargaste una ruta con altitud, usa "Ajustar al terreno real" en Perfil para traer la elevación de un servicio real.</li>
+                <li><strong>Resumen</strong> — revisa la Tabla de estructuras: vanos, flechas, distancias al terreno, y si cada poste/contraviento "Cumple" con las cargas calculadas.</li>
+                <li><strong>Cálculo mecánico</strong> — para el detalle completo, el árbol de cargas de cada estructura bajo cada hipótesis climática.</li>
+              </ol>
+              <p class="muted">El proyecto se autoguarda en tu navegador en cada cambio — puedes cerrar y volver sin perder nada. Exporta a JSON desde Parámetros de entrada si quieres respaldarlo o llevarlo a otro equipo.</p>
             </div>
 
             <div class="card">
@@ -445,7 +458,7 @@
               <h2>Cumple poste / Cumple contraviento (validación de resistencia)</h2>
               <p>Dos columnas en la Tabla de estructuras (Resumen) que validan si el poste y, si tiene, su contraviento resisten las cargas calculadas. "Cumple poste" requiere que la estructura tenga una <strong>resistencia</strong> asignada (kgF, la resistencia última a rotura del poste, ensayada por el fabricante a 20 cm de la punta — convención RETIE/NTC); si no la tiene, la columna muestra "—" (sin validar).</p>
               <p>Sin contraviento, como el poste es de sección circular (sin eje débil/fuerte), lo que lo flecta es la resultante de las fuerzas horizontales del árbol de cargas (transversal + longitudinal) aplicada a la altura promedio de enganche — se evalúa bajo todas las hipótesis climáticas y se toma la peor, no solo la de referencia. Esa demanda se compara contra el momento admisible del poste: la resistencia última × (altura del poste − 0.20 m), dividida entre el "Factor de seguridad de postes" de Parámetros de entrada § Terreno.</p>
-              <p><strong>Contravientos</strong> (Propiedades de una estructura Retención o Ángulo — deshabilitado en Suspensión/Paso): "Instalar contravientos" agrega, internamente, uno opuesto a cada vano adyacente en Retención, o uno solo opuesto a la resultante de tensión en Ángulo. Simplificación de Fase 1: se asume que el contraviento cancela POR COMPLETO la componente de carga inducida por el desequilibrio de tensión del conductor, dejando como demanda residual sobre el poste solo el viento — por eso, al activarlo, "Cumple poste" suele mejorar bastante. La tracción que debe resistir el propio cable de contraviento se calcula con la geometría del anclaje que definas ("Altura de anclaje en el poste" y "Distancia horizontal del anclaje en tierra": entre más achatado el ángulo, mayor la tracción en el cable) y se compara contra la "Resistencia de contraviento" del catálogo de estructuras, dividida entre el "Factor de seguridad de contravientos". "Cumple contraviento" muestra "—" si no aplica o no está instalado, ⚠ si falta resistencia o geometría de anclaje, y ✓/✗ con el % de uso si está completo.</p>
+              <p><strong>Contravientos</strong> (Propiedades de una estructura Retención o Ángulo — deshabilitado en Suspensión/Paso): "Instalar contravientos" agrega, internamente, uno opuesto a cada vano adyacente en Retención, o uno solo opuesto a la resultante de tensión en Ángulo. Simplificación: se asume que el contraviento cancela POR COMPLETO la componente de carga inducida por el desequilibrio de tensión del conductor, dejando como demanda residual sobre el poste solo el viento — por eso, al activarlo, "Cumple poste" suele mejorar bastante. La tracción que debe resistir el propio cable de contraviento se calcula con la geometría del anclaje que definas ("Altura de anclaje en el poste" y "Distancia horizontal del anclaje en tierra": entre más achatado el ángulo, mayor la tracción en el cable) y se compara contra la "Resistencia de contraviento" del catálogo de estructuras, dividida entre el "Factor de seguridad de contravientos". "Cumple contraviento" muestra "—" si no aplica o no está instalado, ⚠ si falta resistencia o geometría de anclaje, y ✓/✗ con el % de uso si está completo.</p>
               <p>En ambas columnas: el detalle (demanda, admisible y caso climático gobernante) aparece al pasar el cursor sobre la celda.</p>
             </div>
 

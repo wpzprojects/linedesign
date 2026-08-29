@@ -390,13 +390,13 @@ body.dark-theme .icon-moon {
   margin-bottom: 0;
 }
 
-.card ul {
+.card ul, .card ol {
   margin: 0 0 10px;
   padding-left: 20px;
   line-height: 1.5;
 }
 
-.card ul:last-child {
+.card ul:last-child, .card ol:last-child {
   margin-bottom: 0;
 }
 
@@ -411,6 +411,68 @@ body.dark-theme .icon-moon {
   padding: 1px 5px;
   font-size: 0.85em;
   font-family: "Cascadia Mono", "Consolas", "SFMono-Regular", Menlo, monospace;
+}
+
+/* Pantalla de Ayuda: .card p/ul/li no traían tamaño propio y heredaban
+   el 1rem (16px) por defecto del navegador — se notaba bastante más
+   grande que el resto de la app, que usa ~0.8rem en casi todo. Se achica
+   acá para que combine, y las tarjetas se destacan más del fondo (mismo
+   tratamiento que ya usaban las de Parámetros de entrada) para que sea
+   más fácil distinguir dónde empieza y termina cada tema. */
+#screen-help .card {
+  background: var(--panel);
+  box-shadow: var(--shadow);
+  padding: 16px 18px;
+  margin-bottom: 16px;
+}
+
+#screen-help .card h2 {
+  font-size: 0.78rem;
+}
+
+#screen-help .card h3 {
+  font-size: 0.88rem;
+}
+
+#screen-help .card p,
+#screen-help .card ul,
+#screen-help .card ol,
+#screen-help .card li {
+  font-size: 0.85rem;
+}
+
+/* Tarjeta "Primeros pasos": lista numerada de arranque rápido, con más
+   aire entre pasos que una lista normal (cada paso es una frase, no un
+   dato suelto) y el número en el color primario para que se lea como
+   una secuencia, no como una viñeta más. */
+.help-quickstart {
+  counter-reset: quickstart-step;
+  padding-left: 0;
+  list-style: none;
+}
+
+.help-quickstart li {
+  counter-increment: quickstart-step;
+  position: relative;
+  padding-left: 30px;
+  margin-bottom: 12px;
+}
+
+.help-quickstart li::before {
+  content: counter(quickstart-step);
+  position: absolute;
+  left: 0;
+  top: 0;
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  background: var(--primary-soft);
+  color: var(--primary);
+  font-weight: 700;
+  font-size: 0.75rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
 /* Selector de trazado al importar un KMZ/KML con más de un candidato. */
