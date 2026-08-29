@@ -294,6 +294,34 @@
 
   // ---------- Distribución de estructuras ----------
 
+  /** Mismo criterio que con los vértices (ver addVertex/removeVertex):
+   * renumera todos los EST- en orden de station tras agregar o quitar
+   * una estructura, para que el id no vaya dejando huecos ni siga
+   * subiendo sin límite (si no, borrar todas menos una y agregar una
+   * nueva la nombraba "EST-12" en vez de "EST-02"). A diferencia de un
+   * vértice, un id de estructura SÍ puede estar referenciado desde otro
+   * lado del modelo — project.sectionConductors (fromId/toId, el
+   * conductor propio de una sección) — así que la renumeración también
+   * remapea esas referencias con el mismo cambio de id, para no dejarlas
+   * apuntando a un id que ya no existe. */
+  function renumberStructures() {
+    const sorted = [...project.structures].sort((a, b) => a.station - b.station);
+    const idMap = new Map();
+    sorted.forEach((s, i) => {
+      const oldId = s.id;
+      const newId = formatSequentialId('EST-', i + 1);
+      if (newId !== oldId) idMap.set(oldId, newId);
+      s.id = newId;
+    });
+    if (idMap.size) {
+      project.sectionConductors.forEach((sc) => {
+        if (idMap.has(sc.fromId)) sc.fromId = idMap.get(sc.fromId);
+        if (idMap.has(sc.toId)) sc.toId = idMap.get(sc.toId);
+      });
+    }
+    nextIdCounters.structure = sorted.length;
+  }
+
   function addStructure({ typeId, station, height }) {
     const type = project.structureCatalog.find((t) => t.typeId === typeId) || project.structureCatalog[0];
     const totalLength = global.LineDesignStationing.totalLength(project.alignment.vertices);
@@ -310,6 +338,7 @@
       resistance: type.resistanceOptions && type.resistanceOptions.length ? type.resistanceOptions[0] : undefined
     };
     project.structures.push(structure);
+    renumberStructures();
     persist();
     notify();
     return structure;
@@ -352,6 +381,13 @@
 
   function removeStructure(id) {
     project.structures = project.structures.filter((s) => s.id !== id);
+    // Cualquier conductor propio de sección que tuviera a esta estructura
+    // como límite (fromId/toId) deja de tener sentido — esa sección ya no
+    // existe con esos límites (renumberStructures solo remapea ids de
+    // estructuras que SIGUEN existiendo, no limpia las que apuntaban a la
+    // que se acaba de borrar).
+    project.sectionConductors = project.sectionConductors.filter((sc) => sc.fromId !== id && sc.toId !== id);
+    renumberStructures();
     persist();
     notify();
   }
