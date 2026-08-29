@@ -27,6 +27,8 @@
   const themeToggle = document.getElementById('theme-toggle');
   const conductorColorInput = document.getElementById('conductor-color-input');
   const structureColorInput = document.getElementById('structure-color-input');
+  const alignmentColorInput = document.getElementById('alignment-color-input');
+  const terrainColorInput = document.getElementById('terrain-color-input');
   const resetColorsBtn = document.getElementById('reset-colors-btn');
   const inspectorPanel = document.getElementById('inspector-body');
   const inspectorAside = document.getElementById('inspector-panel');
@@ -246,6 +248,14 @@
     return document.body.classList.contains('dark-theme') ? '#2dd4bf' : '#0d9488';
   }
 
+  function defaultAlignmentColor() {
+    return document.body.classList.contains('dark-theme') ? '#5b9dff' : '#2563eb';
+  }
+
+  function defaultTerrainColor() {
+    return '#7a8f5c';
+  }
+
   try {
     const savedConductorColor = localStorage.getItem('linedesign-conductor-color');
     if (savedConductorColor) document.documentElement.style.setProperty('--conductor-color', savedConductorColor);
@@ -262,6 +272,24 @@
   } catch (error) {
     console.warn('No se pudo leer el color de postes guardado:', error);
     structureColorInput.value = defaultStructureColor();
+  }
+
+  try {
+    const savedAlignmentColor = localStorage.getItem('linedesign-alignment-color');
+    if (savedAlignmentColor) document.documentElement.style.setProperty('--alignment-color', savedAlignmentColor);
+    alignmentColorInput.value = savedAlignmentColor || defaultAlignmentColor();
+  } catch (error) {
+    console.warn('No se pudo leer el color de alineamiento guardado:', error);
+    alignmentColorInput.value = defaultAlignmentColor();
+  }
+
+  try {
+    const savedTerrainColor = localStorage.getItem('linedesign-terrain-color');
+    if (savedTerrainColor) document.documentElement.style.setProperty('--terrain-color', savedTerrainColor);
+    terrainColorInput.value = savedTerrainColor || defaultTerrainColor();
+  } catch (error) {
+    console.warn('No se pudo leer el color de terreno guardado:', error);
+    terrainColorInput.value = defaultTerrainColor();
   }
 
   const catalogView = window.LineDesignCatalogView.createCatalogView(document.getElementById('catalog-container'), store);
@@ -926,17 +954,41 @@
       }
     });
 
+    alignmentColorInput.addEventListener('input', (e) => {
+      document.documentElement.style.setProperty('--alignment-color', e.target.value);
+      try {
+        localStorage.setItem('linedesign-alignment-color', e.target.value);
+      } catch (error) {
+        console.warn('No se pudo guardar el color de alineamiento:', error);
+      }
+    });
+
+    terrainColorInput.addEventListener('input', (e) => {
+      document.documentElement.style.setProperty('--terrain-color', e.target.value);
+      try {
+        localStorage.setItem('linedesign-terrain-color', e.target.value);
+      } catch (error) {
+        console.warn('No se pudo guardar el color de terreno:', error);
+      }
+    });
+
     resetColorsBtn.addEventListener('click', () => {
       document.documentElement.style.removeProperty('--conductor-color');
       document.documentElement.style.removeProperty('--structure-color');
+      document.documentElement.style.removeProperty('--alignment-color');
+      document.documentElement.style.removeProperty('--terrain-color');
       try {
         localStorage.removeItem('linedesign-conductor-color');
         localStorage.removeItem('linedesign-structure-color');
+        localStorage.removeItem('linedesign-alignment-color');
+        localStorage.removeItem('linedesign-terrain-color');
       } catch (error) {
         console.warn('No se pudo restablecer los colores guardados:', error);
       }
       conductorColorInput.value = defaultConductorColor();
       structureColorInput.value = defaultStructureColor();
+      alignmentColorInput.value = defaultAlignmentColor();
+      terrainColorInput.value = defaultTerrainColor();
     });
 
     planMapToggle.addEventListener('click', () => {

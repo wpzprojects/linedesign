@@ -20,6 +20,8 @@
      que gana sobre esta referencia sin importar el tema activo. */
   --conductor-color: var(--warning);
   --structure-color: var(--accent);
+  --alignment-color: var(--primary);
+  --terrain-color: #7a8f5c;
   --shadow: 0 8px 24px rgba(16, 16, 16, 0.08);
   --focus-ring: 0 0 0 3px rgba(37, 99, 235, 0.25);
   --sidebar-width: 280px;
@@ -1257,7 +1259,7 @@ svg#plan-svg {
 }
 
 .alignment-line {
-  stroke: var(--primary);
+  stroke: var(--alignment-color);
   stroke-width: 4;
   fill: none;
   stroke-linecap: round;
@@ -1278,9 +1280,10 @@ svg#plan-svg {
    que ya usan .conductor-line y .profile-line — un verde oliva "de
    terreno" en vez de otro tono naranja/ámbar, para que a simple vista
    quede claro cuál línea es cuál (se llegaron a confundir siendo ambas
-   tonos cálidos similares). */
+   tonos cálidos similares). Configurable (Configuración § Colores del
+   lienzo) — ver --terrain-color arriba. */
 .profile-line--real {
-  stroke: #7a8f5c;
+  stroke: var(--terrain-color);
 }
 
 .conductor-line {
@@ -1346,7 +1349,7 @@ svg#plan-svg {
 
 .vertex-point {
   fill: var(--panel);
-  stroke: var(--primary);
+  stroke: var(--alignment-color);
   stroke-width: 3;
   cursor: grab;
   vector-effect: non-scaling-stroke;
