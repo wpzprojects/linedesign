@@ -1547,6 +1547,75 @@ circle.sync-marker {
   align-items: center;
 }
 
+.point-row-label {
+  font-size: 0.7rem;
+  color: var(--muted);
+}
+
+/* Espacio contra el último punto de la lista — sin esto quedaba pegado
+   directo a la fila de arriba (Fase C, etc.). */
+.add-point-btn {
+  margin-top: 10px;
+}
+
+/* Formulario de catálogo en dos columnas: campos a la izquierda, esquema
+   del poste a la derecha (ver catalogView.js#updateDiagram). En angosto
+   (móvil/tablet) se apilan, el esquema queda debajo. */
+.catalog-form-split {
+  display: flex;
+  gap: 20px;
+  align-items: flex-start;
+  flex-wrap: wrap;
+}
+
+.catalog-form-fields {
+  flex: 1 1 280px;
+  min-width: 0;
+}
+
+.catalog-form-diagram {
+  flex: 0 0 160px;
+  align-self: stretch;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--panel);
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  padding: 8px;
+}
+
+.catalog-diagram {
+  width: 100%;
+  max-width: 160px;
+  height: auto;
+}
+
+.catalog-diagram-pole {
+  stroke: var(--muted);
+  stroke-width: 3;
+  stroke-linecap: round;
+}
+
+.catalog-diagram-ground {
+  stroke: var(--line);
+  stroke-width: 2;
+}
+
+.catalog-diagram-arm {
+  stroke: var(--conductor-color);
+  stroke-width: 1.5;
+}
+
+.catalog-diagram-point {
+  fill: var(--conductor-color);
+}
+
+.catalog-diagram-label {
+  fill: var(--text);
+  font-size: 8px;
+}
+
 /* ---------- Tablas ---------- */
 
 .table-wrap {

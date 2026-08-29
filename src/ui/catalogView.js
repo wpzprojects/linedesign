@@ -4,6 +4,7 @@
  */
 (function (global) {
   const { el, clear } = global.LineDesignDomUtil;
+  const { svgEl } = global.LineDesignSvgUtil;
 
   // Retención y Ángulo anclan la línea (delimitan una sección de
   // tensionamiento); Suspensión y Paso no — el conductor las atraviesa sin
@@ -11,9 +12,16 @@
   // `type` para el cálculo de tendido (vano regulador por sección).
   const STRUCTURE_TYPES = ['Suspensión', 'Ángulo', 'Retención', 'Paso'];
 
+  // Cordón de acero galvanizado EHS (mismo material que dataSource.js#
+  // sampleStructureCatalog usa para las resistencias de contraviento de
+  // ejemplo) — referencia de qué talla comercial corresponde a cada
+  // resistencia típica, para que no sean solo números sueltos.
+  const GUY_RESISTANCE_REFERENCE = 'Valores típicos de cordón EHS galvanizado: 2722 kgF (1/4″) · 4082 kgF (5/16″) · 5987 kgF (3/8″).';
+
   function createCatalogView(container, store) {
     let editingId = null;
     let draftPoints = [];
+    let diagramGroup = null; // <g> vigente del diagrama — se repuebla en updateDiagram(), sin rehacer el resto del formulario.
 
     function startNew() {
       editingId = null;
@@ -43,7 +51,7 @@
       const inUse = project.structures.some((s) => s.typeId === type.typeId);
       return el('div', { class: 'catalog-card' }, [
         el('h3', {}, `${type.name}`),
-        el('p', { class: 'muted' }, `${type.type} · ${type.typeId}`),
+        el('p', { class: 'muted' }, type.type),
         el('p', {}, `Alturas: ${type.heightOptions.join(', ')} m`),
         type.resistanceOptions && type.resistanceOptions.length
           ? el('p', {}, `Resistencias: ${type.resistanceOptions.join(', ')} kgF`)
@@ -68,19 +76,67 @@
       ]);
     }
 
+    /**
+     * Redibuja SOLO el diagrama (limpia y repuebla `diagramGroup`), sin
+     * tocar el resto del formulario — así se puede llamar en cada tecla
+     * que cambia un offsetX/offsetZ (ver renderPointRow) sin destruir el
+     * <input> que tiene el foco (el mismo problema que ya se corrigió con
+     * el resize del teclado virtual en móvil: reconstruir un campo con
+     * foco le hace perder ese foco).
+     */
+    function updateDiagram() {
+      if (!diagramGroup) return;
+      clear(diagramGroup);
+
+      const CX = 70; // centro horizontal del diagrama (offsetX = 0)
+      const GROUND_Y = 210; // línea de base (offsetZ = 0)
+      const TOP_Y = 15;
+      // Alto de referencia del poste: el punto más alto + margen, con un
+      // mínimo razonable para que el diagrama no se vea vacío con pocos
+      // puntos o todos muy bajos.
+      const maxOffsetZ = Math.max(15, ...draftPoints.map((p) => p.offsetZ || 0)) * 1.15;
+      const scaleZ = (GROUND_Y - TOP_Y) / maxOffsetZ;
+      // Ancho de referencia: el offsetX más alejado del eje + margen, con
+      // un mínimo para que un solo punto centrado no quede sin escala.
+      const maxOffsetX = Math.max(1.5, ...draftPoints.map((p) => Math.abs(p.offsetX || 0))) * 1.3;
+      const scaleX = 60 / maxOffsetX;
+
+      diagramGroup.appendChild(svgEl('line', {
+        class: 'catalog-diagram-pole', x1: CX, y1: GROUND_Y, x2: CX, y2: GROUND_Y - maxOffsetZ * scaleZ
+      }));
+      diagramGroup.appendChild(svgEl('line', {
+        class: 'catalog-diagram-ground', x1: 10, y1: GROUND_Y, x2: 130, y2: GROUND_Y
+      }));
+
+      draftPoints.forEach((p) => {
+        const cx = CX + (p.offsetX || 0) * scaleX;
+        const cy = GROUND_Y - (p.offsetZ || 0) * scaleZ;
+        diagramGroup.appendChild(svgEl('line', { class: 'catalog-diagram-arm', x1: CX, y1: cy, x2: cx, y2: cy }));
+        diagramGroup.appendChild(svgEl('circle', { class: 'catalog-diagram-point', cx, cy, r: 4 }));
+        const label = svgEl('text', {
+          class: 'catalog-diagram-label',
+          x: cx + (p.offsetX >= 0 ? 7 : -7),
+          y: cy + 3,
+          'text-anchor': p.offsetX >= 0 ? 'start' : 'end'
+        });
+        label.textContent = p.name || '';
+        diagramGroup.appendChild(label);
+      });
+    }
+
     function renderPointRow(point, index) {
       return el('div', { class: 'point-row' }, [
         el('input', {
           type: 'text', value: point.name, placeholder: 'Nombre (fase)',
-          onInput: (e) => { draftPoints[index].name = e.target.value; }
+          onInput: (e) => { draftPoints[index].name = e.target.value; updateDiagram(); }
         }),
         el('input', {
-          type: 'number', step: '0.1', value: point.offsetX, placeholder: 'offsetX (m)',
-          onInput: (e) => { draftPoints[index].offsetX = parseFloat(e.target.value) || 0; }
+          type: 'number', step: '0.1', value: point.offsetX,
+          onInput: (e) => { draftPoints[index].offsetX = parseFloat(e.target.value) || 0; updateDiagram(); }
         }),
         el('input', {
-          type: 'number', step: '0.1', value: point.offsetZ, placeholder: 'offsetZ (m)',
-          onInput: (e) => { draftPoints[index].offsetZ = parseFloat(e.target.value) || 0; }
+          type: 'number', step: '0.1', value: point.offsetZ,
+          onInput: (e) => { draftPoints[index].offsetZ = parseFloat(e.target.value) || 0; updateDiagram(); }
         }),
         el('button', {
           class: 'btn btn-small btn-danger', type: 'button',
@@ -113,10 +169,25 @@
         placeholder: 'Ej: 2722, 4082, 5987 (solo aplica a Ángulo/Retención)'
       });
 
-      const pointsContainer = el('div', { class: 'points-editor' }, draftPoints.map(renderPointRow));
+      // Fila de encabezado (mismas columnas que .point-row, ver CSS): antes
+      // solo el placeholder decía qué campo era cuál, y desaparecía en
+      // cuanto se escribía algo — quedaba ambiguo cuál offset es horizontal
+      // y cuál vertical.
+      const pointsHeader = el('div', { class: 'point-row point-row--header' }, [
+        el('span', { class: 'point-row-label' }, 'Nombre'),
+        el('span', { class: 'point-row-label' }, 'X — horizontal (m)'),
+        el('span', { class: 'point-row-label' }, 'Z — altura (m)'),
+        el('span', {})
+      ]);
+      const pointsContainer = el('div', { class: 'points-editor' }, [pointsHeader, ...draftPoints.map(renderPointRow)]);
+
+      const diagramSvg = svgEl('svg', { class: 'catalog-diagram', viewBox: '0 0 140 220', role: 'img', 'aria-label': 'Esquema de puntos de fijación' });
+      diagramGroup = svgEl('g');
+      diagramSvg.appendChild(diagramGroup);
+      updateDiagram();
 
       const form = el('form', {
-        class: 'form-card',
+        class: 'form-card catalog-form',
         onSubmit: (evt) => {
           evt.preventDefault();
           const heightOptions = heightInput.value.split(',').map((v) => parseFloat(v.trim())).filter((v) => !Number.isNaN(v));
@@ -147,27 +218,37 @@
         }
       }, [
         el('h2', {}, editingId ? `Editar ${editingId}` : 'Nuevo tipo de estructura'),
-        el('label', {}, 'Nombre'),
-        nameInput,
-        el('label', {}, 'Categoría'),
-        typeSelect,
-        el('label', {}, 'Alturas disponibles (m, separadas por coma)'),
-        heightInput,
-        el('label', {}, 'Resistencias disponibles (kgF, separadas por coma)'),
-        resistanceInput,
-        el('label', {}, 'Resistencias de contraviento disponibles (kgF, separadas por coma)'),
-        guyResistanceInput,
-        el('label', {}, 'Puntos de fijación del conductor'),
-        pointsContainer,
-        el('button', {
-          class: 'btn btn-small', type: 'button',
-          onClick: () => {
-            draftPoints.push({ name: `Fase ${draftPoints.length + 1}`, offsetX: 0, offsetZ: 15 });
-            render(store.getProject());
-          }
-        }, '+ agregar punto de fijación'),
+        el('div', { class: 'catalog-form-split' }, [
+          el('div', { class: 'catalog-form-fields' }, [
+            el('label', {}, 'Nombre'),
+            nameInput,
+            el('label', {}, 'Categoría'),
+            typeSelect,
+            el('label', {}, 'Alturas disponibles (m, separadas por coma)'),
+            heightInput,
+            el('label', {}, 'Resistencias disponibles (kgF, separadas por coma)'),
+            resistanceInput,
+            el('label', {}, 'Resistencias de contraviento disponibles (kgF, separadas por coma)'),
+            guyResistanceInput,
+            el('p', { class: 'muted conductor-specs' }, GUY_RESISTANCE_REFERENCE),
+            el('label', {}, 'Puntos de fijación del conductor'),
+            pointsContainer,
+            el('button', {
+              class: 'btn btn-small add-point-btn', type: 'button',
+              onClick: () => {
+                draftPoints.push({ name: `Fase ${draftPoints.length + 1}`, offsetX: 0, offsetZ: 15 });
+                render(store.getProject());
+              }
+            }, '+ agregar punto de fijación')
+          ]),
+          // Esquema del poste con los puntos de fijación ubicados a escala
+          // (X horizontal desde el eje, Z altura desde el piso) — se
+          // actualiza en vivo con cada tecla vía updateDiagram(), sin
+          // reconstruir el formulario (ver comentario ahí).
+          el('div', { class: 'catalog-form-diagram' }, [diagramSvg])
+        ]),
         el('div', { class: 'row-actions' }, [
-          el('button', { class: 'btn btn-primary', type: 'submit' }, editingId ? 'Guardar cambios' : 'Crear tipo'),
+          el('button', { class: 'btn toolbar-card-btn', type: 'submit' }, editingId ? 'Guardar cambios' : 'Crear tipo'),
           editingId ? el('button', { class: 'btn btn-small', type: 'button', onClick: startNew }, 'Cancelar') : null
         ])
       ]);
