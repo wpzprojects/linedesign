@@ -1061,6 +1061,21 @@ p.conductor-specs {
   text-overflow: ellipsis;
 }
 
+/* Valor de solo lectura (specs calculadas, no editables — ver
+   propRowStatic en app.js): mismo espacio/alineación que un
+   .prop-control, sin la caja ni el hover, porque no hay nada que
+   editar en esta fila. */
+.prop-value-text {
+  flex: 1 1 auto;
+  min-width: 0;
+  text-align: right;
+  font-size: 0.76rem;
+  color: var(--text);
+  padding: 2px 5px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
 /* El control real (input/select) sigue siendo funcional — solo se le
    quita el aspecto de caja hasta que el usuario interactúa con él.
    Especificidad: ".prop-control" sola (una clase) pierde contra reglas

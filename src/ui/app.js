@@ -461,6 +461,13 @@
     ]);
   }
 
+  /** Fila de solo lectura (valores calculados, no editables — p. ej. las
+   * specs del conductor de un vano): mismo look que propRow, pero el
+   * valor es texto plano en vez de un input/select. */
+  function propRowStatic(labelText, valueText) {
+    return propRow(labelText, el('span', { class: 'prop-value-text' }, valueText));
+  }
+
   /** Combo del encabezado de Propiedades: mismo panel para vértice,
    * estructura o vano — deja saltar de uno a otro sin volver al lienzo. */
   function buildInspectorObjectSelect(project) {
@@ -680,14 +687,18 @@
         ]))
       ]));
 
-      inspectorPanel.appendChild(el('p', { class: 'muted conductor-specs prop-specs' },
-        `${vanoCount} vano${vanoCount === 1 ? '' : 's'} · Vano regulador ${section ? section.rulingSpan.toFixed(1) : '—'} m`));
-
       const isSI = project.displayUnitSystem === 'si';
       const weightDisplay = isSI ? units.kgPerKmToNewtonsPerMeter(conductor.weightPerLength) : conductor.weightPerLength;
       const strengthDisplay = isSI ? units.kgfToNewtons(conductor.ultimateStrength) : conductor.ultimateStrength;
-      inspectorPanel.appendChild(el('p', { class: 'muted conductor-specs prop-specs' },
-        `Diámetro ${conductor.diameter} m · Peso ${weightDisplay.toFixed(1)} ${isSI ? 'N/m' : 'kg/km'} · RTS ${strengthDisplay.toFixed(1)} ${isSI ? 'N' : 'kgF'}`));
+
+      inspectorPanel.appendChild(el('div', { class: 'prop-section' }, [
+        propCategory('Conductor'),
+        propRowStatic('Vanos', String(vanoCount)),
+        propRowStatic('Vano regulador (m)', section ? section.rulingSpan.toFixed(1) : '—'),
+        propRowStatic('Diámetro (m)', String(conductor.diameter)),
+        propRowStatic(`Peso (${isSI ? 'N/m' : 'kg/km'})`, weightDisplay.toFixed(1)),
+        propRowStatic(`RTS (${isSI ? 'N' : 'kgF'})`, strengthDisplay.toFixed(1))
+      ]));
     }
   }
 
