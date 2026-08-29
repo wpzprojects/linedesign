@@ -319,6 +319,39 @@
         ultimateStrength: 52410,
         referenceHypothesisId: 'H1',
         referenceHorizontalTension: 10480
+      },
+      // Cables de guarda (hilo de guarda / OGW), no conductores de fase —
+      // se agregan al mismo catálogo porque la app aún no distingue el rol
+      // (fase vs. guarda) en ningún cálculo; el usuario elige cuál usar
+      // como "conductor" del proyecto igual que con cualquier otro.
+      {
+        id: 'ALUMOWELD-7-8',
+        name: 'Alumoweld 7#8 (hilo de guarda)',
+        diameter: 0.00978,
+        weightPerLength: 3.82,
+        crossSectionArea: 0.00005857,
+        elasticModulus: 6.9e10,
+        thermalExpansionCoef: 1.9e-5,
+        ultimateStrength: 70860,
+        referenceHypothesisId: 'H1',
+        referenceHorizontalTension: 14170
+      },
+      // Diámetro/peso son valores típicos de la clase OPGW-70kN (varían
+      // según fabricante y cantidad de fibras, a diferencia de los
+      // conductores de fase de arriba que sí tienen tabla estándar única
+      // por nombre/calibre) — la resistencia de rotura es la que define la
+      // clase, esa sí exacta (70 kN).
+      {
+        id: 'OPGW-70KN',
+        name: 'OPGW 70 kN',
+        diameter: 0.0114,
+        weightPerLength: 3.92,
+        crossSectionArea: 0.0000561,
+        elasticModulus: 6.9e10,
+        thermalExpansionCoef: 1.9e-5,
+        ultimateStrength: 70000,
+        referenceHypothesisId: 'H1',
+        referenceHorizontalTension: 14000
       }
     ];
   }
