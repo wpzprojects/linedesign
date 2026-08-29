@@ -511,6 +511,13 @@ body.dark-theme .icon-moon {
   border-bottom: none;
 }
 
+/* El <strong> por defecto (negrita del navegador) se ve más "gritado"
+   que el resto de la tarjeta — se atenúa el peso sin encogerlo (sigue
+   en el mismo tamaño de .project-meta), para un valor más sobrio. */
+.project-meta strong {
+  font-weight: 500;
+}
+
 .stack-list {
   margin: 0;
   padding-left: 0;
