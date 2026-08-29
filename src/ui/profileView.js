@@ -55,7 +55,15 @@
       const svgPoint = toSvgPoint(svg, evt.clientX, evt.clientY);
       const unzoomed = viewport.toUnzoomed(svgPoint);
       const dataPoint = current.projector.toData(unzoomed.x, unzoomed.y);
-      callbacks.onHover({ station: dataPoint.x, elevation: dataPoint.y });
+      // La elevación mostrada es la del PERFIL en esa station (proyección
+      // vertical del cursor sobre el terreno), no la altura cruda a la que
+      // esté apuntando el mouse — que es lo que devolvía dataPoint.y antes
+      // (dependía de dónde el usuario tuviera la mano en pantalla, no del
+      // terreno real).
+      const elevation = current.terrainProfile
+        ? stationing.elevationAtStation(current.terrainProfile, dataPoint.x)
+        : stationing.pointAtStation(current.vertices, dataPoint.x).z;
+      callbacks.onHover({ station: dataPoint.x, elevation });
     });
     svg.addEventListener('pointerleave', () => callbacks.onHover(null));
 
@@ -98,6 +106,8 @@
       const vertices = project.alignment.vertices;
       const distances = stationing.cumulativeDistances(vertices);
       const terrainProfile = project.alignment.terrainProfile;
+      current.vertices = vertices;
+      current.terrainProfile = terrainProfile;
       const resolved = stationing.resolveStructures(vertices, project.structures, terrainProfile)
         .sort((a, b) => a.station - b.station);
       const groundClearance = project.groundClearance || 0;
