@@ -61,6 +61,7 @@
   const zoomLevels = { plan: 1, profile: 1 };
   let statusMessageTimer = null;
   let kmzCandidates = [];
+  let lastStringingWarningKey = null;
 
   function roundTo4(value) {
     return Math.round(value * 10000) / 10000;
@@ -84,6 +85,33 @@
 
   function updateStatusZoom() {
     statusZoom.textContent = `Planta ${Math.round(zoomLevels.plan * 100)}% · Perfil ${Math.round(zoomLevels.profile * 100)}%`;
+  }
+
+  // Avisa cuando "Tensiones de tendido" tiene filas cargadas pero ninguna
+  // aplica al conductor + caso climático de referencia vigentes (el que
+  // define conductor.referenceHypothesisId en la tarjeta Conductor, NO el
+  // selector "Catenaria bajo hipótesis" de Planta y Perfil — ese solo
+  // cambia qué hipótesis se VE dibujada, la tensión instalada de partida
+  // siempre sale de la hipótesis de referencia). Si la tabla está vacía
+  // del todo no avisa nada: eso es "no estoy usando este criterio", no un
+  // caso a medio configurar. Se avisa una sola vez por combinación
+  // conductor+hipótesis rota, no en cada render (arrastrar un vértice
+  // dispara render() en cada pointermove).
+  function checkStringingCriteria(project) {
+    if (!project.stringingTensions.length) {
+      lastStringingWarningKey = null;
+      return;
+    }
+    const referenceHypothesis = loadTree.getReferenceHypothesis(project);
+    const key = `${project.conductor.id}|${referenceHypothesis.id}`;
+    const matched = catenary.findStringingRows(project.conductor, referenceHypothesis, project.stringingTensions).length > 0;
+    if (matched) {
+      lastStringingWarningKey = null;
+      return;
+    }
+    if (lastStringingWarningKey === key) return;
+    lastStringingWarningKey = key;
+    alert(`"Tensiones de tendido" no tiene ninguna fila que aplique al conductor "${project.conductor.name}" bajo el caso climático de referencia "${referenceHypothesis.name}" — ese caso/conductor no está totalmente configurado, se usará la tensión horizontal de referencia manual en su lugar.`);
   }
 
   const planView = window.LineDesignPlanView.createPlanView(planSvg, planMapContainer, {
@@ -515,6 +543,8 @@
     loadTreeView.render(project);
 
     if (workspaceBody) workspaceBody.scrollTop = scrollTop;
+
+    checkStringingCriteria(project);
   }
 
   function wireToolbar() {

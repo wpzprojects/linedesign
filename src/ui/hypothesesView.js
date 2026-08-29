@@ -97,11 +97,14 @@
     }
 
     // Criterios de tendido/flechado (equivalente al "Automatic Sagging
-    // Criteria" de PLS-CADD): por ahora es solo una tabla de datos de
-    // entrada, sin motor de cálculo detrás (no hay modelo de creep en esta
-    // fase) — "Caso climático" y "Cable aplicable" se enlazan a las listas
-    // ya existentes (Casos climáticos, catálogo de conductores) para evitar
-    // valores sueltos que no correspondan a nada del proyecto.
+    // Criteria" de PLS-CADD): determina la tensión horizontal instalada
+    // (H1) por vano en vez del valor fijo de "Tensión horizontal de
+    // referencia" — ver catenary.resolveReferenceTension. Sigue sin haber
+    // modelo de creep en esta fase (la columna "Condición del cable" es
+    // solo dato, sin efecto en el cálculo). "Caso climático" y "Cable
+    // aplicable" se enlazan a las listas ya existentes (Casos climáticos,
+    // catálogo de conductores) para evitar valores sueltos que no
+    // correspondan a nada del proyecto.
     function renderStringingTensionsCard(project) {
       const rows = project.stringingTensions.map((t) => renderStringingTensionRow(t, project));
       return el('div', { class: 'card' }, [

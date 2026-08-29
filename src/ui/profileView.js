@@ -159,7 +159,7 @@
         const spanLength = to.station - from.station;
         if (spanLength <= 0) continue;
 
-        const tension = catenary.computeSpanTension(project.conductor, referenceHypothesis, hypothesis, spanLength);
+        const tension = catenary.computeSpanTension(project.conductor, referenceHypothesis, hypothesis, spanLength, project.stringingTensions);
         const fromTop = from.z + from.height;
         const toTop = to.z + to.height;
         const curve = catenary.catenaryCurve({

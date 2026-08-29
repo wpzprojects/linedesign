@@ -57,7 +57,8 @@
         project.conductor,
         referenceHypothesis,
         hypothesis,
-        span.length
+        span.length,
+        project.stringingTensions
       );
       return { ...span, ...tension };
     });

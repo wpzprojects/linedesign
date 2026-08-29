@@ -142,13 +142,58 @@
   }
 
   /**
+   * Filas de "Tensiones de tendido" (Parámetros de entrada) que aplican a
+   * un conductor bajo una hipótesis dada: mismo caso climático por nombre
+   * (weatherCase guarda el nombre, no el id — ver DATA_MODEL.md) y cable
+   * aplicable en blanco (aplica a todos) o igual al nombre del conductor.
+   */
+  function findStringingRows(conductor, hypothesis, stringingTensions) {
+    return (stringingTensions || []).filter((row) =>
+      row.weatherCase === hypothesis.name &&
+      (!row.applicableCable || row.applicableCable === conductor.name)
+    );
+  }
+
+  /**
+   * Resuelve la tensión horizontal instalada (H1) a partir de las filas de
+   * "Tensiones de tendido" que apliquen (equivalente al "Automatic Sagging
+   * Criteria" de PLS-CADD): para cada fila, H = min(%rotura·RTS, tensión
+   * máxima, peso_vertical·catenaria_máxima) — usando solo la carga
+   * VERTICAL (sin viento) para la restricción de catenaria máxima, mismo
+   * criterio que ya usa la curva 2D del perfil (ver nota de arriba). Si
+   * hay varias filas que aplican, se toma la más restrictiva (mínima). Si
+   * ninguna aplica, cae a `conductor.referenceHorizontalTension` (el
+   * campo manual) — `matched` indica si de verdad se usó un criterio de
+   * la tabla o si fue ese respaldo manual.
+   */
+  function resolveReferenceTension(conductor, referenceHypothesis, spanLength, stringingTensions) {
+    const rows = findStringingRows(conductor, referenceHypothesis, stringingTensions);
+    if (!rows.length) {
+      return { tension: conductor.referenceHorizontalTension, matched: false };
+    }
+    const w1 = verticalUnitWeight(conductor, referenceHypothesis);
+    const tensions = rows.map((row) => {
+      const candidates = [(row.percentUltimate / 100) * conductor.ultimateStrength];
+      if (row.maxTension) candidates.push(row.maxTension);
+      if (row.maxCatenary) candidates.push(w1 * row.maxCatenary);
+      return Math.min(...candidates);
+    });
+    // Piso de 1 N: si una fila queda con "% de rotura" en 0 (el valor por
+    // defecto de una fila recién agregada, antes de que el usuario lo
+    // llene), evita que una tensión de 0 se cuele directo a la catenaria
+    // de la hipótesis de referencia (división entre casi cero) — mismo
+    // piso que ya aplica solveHorizontalTension para las demás hipótesis.
+    return { tension: Math.max(Math.min(...tensions), 1), matched: true };
+  }
+
+  /**
    * Calcula el resultado completo de tendido para un vano bajo una hipótesis:
    * tensión horizontal, curva de catenaria (peso vertical) y flecha máxima.
    */
-  function computeSpanTension(conductor, referenceHypothesis, hypothesis, spanLength) {
+  function computeSpanTension(conductor, referenceHypothesis, hypothesis, spanLength, stringingTensions) {
     const w1 = resultantUnitWeight(conductor, referenceHypothesis);
     const w2 = resultantUnitWeight(conductor, hypothesis);
-    const H1 = conductor.referenceHorizontalTension;
+    const H1 = resolveReferenceTension(conductor, referenceHypothesis, spanLength, stringingTensions).tension;
 
     const H2 = hypothesis.id === referenceHypothesis.id
       ? H1
@@ -182,6 +227,8 @@
     resultantUnitWeight,
     solveHorizontalTension,
     catenaryCurve,
+    findStringingRows,
+    resolveReferenceTension,
     computeSpanTension
   };
 
