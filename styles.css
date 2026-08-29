@@ -1006,8 +1006,12 @@ p.conductor-specs {
   margin-top: 2px;
 }
 
+/* var(--panel-alt) es el gris MÁS OSCURO del tema (no el claro — al
+   revés de lo que el nombre sugiere), así que las barras de categoría
+   (el gris claro) usan var(--panel) y las filas (el gris oscuro) usan
+   var(--panel-alt), explícito en vez de heredado de .inspector. */
 .prop-category {
-  background: var(--panel-alt);
+  background: var(--panel);
   color: var(--muted);
   font-size: 0.64rem;
   font-weight: 700;
@@ -1023,6 +1027,7 @@ p.conductor-specs {
   gap: 8px;
   padding: 3px 14px;
   margin: 0 -14px;
+  background: var(--panel-alt);
   border-bottom: 1px solid var(--line);
 }
 
