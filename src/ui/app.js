@@ -31,6 +31,7 @@
   const newStructureStation = document.getElementById('new-structure-station');
   const planHypothesisSelect = document.getElementById('plan-hypothesis-select');
   const groundClearanceInput = document.getElementById('ground-clearance-input');
+  const rightOfWayInput = document.getElementById('right-of-way-input');
   const profileVExagSelect = document.getElementById('profile-vexag-select');
   const terrainFetchBtn = document.getElementById('terrain-fetch-btn');
   const sagLabelsToggle = document.getElementById('sag-labels-toggle');
@@ -353,6 +354,7 @@
 
     projectNameInput.value = project.name;
     groundClearanceInput.value = project.groundClearance;
+    rightOfWayInput.value = project.rightOfWayWidth;
     renderSummary(project);
     syncStructureTypeOptions(project);
     syncPlanHypothesisOptions(project);
@@ -533,6 +535,7 @@
     projectNameInput.addEventListener('change', (e) => store.setProjectName(e.target.value.trim() || 'Proyecto sin nombre'));
 
     groundClearanceInput.addEventListener('change', (e) => store.setGroundClearance(parseFloat(e.target.value) || 0));
+    rightOfWayInput.addEventListener('change', (e) => store.setRightOfWayWidth(parseFloat(e.target.value) || 0));
 
     planMapToggle.addEventListener('click', () => {
       const next = planMapToggle.getAttribute('aria-pressed') !== 'true';

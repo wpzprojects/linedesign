@@ -64,6 +64,7 @@
     project = restored || dataSource.getInitialProject();
     if (!project.stringingTensions) project.stringingTensions = [];
     if (project.groundClearance == null) project.groundClearance = 0;
+    if (project.rightOfWayWidth == null) project.rightOfWayWidth = 0;
     recalculateIdCounters();
     notify();
   }
@@ -318,6 +319,12 @@
     notify();
   }
 
+  function setRightOfWayWidth(value) {
+    project.rightOfWayWidth = Math.max(0, value || 0);
+    persist();
+    notify();
+  }
+
   // ---------- Conductor ----------
 
   function setConductor(conductorId) {
@@ -388,6 +395,7 @@
     updateStringingTension,
     removeStringingTension,
     setGroundClearance,
+    setRightOfWayWidth,
     setConductor,
     updateConductor,
     setProjectName,

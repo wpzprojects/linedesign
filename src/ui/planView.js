@@ -146,7 +146,8 @@
 
       const vertices = project.alignment.vertices;
       current.vertices = vertices;
-      const bounds = stationing.planBounds(vertices);
+      const rightOfWayWidth = project.rightOfWayWidth || 0;
+      const bounds = stationing.planBounds(vertices, rightOfWayWidth / 2);
       current.bounds = bounds;
       const projector = stationing.makeProjector(bounds, WIDTH, HEIGHT, PADDING);
       current.projector = projector;
@@ -164,6 +165,19 @@
       current.zoomLayer = zoomLayer;
 
       zoomLayer.appendChild(buildRulerGrid({ svgEl, niceStep: stationing.niceStep, projector, bounds, padding: PADDING }));
+
+      // Franja de servidumbre (Parámetros de entrada § Terreno): dos líneas
+      // punteadas paralelas al alineamiento, cada una a la mitad del ancho
+      // configurado (offsetPolyline calcula el desplazamiento perpendicular
+      // al propio trazado, no a los ejes X/Y). Se dibujan antes que el
+      // alineamiento para que este quede por encima.
+      if (rightOfWayWidth > 0) {
+        const half = rightOfWayWidth / 2;
+        [half, -half].forEach((offset) => {
+          const side = stationing.offsetPolyline(vertices, offset).map((p) => projector.toScreen(p.x, p.y));
+          zoomLayer.appendChild(svgEl('path', { class: 'row-line', d: pathFromPoints(side) }));
+        });
+      }
 
       const alignmentPath = svgEl('path', {
         class: 'alignment-line',

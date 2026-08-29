@@ -257,7 +257,8 @@
       conductor: conductorCatalog[0],
       hypotheses: sampleHypotheses(),
       stringingTensions: [],
-      groundClearance: 0
+      groundClearance: 0,
+      rightOfWayWidth: 0
     };
   }
 

@@ -61,14 +61,21 @@
     };
   }
 
-  function planBounds(vertices) {
+  /**
+   * `margin` (opcional, m): agranda el rango en las cuatro direcciones —
+   * usado para que la franja de servidumbre (ver `offsetPolyline` abajo)
+   * quepa completa aunque se salga del cajón que forman los vértices. Un
+   * margen uniforme es más simple que proyectar el offset real y siempre
+   * es suficiente (el offset nunca se aleja más de `margin` del trazado).
+   */
+  function planBounds(vertices, margin = 0) {
     const xs = vertices.map((v) => v.x);
     const ys = vertices.map((v) => v.y);
     return {
-      minX: Math.min(...xs),
-      maxX: Math.max(...xs),
-      minY: Math.min(...ys),
-      maxY: Math.max(...ys)
+      minX: Math.min(...xs) - margin,
+      maxX: Math.max(...xs) + margin,
+      minY: Math.min(...ys) - margin,
+      maxY: Math.max(...ys) + margin
     };
   }
 
@@ -339,6 +346,44 @@
     return { sorted, spans };
   }
 
+  /**
+   * Desplaza el alineamiento `distance` metros perpendicular a su propio
+   * trazado (positivo/negativo = un lado u otro) — usado para dibujar el
+   * borde de la franja de servidumbre en Planta. En cada vértice interior
+   * el desplazamiento usa la dirección promedio de los dos segmentos que
+   * se cruzan ahí (aproximación de "miter" simple, sin corrección de
+   * longitud en el ángulo — suficiente para los quiebres graduales típicos
+   * de un alineamiento de línea de transmisión; en un ángulo muy cerrado
+   * el borde quedaría un poco más angosto que `distance` justo en el PI).
+   */
+  function offsetPolyline(vertices, distance) {
+    if (vertices.length < 2) return vertices.map((v) => ({ x: v.x, y: v.y }));
+    const dirs = [];
+    for (let i = 0; i < vertices.length - 1; i += 1) {
+      const dx = vertices[i + 1].x - vertices[i].x;
+      const dy = vertices[i + 1].y - vertices[i].y;
+      const len = Math.hypot(dx, dy) || 1;
+      dirs.push({ x: dx / len, y: dy / len });
+    }
+    return vertices.map((v, i) => {
+      let dir;
+      if (i === 0) {
+        dir = dirs[0];
+      } else if (i === vertices.length - 1) {
+        dir = dirs[dirs.length - 1];
+      } else {
+        const a = dirs[i - 1];
+        const b = dirs[i];
+        const mx = a.x + b.x;
+        const my = a.y + b.y;
+        const mlen = Math.hypot(mx, my);
+        dir = mlen > 1e-9 ? { x: mx / mlen, y: my / mlen } : { x: -a.y, y: a.x };
+      }
+      // Perpendicular (rotación de 90°) de la dirección del trazado.
+      return { x: v.x + -dir.y * distance, y: v.y + dir.x * distance };
+    });
+  }
+
   const stationing = {
     segmentLength,
     cumulativeDistances,
@@ -354,7 +399,8 @@
     nearestStation,
     computeSpans,
     niceStep,
-    sampleStations
+    sampleStations,
+    offsetPolyline
   };
 
   if (typeof module !== 'undefined' && module.exports) {

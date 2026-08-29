@@ -56,13 +56,16 @@
       "percentUltimate": 22, "maxTension": null, "maxCatenary": null, "applicableCable": ""
     }
   ],
-  "groundClearance": 0
+  "groundClearance": 0,
+  "rightOfWayWidth": 0
 }
 ```
 
 `stringingTensions` (Parámetros de entrada § Tensiones de tendido): tabla de datos de entrada, sin motor de cálculo asociado por ahora (no hay modelo de creep en esta fase). `weatherCase`/`applicableCable` guardan el *nombre* (no el id) del caso climático/conductor elegido en el desplegable — texto libre en la práctica, no una referencia validada. `maxTension`/`maxCatenary` son `null` cuando el campo queda en blanco (opcional).
 
 `groundClearance` (Parámetros de entrada § Terreno, m): distancia de seguridad al terreno. Cuando es mayor que 0, `profileView.js` dibuja una línea punteada gris con la misma forma del terreno, desplazada esa distancia hacia arriba (en espacio de datos, antes de proyectar — respeta la exageración vertical igual que el resto del perfil).
+
+`rightOfWayWidth` (Parámetros de entrada § Terreno, m): ancho de la franja de servidumbre. Cuando es mayor que 0, `planView.js` dibuja dos líneas punteadas grises paralelas al alineamiento, cada una a `rightOfWayWidth / 2` de distancia — `stationing.offsetPolyline(vertices, distance)` desplaza cada vértice perpendicular al propio trazado (no a los ejes X/Y), promediando la dirección de los dos segmentos que se cruzan en cada vértice interior (aproximación de miter simple, sin corrección de longitud en el ángulo — en un quiebre muy cerrado el borde queda un poco más angosto que el ancho configurado justo en ese PI).
 
 ### Decisión clave: posición de estructuras derivada, no almacenada
 
