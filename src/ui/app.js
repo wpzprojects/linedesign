@@ -9,12 +9,12 @@
   const stationing = window.LineDesignStationing;
   const catenary = window.LineDesignCatenary;
   const loadTree = window.LineDesignLoadTree;
+  const units = window.LineDesignUnits;
   const geo = window.LineDesignGeo;
   const elevationSource = window.LineDesignElevationSource;
   const kmzImport = window.LineDesignKmzImport;
   const { el, clear } = window.LineDesignDomUtil;
   const { downloadFile } = window.LineDesignSvgUtil;
-  const units = window.LineDesignUnits;
 
   const planSvg = document.getElementById('plan-svg');
   const planMapContainer = document.getElementById('plan-map');
@@ -531,8 +531,11 @@
         ...project.conductorCatalog.map((c) => el('option', { value: c.id, selected: c.id === conductor.id && !!override }, c.name))
       ]));
 
+      const isSI = project.displayUnitSystem === 'si';
+      const weightDisplay = isSI ? units.kgPerKmToNewtonsPerMeter(conductor.weightPerLength) : conductor.weightPerLength;
+      const strengthDisplay = isSI ? units.kgfToNewtons(conductor.ultimateStrength) : conductor.ultimateStrength;
       inspectorPanel.appendChild(el('p', { class: 'muted conductor-specs' },
-        `Diámetro ${conductor.diameter} m · Peso ${units.newtonsPerMeterToKgPerKm(conductor.weightPerLength).toFixed(1)} kg/km · RTS ${Math.round(units.newtonsToKgf(conductor.ultimateStrength))} kgF`));
+        `Diámetro ${conductor.diameter} m · Peso ${weightDisplay.toFixed(1)} ${isSI ? 'N/m' : 'kg/km'} · RTS ${strengthDisplay.toFixed(1)} ${isSI ? 'N' : 'kgF'}`));
     }
   }
 

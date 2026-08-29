@@ -389,7 +389,7 @@
               <p>Todo lo que condiciona el cálculo, agrupado en un solo lugar:</p>
               <ul>
                 <li><strong>Proyecto</strong>: nombre del proyecto, exportar/importar el proyecto completo como JSON, botón para reiniciar al proyecto de ejemplo (borra tus cambios, pide confirmación del navegador).</li>
-                <li><strong>Unidades</strong>: fijas para todo el proyecto — sistema internacional (métrico) y coordenadas MAGNA-SIRGAS / Origen-Nacional (EPSG:9377).</li>
+                <li><strong>Unidades</strong>: longitudes y coordenadas fijas — sistema internacional (métrico) y MAGNA-SIRGAS / Origen-Nacional (EPSG:9377). Fuerza y peso por longitud (tensión del conductor, RTS, tensión de tendido) sí tienen un selector, kgF/kg-km o N/N-m — solo cambia cómo se muestran y editan esos campos en pantalla; lo guardado y lo exportado siempre queda en kgF/kg-km.</li>
                 <li><strong>Terreno</strong>: distancia de seguridad al terreno y ancho de servidumbre (ver Planta y Perfil arriba para cómo se dibujan).</li>
                 <li><strong>Importar alineamiento</strong>: carga un archivo KMZ o KML (p. ej. exportado de Google Earth) y reemplaza el alineamiento, las estructuras y el perfil de terreno del proyecto actual. Si hay más de un trazado en el archivo, puedes elegir cuál importar y si invertir su orden. Si el archivo no trae altitud, usa después "Ajustar al terreno real" en Perfil.</li>
                 <li><strong>Conductor</strong>: catálogo de conductores (ACSR, AAAC, ACAR, cables de guarda), hipótesis de referencia (bajo qué caso climático se considera "instalado" el conductor) y tensión horizontal de referencia.</li>
@@ -408,7 +408,7 @@
 
             <div class="card">
               <h2>Catálogo de estructuras</h2>
-              <p>Tipos de poste/torre reutilizables por las estructuras distribuidas en el alineamiento. Cada tipo tiene: nombre, categoría (Suspensión/Ángulo/Retención/Poste), alturas disponibles (m), resistencias disponibles (kgF, opcional) y puntos de fijación del conductor (nombre de fase, desplazamiento lateral y vertical respecto al eje del poste).</p>
+              <p>Tipos de poste/torre reutilizables por las estructuras distribuidas en el alineamiento. Cada tipo tiene: nombre, categoría (Suspensión/Ángulo/Retención/Paso — Retención y Ángulo anclan la línea, delimitan una sección de tensionamiento; Suspensión y Paso no, el conductor las atraviesa), alturas disponibles (m), resistencias disponibles (kgF, opcional) y puntos de fijación del conductor (nombre de fase, desplazamiento lateral y vertical respecto al eje del poste).</p>
               <p>Los puntos de fijación determinan cuántas fases tiene la estructura para el árbol de cargas (se pondera la fuerza por vano por esa cantidad), aunque en Perfil la catenaria se dibuja como una sola curva representativa por vano (no una por fase).</p>
               <p class="muted">Un tipo en uso por alguna estructura distribuida no se puede eliminar hasta reasignar o borrar esas estructuras primero.</p>
             </div>
@@ -461,7 +461,7 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
     <script src="./src/ui/domUtil.js"></script>
-    <script src="./src/ui/units.js"></script>
+    <script src="./src/engine/units.js"></script>
     <script src="./src/ui/svgUtil.js"></script>
     <script src="./src/ui/viewport.js"></script>
     <script src="./src/engine/stationing.js"></script>

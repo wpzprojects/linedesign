@@ -2,12 +2,17 @@
  * catenary.js — Tendido del cable (sag-tension) por vano y por hipótesis de carga.
  *
  * Convenciones y unidades (ver DATA_MODEL.md §"Suposiciones de cálculo"):
- *   - longitud: m · fuerza: N · peso por longitud: N/m · temperatura: °C
- *   - conductor.weightPerLength ya es un peso por unidad de longitud en N/m
- *     (incluye g), tal como lo define el modelo de datos del proyecto.
- *   - conductor.crossSectionArea: m² · conductor.elasticModulus: Pa (N/m²)
- *   - hipótesis.windSpeed: m/s (velocidad de viento) · hipótesis.iceThickness: mm
- *     (espesor radial de manguito de hielo).
+ *   - longitud: m · temperatura: °C · conductor.crossSectionArea: m² ·
+ *     conductor.elasticModulus: Pa (N/m²) · hipótesis.windSpeed: m/s ·
+ *     hipótesis.iceThickness: mm (espesor radial de manguito de hielo).
+ *   - `conductor.weightPerLength` (kg/km), `.ultimateStrength` (kgF),
+ *     `.referenceHorizontalTension` (kgF) y `stringingTensions[].maxTension`
+ *     (kgF) son las unidades en las que el proyecto los GUARDA y MUESTRA
+ *     (lo que ves es lo que se guarda) — este módulo los convierte a N/N-m
+ *     con `units.js` en el momento de usarlos, para que las fórmulas físicas
+ *     de abajo (presión dinámica, módulo de elasticidad, todas en SI) sean
+ *     dimensionalmente consistentes. El resto de la app (loadTree.js,
+ *     profileView.js, la UI) nunca ve ni maneja el valor en SI.
  *
  * Método:
  *   1) Carga vertical (peso propio + hielo) y carga transversal (viento) por
@@ -32,6 +37,7 @@
  *   - Coeficiente de arrastre (drag) del conductor para viento: Cd = 1.0.
  */
 (function (global) {
+  const units = global.LineDesignUnits;
   const AIR_DENSITY = 1.225; // kg/m3 a nivel del mar, 15°C
   const ICE_DENSITY = 900; // kg/m3, densidad típica de manguito de hielo
   const GRAVITY = 9.81; // m/s2
@@ -64,7 +70,7 @@
 
   /** Carga vertical total (autopeso + hielo), por unidad de longitud (N/m). */
   function verticalUnitWeight(conductor, hypothesis) {
-    return conductor.weightPerLength + iceUnitWeight(conductor, hypothesis);
+    return units.kgPerKmToNewtonsPerMeter(conductor.weightPerLength) + iceUnitWeight(conductor, hypothesis);
   }
 
   /** Carga resultante (vector viento + peso), por unidad de longitud (N/m). */
@@ -175,12 +181,13 @@
   function resolveReferenceTension(conductor, referenceHypothesis, stringingTensions) {
     const rows = findStringingRows(conductor, referenceHypothesis, stringingTensions);
     if (!rows.length) {
-      return { tension: conductor.referenceHorizontalTension, matched: false };
+      return { tension: units.kgfToNewtons(conductor.referenceHorizontalTension), matched: false };
     }
     const w1 = verticalUnitWeight(conductor, referenceHypothesis);
+    const ultimateStrengthN = units.kgfToNewtons(conductor.ultimateStrength);
     const tensions = rows.map((row) => {
-      const candidates = [(row.percentUltimate / 100) * conductor.ultimateStrength];
-      if (row.maxTension) candidates.push(row.maxTension);
+      const candidates = [(row.percentUltimate / 100) * ultimateStrengthN];
+      if (row.maxTension) candidates.push(units.kgfToNewtons(row.maxTension));
       if (row.maxCatenary) candidates.push(w1 * row.maxCatenary);
       return Math.min(...candidates);
     });

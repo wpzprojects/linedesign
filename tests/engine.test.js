@@ -16,6 +16,8 @@ global.localStorage = {
   removeItem: (k) => { delete storageState[k]; }
 };
 
+require('../src/engine/units.js');
+const units = global.LineDesignUnits;
 const stationing = require('../src/engine/stationing.js');
 const catenary = require('../src/engine/catenary.js');
 const loadTree = require('../src/engine/loadTree.js');
@@ -171,16 +173,21 @@ check('simplifyPolyline conserva campos extra (p.ej. z, de la altitud de un KML)
 });
 
 // --- catenary ---
+// conductor.weightPerLength/ultimateStrength/referenceHorizontalTension se
+// guardan en kgF/kg-km (ver DATA_MODEL.md); catenary.js las convierte a
+// N/N-m internamente. Se fijan aquí como el inverso exacto de los valores
+// N/N-m con los que esta suite fue escrita (9.13 N/m, 40000 N, 8000 N) para
+// que las aserciones de abajo seguir comparando contra esos mismos números.
 const conductor = {
   name: 'ACSR 4/0',
   diameter: 0.0143,
-  weightPerLength: 9.13,
+  weightPerLength: units.newtonsPerMeterToKgPerKm(9.13),
   crossSectionArea: 0.0001246,
   elasticModulus: 6.9e10,
   thermalExpansionCoef: 1.9e-5,
-  ultimateStrength: 40000,
+  ultimateStrength: units.newtonsToKgf(40000),
   referenceHypothesisId: 'H1',
-  referenceHorizontalTension: 8000
+  referenceHorizontalTension: units.newtonsToKgf(8000)
 };
 
 const hEveryday = { id: 'H1', name: 'Everyday', temperature: 15, windSpeed: 0, iceThickness: 0 };

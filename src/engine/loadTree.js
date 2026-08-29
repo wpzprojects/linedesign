@@ -1,7 +1,10 @@
 /**
  * loadTree.js — Árbol de cargas por estructura.
  *
- * Para cada estructura y cada hipótesis de carga se calcula:
+ * Para cada estructura y cada hipótesis de carga se calcula (en N/N·m, SI —
+ * son resultados de cálculo, no campos guardados; loadTreeView.js los
+ * convierte a kgF/kgF·m tanto en la tabla en pantalla como en el JSON que
+ * exporta):
  *   - vertical (N): peso tributario del conductor (autopeso + hielo) de los
  *     vanos adyacentes, mitad de cada vano, sentido positivo hacia abajo.
  *   - transversal (N): carga de viento tributaria de los vanos adyacentes +

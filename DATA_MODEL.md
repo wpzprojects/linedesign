@@ -6,19 +6,32 @@
 |---|---|
 | Longitud, altura | metros (m) |
 | Coordenadas del alineamiento (`vertex.x`/`vertex.y`) | metros (m), MAGNA-SIRGAS / Origen-Nacional (EPSG:9377) — ver abajo |
-| Fuerza | newtons (N) |
-| Peso por longitud (conductor) | N/m |
+| Fuerza / tensión del conductor (peso, RTS, tensión de referencia, tensión máxima) | **kgF** — ver nota de unidades mixtas abajo |
+| Peso por longitud (conductor) | **kg/km** |
+| Fuerzas del árbol de cargas (vertical/transversal/longitudinal) | kgF (tabla en pantalla y JSON exportado) |
+| Momento (estimado) | kgF·m (tabla en pantalla y JSON exportado) |
 | Temperatura | °C |
 | Velocidad de viento | m/s |
 | Espesor de hielo (manguito) | mm (radial) |
 | Presión (interna, viento) | Pa |
 | Módulo de elasticidad, esfuerzo | Pa (N/m²) |
 | Área de sección del conductor | m² |
-| Momento (estimado) | N·m |
 
-`weightPerLength` del conductor ya es un peso por unidad de longitud en N/m (incluye g); no se vuelve a multiplicar por gravedad al usarlo directamente. El peso adicional por hielo y la carga de viento sí se derivan desde magnitudes físicas (densidad, velocidad) — ver `src/engine/catenary.js`.
+### Unidades mixtas: kgF/kg-km en el modelo de datos, SI dentro del motor
 
-Estas son las unidades **internas** que usa el motor de cálculo y en las que se guarda/exporta el proyecto (JSON, `loadTreeView.js`'s `exportLoadTree`). La interfaz, en cambio, le muestra al usuario fuerza y peso por longitud en **kgF** y **kg/km** (más habitual en ingeniería de líneas en español) — `src/ui/units.js` hace la conversión (factor `G = 9.80665`, gravedad estándar) solo en la capa de presentación: cada campo editable en esas unidades (tensión de referencia del conductor, tensión máxima de "Tensiones de tendido", tablas de Árbol de cargas) convierte al mostrar el valor y vuelve a convertir a N/N·m al guardarlo — el dato en memoria y en el JSON exportado sigue siempre en SI.
+Lo que ve el usuario es lo que se guarda: `conductor.weightPerLength` (kg/km), `.ultimateStrength` (kgF), `.referenceHorizontalTension` (kgF) y `stringingTensions[].maxTension` (kgF) están en esas unidades tanto en memoria como en el JSON exportado — **no** hay una unidad en pantalla y otra distinta en el archivo. `diameter`/`crossSectionArea`/`elasticModulus`/`thermalExpansionCoef` siguen en SI (m/m²/Pa/°C⁻¹): no son campos de fuerza/peso y así se referencian en cualquier tabla de fabricante, no hace falta convertirlos.
+
+Las fórmulas físicas de `src/engine/catenary.js` (presión dinámica de viento en Pa, módulo de elasticidad en Pa, etc.) sí necesitan que fuerza y peso estén en SI (N, N/m) para ser dimensionalmente consistentes — por eso `src/engine/units.js` (factor `G = 9.80665`, gravedad estándar) convierte esos tres/cuatro campos a N/N-m **dentro** de `catenary.js`, en el momento de usarlos (`verticalUnitWeight`, `resolveReferenceTension`), y nunca antes. El resto de la app (`loadTree.js`, `profileView.js`, toda la UI) lee y escribe siempre en kgF/kg-km — nunca ve el valor en SI.
+
+Los RESULTADOS que produce el motor (tensión horizontal resuelta, fuerzas y momento del árbol de cargas) sí nacen en N/N·m (son cálculo, no un campo guardado) — `loadTreeView.js` los convierte a kgF/kgF·m tanto para la tabla en pantalla como para el JSON que exporta `exportLoadTree` (mismo criterio: lo que se ve es lo que se guarda).
+
+`weightPerLength` del conductor, una vez convertido a N/m dentro del motor, ya es un peso por unidad de longitud (incluye g); no se vuelve a multiplicar por gravedad al usarlo directamente. El peso adicional por hielo y la carga de viento sí se derivan desde magnitudes físicas (densidad, velocidad) — ver `src/engine/catenary.js`.
+
+Proyectos guardados **antes** de este cambio (con esos campos todavía en N/N-m) se migran una sola vez al cargar (`projectStore.js#migrateForceUnitsToKgf`, con el flag `project.forceUnitsMigratedV1` para no repetir la conversión).
+
+### Unidad de interfaz (`project.displayUnitSystem`)
+
+Además de lo anterior, "Parámetros de entrada" (`hypothesesView.js`) tiene un selector de unidad de **interfaz**: `'kgf'` (kgF/kg-km, por defecto) o `'si'` (N/N-m). Es puramente de despliegue/captura — convierte al vuelo lo que se muestra en los campos de tensión de referencia, peso/RTS del conductor y tensión máxima de tendido, y de vuelta al guardar lo editado. No cambia en absoluto lo guardado en el proyecto ni el JSON exportado (`loadTreeView.js#exportLoadTree`), que siempre quedan en kgF/kgF·m — su unidad propia, fija, independiente de esta preferencia (así un cambio de unidad de interfaz nunca reescribe datos ni rompe un archivo ya exportado). La tabla del árbol de cargas en pantalla sí respeta esta preferencia (encabezados y valores), pero la exportación no.
 
 ## Proyecto (forma completa, ver `src/data/dataSource.js#getInitialProject`)
 
@@ -45,10 +58,10 @@ Estas son las unidades **internas** que usa el motor de cálculo y en las que se
   "conductorCatalog": [ "...", ],
   "conductor": {
     "id": "ACSR-4-0", "name": "ACSR 4/0",
-    "diameter": 0.0143, "weightPerLength": 9.13,
+    "diameter": 0.0143, "weightPerLength": 931,
     "crossSectionArea": 0.0001246, "elasticModulus": 6.9e10,
-    "thermalExpansionCoef": 1.9e-5, "ultimateStrength": 40000,
-    "referenceHypothesisId": "H1", "referenceHorizontalTension": 8000
+    "thermalExpansionCoef": 1.9e-5, "ultimateStrength": 4078.86,
+    "referenceHypothesisId": "H1", "referenceHorizontalTension": 815.77
   },
   "hypotheses": [
     { "id": "H1", "name": "Everyday (EDS)", "temperature": 15, "windSpeed": 0, "iceThickness": 0 }
@@ -61,7 +74,9 @@ Estas son las unidades **internas** que usa el motor de cálculo y en las que se
   ],
   "groundClearance": 0,
   "rightOfWayWidth": 0,
-  "sectionConductors": [{ "id": "SC-01", "fromId": "EST-01", "toId": "EST-03", "conductorId": "ACSR-336" }]
+  "sectionConductors": [{ "id": "SC-01", "fromId": "EST-01", "toId": "EST-03", "conductorId": "ACSR-336" }],
+  "forceUnitsMigratedV1": true,
+  "displayUnitSystem": "kgf"
 }
 ```
 
@@ -131,7 +146,7 @@ Pertenecen al **tipo de estructura** (catálogo), no a cada instancia — todas 
 
 ### Tendido del cable / sag-tension (`src/engine/catenary.js`)
 
-1. **Cargas por unidad de longitud**: vertical = autopeso + peso de hielo (sección de corona de hielo, densidad 900 kg/m³); transversal = presión dinámica de viento (`0.5·ρ_aire·v²`, ρ=1.225 kg/m³) × Cd (=1.0, simplificación) × diámetro efectivo (diámetro + 2×hielo). Carga resultante = combinación vectorial de ambas, usada para resolver la tensión (criterio estándar de "resultant load" para condiciones de viento/hielo).
+1. **Cargas por unidad de longitud**: vertical = autopeso (`conductor.weightPerLength`, convertido de kg/km a N/m con `units.js` — ver nota de unidades mixtas arriba) + peso de hielo (sección de corona de hielo, densidad 900 kg/m³); transversal = presión dinámica de viento (`0.5·ρ_aire·v²`, ρ=1.225 kg/m³) × Cd (=1.0, simplificación) × diámetro efectivo (diámetro + 2×hielo). Carga resultante = combinación vectorial de ambas, usada para resolver la tensión (criterio estándar de "resultant load" para condiciones de viento/hielo).
 2. **Secciones de tensionamiento y vano regulador** (`stationing.isAnchorStructure`/`computeTensionSections`/`tensionSectionRulingSpans`): los vanos NO se resuelven cada uno con su propia tensión — los que caen entre dos estructuras de anclaje forman una sección de tensionamiento que comparte una sola tensión horizontal, calculada con el **vano regulador** de esa sección: `L = √(Σ Lᵢ³ / Σ Lᵢ)`, fórmula estándar de la industria (equivalente conceptual al criterio de PLS-CADD). Ancla la línea el `type` (categoría) del tipo de estructura: `Retención`/`Ángulo` anclan, `Suspensión`/`Paso` no (el conductor las atraviesa, la cadena de aisladores se balancea para igualar tensión con el vano vecino). La primera y la última estructura del alineamiento cierran sección siempre, tengan o no un tipo de anclaje real asignado — la línea tiene que amarrarse en sus dos extremos. La longitud REAL de cada vano (no la reguladora) se sigue usando tal cual para dibujar su propia curva/flecha. `computeTensionSections` devuelve cada sección con `fromId`/`toId` (ids de las estructuras de anclaje que la delimitan) — son los mismos ids que usa `sectionConductors` (arriba) para asignarle un conductor propio a una sección puntual; sin asignación, la sección usa `project.conductor` y su propia `referenceHypothesisId` (cada conductor resuelve su propia hipótesis de referencia — no se asume la del conductor del proyecto para todas las secciones).
 3. **Tensión bajo una hipótesis distinta a la de referencia**: ecuación de cambio de estado (state-change equation), deducida de la identidad de longitud de arco elástico-térmica del conductor (ver comentario extenso en `catenary.js`), resuelta por Newton-Raphson, usando el vano regulador de la sección (punto 2) como longitud. Validada numéricamente contra la solución autoconsistente no linealizada (error < 0.1% en los rangos de esta app). Es la formulación estándar de la industria para sag-tension de un vano (análoga conceptualmente al método de PLS-CADD, sin reproducir su algoritmo interno exacto).
 4. **Curva de catenaria**: forma exacta (`H/w·cosh(...)`, no aproximación parabólica) para apoyos a distinta elevación, con solución cerrada para el punto bajo (no requiere iteración) — con la longitud REAL de cada vano individual, no la reguladora de su sección.

@@ -8,8 +8,36 @@
   const units = global.LineDesignUnits;
 
   function createHypothesesView(container, store) {
+    // Unidad de INTERFAZ (kgF/kg-km o N/N-m) para mostrar y editar fuerza y
+    // peso por longitud — puramente de despliegue, ver
+    // projectStore.js#setDisplayUnitSystem. Lo guardado en el proyecto y lo
+    // exportado en el árbol de cargas siempre queda en kgF/kg-km, su unidad
+    // propia, sin importar esta preferencia.
+    function isSI(project) { return project.displayUnitSystem === 'si'; }
+    function forceUnitLabel(project) { return isSI(project) ? 'N' : 'kgF'; }
+    function weightUnitLabel(project) { return isSI(project) ? 'N/m' : 'kg/km'; }
+    function toDisplayForce(project, kgf) { return isSI(project) ? units.kgfToNewtons(kgf) : kgf; }
+    function fromDisplayForce(project, value) { return isSI(project) ? units.newtonsToKgf(value) : value; }
+    function toDisplayWeight(project, kgKm) { return isSI(project) ? units.kgPerKmToNewtonsPerMeter(kgKm) : kgKm; }
+
+    function renderUnitSystemSelect(project) {
+      const select = el('select', {
+        onChange: (e) => store.setDisplayUnitSystem(e.target.value)
+      }, [
+        el('option', { value: 'kgf', selected: !isSI(project) }, 'kgF / kg-km'),
+        el('option', { value: 'si', selected: isSI(project) }, 'N / N-m (SI)')
+      ]);
+      return el('div', { class: 'card' }, [
+        el('h2', {}, 'Unidades de la interfaz'),
+        el('p', { class: 'muted' }, 'Solo cambia cómo se muestran y editan los campos de fuerza y peso por longitud en esta pantalla. El proyecto guardado y el árbol de cargas exportado siempre usan kgF/kg-km, su unidad propia.'),
+        el('label', {}, 'Sistema de unidades'),
+        select
+      ]);
+    }
+
     function render(project) {
       clear(container);
+      container.appendChild(renderUnitSystemSelect(project));
       container.appendChild(renderConductorCard(project));
       container.appendChild(renderHypothesesCard(project));
       container.appendChild(renderStringingTensionsCard(project));
@@ -41,10 +69,14 @@
       const usingCalculated = resolved.matched;
       const usingManualFallback = project.stringingTensions.length > 0 && !usingCalculated;
 
+      // resolved.tension es un resultado del motor (siempre en N, SI — ver
+      // catenary.js): se convierte a kgF y de ahí a la unidad de interfaz
+      // elegida. project.conductor.* ya está guardado en kgF/kg-km (ver
+      // dataSource.js): se convierte directo a la unidad de interfaz.
       const tensionInput = el('input', {
-        type: 'number', step: '10', value: Math.round(units.newtonsToKgf(resolved.tension)),
+        type: 'number', step: '10', value: Math.round(toDisplayForce(project, units.newtonsToKgf(resolved.tension))),
         disabled: usingCalculated,
-        onChange: (e) => store.updateConductor({ referenceHorizontalTension: units.kgfToNewtons(parseFloat(e.target.value) || 0) })
+        onChange: (e) => store.updateConductor({ referenceHorizontalTension: fromDisplayForce(project, parseFloat(e.target.value) || 0) })
       });
 
       return el('div', { class: 'card' }, [
@@ -52,10 +84,10 @@
         el('label', {}, 'Catálogo'),
         conductorSelect,
         el('p', { class: 'muted conductor-specs' },
-          `Diámetro ${project.conductor.diameter} m · Peso ${units.newtonsPerMeterToKgPerKm(project.conductor.weightPerLength).toFixed(1)} kg/km · RTS ${Math.round(units.newtonsToKgf(project.conductor.ultimateStrength))} kgF`),
+          `Diámetro ${project.conductor.diameter} m · Peso ${toDisplayWeight(project, project.conductor.weightPerLength).toFixed(1)} ${weightUnitLabel(project)} · RTS ${toDisplayForce(project, project.conductor.ultimateStrength).toFixed(1)} ${forceUnitLabel(project)}`),
         el('label', {}, 'Hipótesis de referencia (tensión instalada)'),
         refHypSelect,
-        el('label', {}, 'Tensión horizontal de referencia (kgF)'),
+        el('label', {}, `Tensión horizontal de referencia (${forceUnitLabel(project)})`),
         tensionInput,
         usingCalculated
           ? el('p', { class: 'muted conductor-specs' },
@@ -140,7 +172,7 @@
               el('th', {}, 'Caso climático'),
               el('th', {}, 'Condición del cable'),
               el('th', {}, '% de rotura'),
-              el('th', {}, 'Tensión máx. (kgF)'),
+              el('th', {}, `Tensión máx. (${forceUnitLabel(project)})`),
               el('th', {}, 'Catenaria máx. (m)'),
               el('th', {}, 'Cable aplicable'),
               el('th', {}, '')
@@ -182,10 +214,8 @@
           onChange: (e) => store.updateStringingTension(item.id, { percentUltimate: parseFloat(e.target.value) || 0 })
         })),
         el('td', {}, el('input', {
-          type: 'number', value: item.maxTension == null ? '' : Math.round(units.newtonsToKgf(item.maxTension)), step: '10', min: '0', placeholder: '—',
-          onChange: (e) => store.updateStringingTension(item.id, {
-            maxTension: e.target.value === '' ? null : units.kgfToNewtons(parseFloat(e.target.value))
-          })
+          type: 'number', value: item.maxTension == null ? '' : toDisplayForce(project, item.maxTension), step: '10', min: '0', placeholder: '—',
+          onChange: (e) => store.updateStringingTension(item.id, { maxTension: e.target.value === '' ? null : fromDisplayForce(project, parseFloat(e.target.value)) })
         })),
         el('td', {}, el('input', {
           type: 'number', value: item.maxCatenary ?? '', step: '0.1', min: '0', placeholder: '—',

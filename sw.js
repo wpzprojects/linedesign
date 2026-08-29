@@ -10,7 +10,7 @@
  * vez de quedar atascados en la caché vieja. Esta es una tarea recurrente en
  * cada fase del proyecto (ver README.md).
  */
-const CACHE_NAME = 'linedesign-html-v94';
+const CACHE_NAME = 'linedesign-html-v95';
 const APP_SHELL = [
   './',
   './index.html',
@@ -26,7 +26,7 @@ const APP_SHELL = [
   'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.js',
   'https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js',
   './src/ui/domUtil.js',
-  './src/ui/units.js',
+  './src/engine/units.js',
   './src/ui/svgUtil.js',
   './src/ui/viewport.js',
   './src/engine/stationing.js',

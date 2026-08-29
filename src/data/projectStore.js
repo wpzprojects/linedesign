@@ -11,6 +11,7 @@
 (function (global) {
   const STORAGE_KEY = 'linedesign.project.v1';
   const dataSource = global.LineDesignDataSource;
+  const units = global.LineDesignUnits;
 
   let project = null;
   let nextIdCounters = { vertex: 0, structure: 0, catalog: 0, hypothesis: 0, stringingTension: 0, sectionConductor: 0 };
@@ -54,6 +55,34 @@
     return `${prefix}${String(nextIdCounters[kind]).padStart(2, '0')}`;
   }
 
+  /**
+   * Los proyectos guardados ANTES de que el peso/fuerza del conductor
+   * pasaran a guardarse en kgF/kg-km (en vez de N/N-m, la unidad interna
+   * del motor de cálculo — ver src/engine/units.js y catenary.js) quedaron
+   * con esos campos todavía en N/N-m. Se convierten una sola vez (el flag
+   * `forceUnitsMigratedV1` evita repetirlo en cada carga, lo que
+   * arruinaría el valor con una segunda conversión) y se persiste el
+   * resultado. Un proyecto NUEVO (dataSource.getInitialProject()) ya nace
+   * marcado como migrado, así que esta función no le hace nada.
+   */
+  function migrateForceUnitsToKgf(proj) {
+    if (proj.forceUnitsMigratedV1) return;
+    const seen = new Set();
+    function convertConductor(c) {
+      if (!c || seen.has(c)) return;
+      seen.add(c);
+      if (c.weightPerLength != null) c.weightPerLength = units.newtonsPerMeterToKgPerKm(c.weightPerLength);
+      if (c.ultimateStrength != null) c.ultimateStrength = units.newtonsToKgf(c.ultimateStrength);
+      if (c.referenceHorizontalTension != null) c.referenceHorizontalTension = units.newtonsToKgf(c.referenceHorizontalTension);
+    }
+    (proj.conductorCatalog || []).forEach(convertConductor);
+    convertConductor(proj.conductor);
+    (proj.stringingTensions || []).forEach((row) => {
+      if (row.maxTension != null) row.maxTension = units.newtonsToKgf(row.maxTension);
+    });
+    proj.forceUnitsMigratedV1 = true;
+  }
+
   function load() {
     let restored = null;
     try {
@@ -67,6 +96,8 @@
     if (!project.sectionConductors) project.sectionConductors = [];
     if (project.groundClearance == null) project.groundClearance = 0;
     if (project.rightOfWayWidth == null) project.rightOfWayWidth = 0;
+    if (project.displayUnitSystem == null) project.displayUnitSystem = 'kgf';
+    migrateForceUnitsToKgf(project);
     // Un proyecto restaurado de localStorage quedó guardado con el
     // conductorCatalog vigente en el momento de guardarlo — si luego se
     // agregan conductores nuevos al catálogo base (dataSource.js), un
@@ -369,6 +400,20 @@
     notify();
   }
 
+  /**
+   * Unidad en que "Parámetros de entrada" muestra y edita fuerza/peso por
+   * longitud ('kgf' = kgF/kg-km, 'si' = N/N-m). Es solo de interfaz: lo
+   * guardado en el proyecto (conductorCatalog, stringingTensions) y lo
+   * exportado en el árbol de cargas siguen siempre en kgF/kg-km, su unidad
+   * propia — cambiar esta preferencia no convierte ni reescribe ningún
+   * dato, solo cómo se despliegan/capturan los campos en pantalla.
+   */
+  function setDisplayUnitSystem(system) {
+    project.displayUnitSystem = system === 'si' ? 'si' : 'kgf';
+    persist();
+    notify();
+  }
+
   // ---------- Conductor ----------
 
   function setConductor(conductorId) {
@@ -442,6 +487,7 @@
     clearSectionConductor,
     setGroundClearance,
     setRightOfWayWidth,
+    setDisplayUnitSystem,
     setConductor,
     updateConductor,
     setProjectName,

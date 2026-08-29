@@ -164,35 +164,43 @@
     ];
   }
 
+  // weightPerLength (kg/km), ultimateStrength y referenceHorizontalTension
+  // (kgF) son las unidades en las que el proyecto GUARDA y MUESTRA estos
+  // campos — lo que ves es lo que se guarda, sin conversión oculta entre
+  // pantalla y JSON exportado (ver src/engine/units.js, que convierte a
+  // N/N-m solo en el momento de usarlos dentro del motor de cálculo).
+  // diameter/crossSectionArea/elasticModulus/thermalExpansionCoef siguen en
+  // SI (m/m²/Pa/°C⁻¹): no son campos de fuerza/peso, y así se referencian
+  // en cualquier tabla de fabricante.
   function sampleConductorCatalog() {
     return [
       {
         id: 'ACSR-4-0',
         name: 'ACSR 4/0 "Penguin"',
         diameter: 0.0143, // m
-        weightPerLength: 9.13, // N/m
+        weightPerLength: 931, // kg/km
         crossSectionArea: 0.0001246, // m2
         elasticModulus: 6.9e10, // Pa
         thermalExpansionCoef: 1.9e-5, // 1/°C
-        ultimateStrength: 40000, // N
+        ultimateStrength: 4078.86, // kgF
         referenceHypothesisId: 'H1',
         // Tensión horizontal instalada a la hipótesis de referencia. Criterio
         // simplificado de Fase 1: 20% de la carga de rotura (RTS), valor
         // típico de diseño en ausencia de curva real de sag-tension (que en
         // PLS-CADD se obtiene de una gráfica stress-strain del conductor).
-        referenceHorizontalTension: 8000
+        referenceHorizontalTension: 815.77 // kgF
       },
       {
         id: 'ACSR-336',
         name: 'ACSR 336.4 MCM "Linnet"',
         diameter: 0.01847,
-        weightPerLength: 12.16,
+        weightPerLength: 1239.97,
         crossSectionArea: 0.0002102,
         elasticModulus: 6.9e10,
         thermalExpansionCoef: 1.9e-5,
-        ultimateStrength: 62700,
+        ultimateStrength: 6393.62,
         referenceHypothesisId: 'H1',
-        referenceHorizontalTension: 12500
+        referenceHorizontalTension: 1274.65
       },
       // El nombre estándar de la tabla de códigos ACSR para 1/0 AWG es
       // "Raven" (no "Penguin" — ese es el nombre real del 4/0 AWG, ya
@@ -202,37 +210,37 @@
         id: 'ACSR-1-0',
         name: 'ACSR 1/0 AWG "Raven"',
         diameter: 0.0101,
-        weightPerLength: 2.12,
+        weightPerLength: 216.18,
         crossSectionArea: 0.0000535,
         elasticModulus: 6.9e10,
         thermalExpansionCoef: 1.9e-5,
-        ultimateStrength: 19480,
+        ultimateStrength: 1986.41,
         referenceHypothesisId: 'H1',
-        referenceHorizontalTension: 3900
+        referenceHorizontalTension: 397.69
       },
       {
         id: 'ACSR-266',
         name: 'ACSR 266.8 MCM "Partridge"',
         diameter: 0.01631,
-        weightPerLength: 5.36,
+        weightPerLength: 546.57,
         crossSectionArea: 0.0001352,
         elasticModulus: 6.9e10,
         thermalExpansionCoef: 1.9e-5,
-        ultimateStrength: 49510,
+        ultimateStrength: 5048.61,
         referenceHypothesisId: 'H1',
-        referenceHorizontalTension: 9900
+        referenceHorizontalTension: 1009.52
       },
       {
         id: 'ACSR-795',
         name: 'ACSR 795 MCM "Drake"',
         diameter: 0.02814,
-        weightPerLength: 15.97,
+        weightPerLength: 1628.49,
         crossSectionArea: 0.0004028,
         elasticModulus: 6.9e10,
         thermalExpansionCoef: 1.9e-5,
-        ultimateStrength: 140120,
+        ultimateStrength: 14288.26,
         referenceHypothesisId: 'H1',
-        referenceHorizontalTension: 28000
+        referenceHorizontalTension: 2855.21
       },
       // AAAC (All Aluminum Alloy Conductor, aleación 6201-T81) — mismo
       // criterio simplificado de Fase 1 que el resto del catálogo: se
@@ -242,37 +250,37 @@
         id: 'AAAC-123',
         name: 'AAAC 123.3 MCM "Azusa"',
         diameter: 0.0101,
-        weightPerLength: 1.68,
+        weightPerLength: 171.31,
         crossSectionArea: 0.0000625,
         elasticModulus: 6.9e10,
         thermalExpansionCoef: 1.9e-5,
-        ultimateStrength: 19840,
+        ultimateStrength: 2023.12,
         referenceHypothesisId: 'H1',
-        referenceHorizontalTension: 3970
+        referenceHorizontalTension: 404.83
       },
       {
         id: 'AAAC-246',
         name: 'AAAC 246.9 MCM "Alliance"',
         diameter: 0.0143,
-        weightPerLength: 3.38,
+        weightPerLength: 344.66,
         crossSectionArea: 0.0001251,
         elasticModulus: 6.9e10,
         thermalExpansionCoef: 1.9e-5,
-        ultimateStrength: 38080,
+        ultimateStrength: 3883.08,
         referenceHypothesisId: 'H1',
-        referenceHorizontalTension: 7620
+        referenceHorizontalTension: 777.02
       },
       {
         id: 'AAAC-312',
         name: 'AAAC 312.8 MCM "Butte"',
         diameter: 0.01631,
-        weightPerLength: 4.29,
+        weightPerLength: 437.46,
         crossSectionArea: 0.0001585,
         elasticModulus: 6.9e10,
         thermalExpansionCoef: 1.9e-5,
-        ultimateStrength: 46710,
+        ultimateStrength: 4763.09,
         referenceHypothesisId: 'H1',
-        referenceHorizontalTension: 9340
+        referenceHorizontalTension: 952.41
       },
       // ACAR (Aluminum Conductor Alloy Reinforced, núcleo de aleación 6201
       // en vez de acero) — no usa nombres de ave como ACSR/AAAC, se
@@ -282,25 +290,25 @@
         id: 'ACAR-350',
         name: 'ACAR 350 MCM',
         diameter: 0.01724,
-        weightPerLength: 4.79,
+        weightPerLength: 488.44,
         crossSectionArea: 0.00017735,
         elasticModulus: 6.9e10,
         thermalExpansionCoef: 1.9e-5,
-        ultimateStrength: 37430,
+        ultimateStrength: 3816.8,
         referenceHypothesisId: 'H1',
-        referenceHorizontalTension: 7490
+        referenceHorizontalTension: 763.77
       },
       {
         id: 'ACAR-500',
         name: 'ACAR 500 MCM',
         diameter: 0.0206,
-        weightPerLength: 6.84,
+        weightPerLength: 697.49,
         crossSectionArea: 0.00025335,
         elasticModulus: 6.9e10,
         thermalExpansionCoef: 1.9e-5,
-        ultimateStrength: 52410,
+        ultimateStrength: 5344.33,
         referenceHypothesisId: 'H1',
-        referenceHorizontalTension: 10480
+        referenceHorizontalTension: 1068.66
       },
       // Cables de guarda (hilo de guarda / OGW), no conductores de fase —
       // se agregan al mismo catálogo porque la app aún no distingue el rol
@@ -310,30 +318,32 @@
         id: 'ALUMOWELD-7-8',
         name: 'Alumoweld 7#8 (hilo de guarda)',
         diameter: 0.00978,
-        weightPerLength: 3.82,
+        weightPerLength: 389.53,
         crossSectionArea: 0.00005857,
         elasticModulus: 6.9e10,
         thermalExpansionCoef: 1.9e-5,
-        ultimateStrength: 70860,
+        ultimateStrength: 7225.71,
         referenceHypothesisId: 'H1',
-        referenceHorizontalTension: 14170
+        referenceHorizontalTension: 1444.94
       },
       // Diámetro/peso son valores típicos de la clase OPGW-70kN (varían
       // según fabricante y cantidad de fibras, a diferencia de los
       // conductores de fase de arriba que sí tienen tabla estándar única
       // por nombre/calibre) — la resistencia de rotura es la que define la
-      // clase, esa sí exacta (70 kN).
+      // clase, esa sí exacta (70 kN ≈ 7138 kgF; el nombre "70 kN" es el
+      // identificador comercial de la clase, no cambia porque la app
+      // muestre kgF en vez de kN en otras partes).
       {
         id: 'OPGW-70KN',
         name: 'OPGW 70 kN',
         diameter: 0.0114,
-        weightPerLength: 3.92,
+        weightPerLength: 399.73,
         crossSectionArea: 0.0000561,
         elasticModulus: 6.9e10,
         thermalExpansionCoef: 1.9e-5,
-        ultimateStrength: 70000,
+        ultimateStrength: 7138.01,
         referenceHypothesisId: 'H1',
-        referenceHorizontalTension: 14000
+        referenceHorizontalTension: 1427.6
       }
     ];
   }
@@ -389,7 +399,14 @@
       stringingTensions: sampleStringingTensions(),
       sectionConductors: [],
       groundClearance: 5.6,
-      rightOfWayWidth: 30
+      rightOfWayWidth: 30,
+      // Ya nace en kgF/kg-km (ver sampleConductorCatalog arriba) — evita que
+      // projectStore.js#migrateForceUnitsToKgf lo vuelva a convertir como si
+      // fuera un proyecto viejo guardado en N/N-m.
+      forceUnitsMigratedV1: true,
+      // Unidad en que "Parámetros de entrada" muestra/edita fuerza y peso
+      // por longitud ('kgf' o 'si') — solo de interfaz, ver projectStore.js#setDisplayUnitSystem.
+      displayUnitSystem: 'kgf'
     };
   }
 
