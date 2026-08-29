@@ -1009,7 +1009,7 @@ p.conductor-specs {
 .prop-category {
   background: var(--panel-alt);
   color: var(--muted);
-  font-size: 0.66rem;
+  font-size: 0.64rem;
   font-weight: 700;
   text-transform: uppercase;
   letter-spacing: 0.05em;
@@ -1021,7 +1021,7 @@ p.conductor-specs {
   display: flex;
   align-items: center;
   gap: 8px;
-  padding: 4px 14px;
+  padding: 3px 14px;
   margin: 0 -14px;
   border-bottom: 1px solid var(--line);
 }
@@ -1031,36 +1031,42 @@ p.conductor-specs {
 }
 
 .prop-row-label {
-  flex: 0 0 44%;
+  flex: 0 0 46%;
   color: var(--muted);
-  font-size: 0.78rem;
+  font-size: 0.72rem;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
 }
 
 /* El control real (input/select) sigue siendo funcional — solo se le
-   quita el aspecto de caja hasta que el usuario interactúa con él. */
-.prop-control {
+   quita el aspecto de caja hasta que el usuario interactúa con él.
+   Especificidad: ".prop-control" sola (una clase) pierde contra reglas
+   base como "input[type=number] { border/background... }" (tipo +
+   atributo = más específico que una sola clase) — de ahí que perdiera
+   siempre pase lo que pasara en la declaración sola; hay que anclarla
+   a ".prop-row" para ganarles a esas reglas con certeza. */
+.prop-row .prop-control {
   flex: 1 1 auto;
   min-width: 0;
   width: auto;
   background: transparent;
   border: 1px solid transparent;
   border-radius: 5px;
-  padding: 3px 6px;
-  font-size: 0.82rem;
+  padding: 2px 5px;
+  font-size: 0.76rem;
+  text-align: right;
   color: var(--text);
   transition: background 0.12s ease, border-color 0.12s ease;
 }
 
-.prop-control:hover,
-.prop-control:focus {
+.prop-row .prop-control:hover,
+.prop-row .prop-control:focus {
   background: var(--panel);
   border-color: var(--line);
 }
 
-.prop-control:focus {
+.prop-row .prop-control:focus {
   border-color: var(--primary);
 }
 
