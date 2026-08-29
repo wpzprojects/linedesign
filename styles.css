@@ -797,9 +797,12 @@ p.conductor-specs {
 .toolbar-field-label {
   color: var(--muted);
   font-size: 0.62rem;
-  /* Punto intermedio: 0.8 + margen negativo comía un poco el borde de
-     la tarjeta; 1 dejaba de más. */
-  line-height: 0.9;
+  /* line-height por sí solo casi no mueve el texto (el navegador recorta
+     el alto de línea parejo arriba y abajo del glifo); el margen negativo
+     es lo que de verdad lo acerca al borde — a la mitad que en v2.9.6
+     (que comía el borde). */
+  line-height: 0.85;
+  margin-top: -0.5px;
   white-space: nowrap;
 }
 
