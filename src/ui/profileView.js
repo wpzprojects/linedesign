@@ -161,12 +161,14 @@
       // alineamiento — no de cada estructura, ver "Cumple poste" para eso.
       // Ayudan a ubicar visualmente dónde cae cada punto de inflexión del
       // trazado sobre el perfil, sobre todo cuando no coincide con ninguna
-      // estructura. Toda la altura del lienzo (0 a HEIGHT), no solo hasta
-      // el terreno — igual que el resto del contenido de zoomLayer, así
-      // que hereda el pan/zoom sin recalcular nada.
+      // estructura. Mismo alto que las líneas verticales de la malla de
+      // coordenadas (viewBounds.minY/maxY, no 0/HEIGHT) — así terminan
+      // exactamente donde termina la malla, ni más ni menos.
+      const gridTopY = projector.toScreen(0, viewBounds.maxY).y;
+      const gridBottomY = projector.toScreen(0, viewBounds.minY).y;
       vertices.forEach((v, i) => {
         const x = projector.toScreen(distances[i], 0).x;
-        const line = svgEl('line', { class: 'vertex-line', x1: x, y1: 0, x2: x, y2: HEIGHT });
+        const line = svgEl('line', { class: 'vertex-line', x1: x, y1: gridTopY, x2: x, y2: gridBottomY });
         if (!current.showVertexLines) line.style.display = 'none';
         zoomLayer.appendChild(line);
       });
