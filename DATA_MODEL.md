@@ -38,7 +38,7 @@
     }
   ],
   "structures": [
-    { "id": "EST-01", "typeId": "TIPO-A", "station": 60, "height": 18 }
+    { "id": "EST-01", "typeId": "TIPO-A", "station": 60, "height": 18, "resistance": 750 }
   ],
   "conductorCatalog": [ "...", ],
   "conductor": {
@@ -69,6 +69,8 @@
 `rightOfWayWidth` (Parámetros de entrada § Terreno, m): ancho de la franja de servidumbre. Cuando es mayor que 0, `planView.js` dibuja dos líneas punteadas grises paralelas al alineamiento, cada una a `rightOfWayWidth / 2` de distancia — `stationing.offsetPolyline(vertices, distance)` desplaza cada vértice perpendicular al propio trazado (no a los ejes X/Y), promediando la dirección de los dos segmentos que se cruzan en cada vértice interior (aproximación de miter simple, sin corrección de longitud en el ángulo — en un quiebre muy cerrado el borde queda un poco más angosto que el ancho configurado justo en ese PI).
 
 `structureCatalog[i].resistanceOptions` (kgF, opcional): resistencias mecánicas disponibles del tipo de estructura, análogo a `heightOptions` — solo dato de catálogo por ahora, sin usarse todavía en `loadTree.js` ni en ningún cálculo (no hay verificación de resistencia vs. carga en esta fase). Los tipos que no lo traen (p.ej. proyectos guardados antes de este campo) simplemente no muestran esa línea en la tarjeta del catálogo.
+
+`structures[i].resistance` (kgF, opcional): la resistencia elegida para esa estructura puntual, análoga a `height` — solo aparece en el panel de Propiedades cuando su tipo trae `resistanceOptions`. `undefined` si el tipo no tiene resistencias configuradas.
 
 ### Decisión clave: posición de estructuras derivada, no almacenada
 

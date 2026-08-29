@@ -212,7 +212,8 @@
       id: nextId('structure', 'EST-'),
       typeId: type.typeId,
       station: Math.min(Math.max(station ?? totalLength / 2, 0), totalLength),
-      height: height || type.heightOptions[0]
+      height: height || type.heightOptions[0],
+      resistance: type.resistanceOptions && type.resistanceOptions.length ? type.resistanceOptions[0] : undefined
     };
     project.structures.push(structure);
     persist();

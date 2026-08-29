@@ -821,6 +821,12 @@ input:focus, select:focus, button:focus-visible {
   width: 100%;
 }
 
+.inspector-action {
+  margin-top: 16px;
+  width: 100%;
+  text-align: center;
+}
+
 .panel {
   background: var(--panel);
   border: 1px solid var(--line);

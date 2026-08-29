@@ -318,7 +318,8 @@
       inspectorPanel.appendChild(el('select', {
         onChange: (e) => {
           const newType = project.structureCatalog.find((t) => t.typeId === e.target.value);
-          store.updateStructure(structure.id, { typeId: newType.typeId, height: newType.heightOptions[0] });
+          const resistance = newType.resistanceOptions && newType.resistanceOptions.length ? newType.resistanceOptions[0] : undefined;
+          store.updateStructure(structure.id, { typeId: newType.typeId, height: newType.heightOptions[0], resistance });
         }
       }, project.structureCatalog.map((t) => el('option', { value: t.typeId, selected: t.typeId === structure.typeId }, t.name))));
 
@@ -327,6 +328,13 @@
         onChange: (e) => store.updateStructure(structure.id, { height: parseFloat(e.target.value) })
       }, (type ? type.heightOptions : [structure.height]).map((h) => el('option', { value: h, selected: h === structure.height }, `${h} m`))));
 
+      if (type && type.resistanceOptions && type.resistanceOptions.length) {
+        inspectorPanel.appendChild(el('label', {}, 'Resistencia (kgF)'));
+        inspectorPanel.appendChild(el('select', {
+          onChange: (e) => store.updateStructure(structure.id, { resistance: parseFloat(e.target.value) })
+        }, type.resistanceOptions.map((r) => el('option', { value: r, selected: r === structure.resistance }, `${r} kgF`))));
+      }
+
       inspectorPanel.appendChild(el('label', {}, 'Station (m)'));
       inspectorPanel.appendChild(el('input', {
         type: 'number', step: '1', value: structure.station.toFixed(1),
@@ -334,7 +342,7 @@
       }));
 
       inspectorPanel.appendChild(el('button', {
-        class: 'btn btn-small', type: 'button',
+        class: 'btn btn-small inspector-action', type: 'button',
         onClick: () => {
           const vertices = project.alignment.vertices;
           const distances = stationing.cumulativeDistances(vertices);
