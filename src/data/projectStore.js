@@ -232,6 +232,10 @@
       return { ok: false, reason: 'El alineamiento necesita al menos 2 vértices.' };
     }
     project.alignment.vertices = project.alignment.vertices.filter((v) => v.id !== id);
+    // Mismo criterio que addVertex: renumera para que no queden huecos
+    // (p. ej. borrar PI-03 dejaba PI-01, PI-02, PI-04...).
+    project.alignment.vertices.forEach((v, i) => { v.id = formatSequentialId('PI-', i + 1); });
+    nextIdCounters.vertex = project.alignment.vertices.length;
     persist();
     notify();
     return { ok: true };
