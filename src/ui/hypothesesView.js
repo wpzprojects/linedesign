@@ -39,8 +39,6 @@
       unitSystemContainer.appendChild(el('label', { for: 'unit-system-select' }, 'Sistema de unidades'));
       select.id = 'unit-system-select';
       unitSystemContainer.appendChild(select);
-      unitSystemContainer.appendChild(el('p', { class: 'muted conductor-specs' },
-        'Solo cambia cómo se ve en pantalla — se guarda siempre en kgF/kg-km.'));
     }
 
     function render(project) {

@@ -594,10 +594,25 @@ label {
   margin-top: 20px;
 }
 
+/* Como .label-loose-above pero un poco menos — para una etiqueta que ya
+   quedó con algo de aire arriba tras quitar el párrafo que tenía justo
+   encima (ver "Sistema de coordenadas"), 20px se sentía de más. */
+.label-loose-above-sm {
+  margin-top: 14px;
+}
+
 /* Menos aire abajo (pega la etiqueta a lo que describe justo debajo, ej.
-   los botones Exportar/Importar/Reiniciar). */
+   los botones Exportar/Importar/Reiniciar). Sola no bastaba: ".row-actions"
+   trae su propio margin-top: 12px (pensado para separarse de un botón
+   normal encima, que no tiene margen propio) — sumado al de la etiqueta
+   dejaba un salto mucho mayor que el de "Importar KMZ" y su botón. Se
+   cancela ese margin-top puntualmente para esta combinación. */
 .label-tight-below {
   margin-bottom: 1px;
+}
+
+.label-tight-below + .row-actions {
+  margin-top: 3px;
 }
 
 input[type="text"],
