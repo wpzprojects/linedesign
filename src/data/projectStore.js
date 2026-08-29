@@ -87,6 +87,38 @@
     proj.forceUnitsMigratedV1 = true;
   }
 
+  /**
+   * Completa con defaults los campos que un proyecto más viejo (guardado
+   * antes de que existieran, o un JSON exportado de una versión anterior)
+   * puede no traer, y corre la migración de unidades de fuerza. Compartida
+   * por load() (proyecto restaurado de localStorage) e importJSON() (antes
+   * llamaba a una función de este mismo nombre que nunca llegó a
+   * escribirse — "Importar JSON" fallaba siempre con un ReferenceError).
+   *
+   * `mergeMissingConductors`: agrega al conductorCatalog los conductores
+   * del catálogo base (dataSource.js) que falten por id, sin tocar los
+   * existentes — un proyecto guardado/exportado antes de que se agregara
+   * un conductor nuevo al catálogo base nunca lo vería si no. No aplica al
+   * proyecto de ejemplo recién creado (ya trae el catálogo al día).
+   */
+  function normalizeProject(raw, { mergeMissingConductors = false } = {}) {
+    const proj = raw;
+    if (!proj.stringingTensions) proj.stringingTensions = [];
+    if (!proj.sectionConductors) proj.sectionConductors = [];
+    if (proj.groundClearance == null) proj.groundClearance = 0;
+    if (proj.rightOfWayWidth == null) proj.rightOfWayWidth = 0;
+    if (proj.displayUnitSystem == null) proj.displayUnitSystem = 'kgf';
+    if (proj.poleSafetyFactor == null) proj.poleSafetyFactor = 2;
+    if (proj.guySafetyFactor == null) proj.guySafetyFactor = 2;
+    migrateForceUnitsToKgf(proj);
+    if (mergeMissingConductors) {
+      const existingIds = new Set(proj.conductorCatalog.map((c) => c.id));
+      const missing = dataSource.getConductorCatalog().filter((c) => !existingIds.has(c.id));
+      if (missing.length) proj.conductorCatalog = proj.conductorCatalog.concat(missing);
+    }
+    return proj;
+  }
+
   function load() {
     let restored = null;
     try {
@@ -95,27 +127,7 @@
     } catch (error) {
       console.warn('No se pudo leer el proyecto guardado, se usará el proyecto de ejemplo:', error);
     }
-    project = restored || dataSource.getInitialProject();
-    if (!project.stringingTensions) project.stringingTensions = [];
-    if (!project.sectionConductors) project.sectionConductors = [];
-    if (project.groundClearance == null) project.groundClearance = 0;
-    if (project.rightOfWayWidth == null) project.rightOfWayWidth = 0;
-    if (project.displayUnitSystem == null) project.displayUnitSystem = 'kgf';
-    if (project.poleSafetyFactor == null) project.poleSafetyFactor = 2;
-    if (project.guySafetyFactor == null) project.guySafetyFactor = 2;
-    migrateForceUnitsToKgf(project);
-    // Un proyecto restaurado de localStorage quedó guardado con el
-    // conductorCatalog vigente en el momento de guardarlo — si luego se
-    // agregan conductores nuevos al catálogo base (dataSource.js), un
-    // proyecto ya guardado nunca los ve, porque load() no vuelve a llamar
-    // getInitialProject() para él. Se completan por id (sin tocar
-    // conductores existentes, por si el usuario los editó) y se persiste
-    // el resultado para no repetir el merge en cada carga.
-    if (restored) {
-      const existingIds = new Set(project.conductorCatalog.map((c) => c.id));
-      const missing = dataSource.getConductorCatalog().filter((c) => !existingIds.has(c.id));
-      if (missing.length) project.conductorCatalog = project.conductorCatalog.concat(missing);
-    }
+    project = normalizeProject(restored || dataSource.getInitialProject(), { mergeMissingConductors: !!restored });
     recalculateIdCounters();
     persist();
     notify();
@@ -321,8 +333,13 @@
       // no es un choque real — todas se ven por su id). Un nombre no
       // vacío sí debe ser único: si dos quedan mostrando lo mismo, deja
       // de quedar claro cuál es cuál en el combo de Propiedades y en
-      // las etiquetas de Planta/Perfil.
-      if (trimmed && project.structures.some((s) => s.id !== id && (s.name || '').trim() === trimmed)) {
+      // las etiquetas de Planta/Perfil. Se compara contra el nombre
+      // EFECTIVO de cada estructura (su nombre propio, o si no tiene, su
+      // id — s.name || s.id) y no solo contra s.name: si no, escribir
+      // "EST-03" como nombre nuevo no chocaba contra la estructura
+      // EST-03 mientras esta no tuviera nombre propio, aunque las dos
+      // terminaran mostrando exactamente lo mismo.
+      if (trimmed && project.structures.some((s) => s.id !== id && (s.name || s.id).trim() === trimmed)) {
         return { ok: false, reason: `Ya hay otra estructura llamada "${trimmed}".` };
       }
       patch = { ...patch, name: trimmed };
@@ -515,7 +532,7 @@
     if (!parsed.alignment || !parsed.structures || !parsed.structureCatalog || !parsed.hypotheses || !parsed.conductor || !parsed.conductorCatalog) {
       return { ok: false, reason: 'El archivo no tiene la forma esperada de un proyecto LineDesign.' };
     }
-    project = normalizeProject(parsed);
+    project = normalizeProject(parsed, { mergeMissingConductors: true });
     recalculateIdCounters();
     persist();
     notify();

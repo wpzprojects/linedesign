@@ -599,7 +599,7 @@
         class: `is-clickable${isSelected ? ' is-active' : ''}`,
         onClick: rowClickTo('structure', structure.id)
       }, [
-        el('td', {}, structure.id),
+        el('td', {}, structure.name || structure.id),
         el('td', {}, type ? type.name : structure.typeId),
         el('td', {}, fmtNum(structure.station, 1)),
         el('td', {}, fmtNum(structure.height, 1)),
@@ -859,14 +859,14 @@
               if (diff < nearestDiff) { nearestDiff = diff; nearestIndex = i; }
             });
             store.moveStructure(structure.id, distances[nearestIndex]);
-            showStatusMessage(`Estructura ${structure.id} ajustada al vértice ${vertices[nearestIndex].id}.`);
+            showStatusMessage(`Estructura ${structure.name || structure.id} ajustada al vértice ${vertices[nearestIndex].id}.`);
           }
         }, 'Ajustar al vértice'),
         el('button', {
           class: 'btn btn-small btn-danger', type: 'button',
           onClick: () => {
             store.removeStructure(structure.id);
-            showStatusMessage(`Estructura ${structure.id} eliminada.`);
+            showStatusMessage(`Estructura ${structure.name || structure.id} eliminada.`);
             selection = null;
             render(store.getProject());
           }
