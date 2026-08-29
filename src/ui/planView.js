@@ -147,7 +147,10 @@
       const vertices = project.alignment.vertices;
       current.vertices = vertices;
       const rightOfWayWidth = project.rightOfWayWidth || 0;
-      const bounds = stationing.planBounds(vertices, rightOfWayWidth / 2);
+      // Un paso de regla más allá del rango real en las cuatro direcciones,
+      // para que el plano no quede pegado exactamente a los extremos del
+      // alineamiento (ver stationing.padBoundsByStep).
+      const bounds = stationing.padBoundsByStep(stationing.planBounds(vertices, rightOfWayWidth / 2));
       current.bounds = bounds;
       const projector = stationing.makeProjector(bounds, WIDTH, HEIGHT, PADDING);
       current.projector = projector;

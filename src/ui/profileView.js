@@ -111,8 +111,15 @@
       const resolved = stationing.resolveStructures(vertices, project.structures, terrainProfile)
         .sort((a, b) => a.station - b.station);
       const groundClearance = project.groundClearance || 0;
+      // `bounds` (sin extender) se conserva para el clamp de arrastre de
+      // estructuras más abajo — station nunca puede ser negativa ni pasar
+      // el largo total del alineamiento. `viewBounds` es lo que realmente
+      // ve el proyector/la regla: un paso más allá en cada dirección,
+      // salvo hacia atrás en X (padMinX: false — el eje de estación
+      // siempre arranca en 0, no tiene sentido extenderlo a negativos).
       const bounds = stationing.profileBounds(vertices, resolved, terrainProfile, groundClearance);
-      const projector = stationing.makeProjector(bounds, WIDTH, HEIGHT, PADDING, current.vExaggeration);
+      const viewBounds = stationing.padBoundsByStep(bounds, { padMinX: false });
+      const projector = stationing.makeProjector(viewBounds, WIDTH, HEIGHT, PADDING, current.vExaggeration);
       current.projector = projector;
 
       const background = svgEl('rect', { x: 0, y: 0, width: WIDTH, height: HEIGHT, class: 'canvas-background' });
@@ -123,7 +130,7 @@
       svg.appendChild(zoomLayer);
       current.zoomLayer = zoomLayer;
 
-      zoomLayer.appendChild(buildRulerGrid({ svgEl, niceStep: stationing.niceStep, projector, bounds, padding: PADDING }));
+      zoomLayer.appendChild(buildRulerGrid({ svgEl, niceStep: stationing.niceStep, projector, bounds: viewBounds, padding: PADDING }));
 
       // Con terreno real consultado (Fase 2, botón "Ajustar al terreno
       // real"), se dibuja el perfil denso en vez de la interpolación lineal

@@ -138,6 +138,26 @@
   }
 
   /**
+   * Extiende cada límite un `niceStep` más allá del rango real de datos —
+   * así el plano no queda exactamente pegado a los extremos del
+   * alineamiento (donde la primera/última marca de regla "agradable"
+   * suele caer bien adentro del rango, dejando una franja sin ninguna
+   * marca en la esquina). `padMinX`/`padMaxX`/`padMinY`/`padMaxY` dejan
+   * desactivar un lado puntual — usado por Perfil, donde el eje de
+   * estación siempre arranca en 0 y no debe extenderse hacia atrás.
+   */
+  function padBoundsByStep(bounds, { padMinX = true, padMaxX = true, padMinY = true, padMaxY = true } = {}) {
+    const stepX = niceStep(bounds.maxX - bounds.minX);
+    const stepY = niceStep(bounds.maxY - bounds.minY);
+    return {
+      minX: padMinX ? bounds.minX - stepX : bounds.minX,
+      maxX: padMaxX ? bounds.maxX + stepX : bounds.maxX,
+      minY: padMinY ? bounds.minY - stepY : bounds.minY,
+      maxY: padMaxY ? bounds.maxY + stepY : bounds.maxY
+    };
+  }
+
+  /**
    * Crea un proyector data->SVG y su inverso SVG->data para un viewport
    * dado ("zoom extents": ajusta y CENTRA el contenido dentro del área con
    * padding, igual que cualquier CAD/GIS). Si la proporción de los datos no
@@ -472,6 +492,7 @@
     pointAtStation,
     planBounds,
     profileBounds,
+    padBoundsByStep,
     makeProjector,
     resolveStructures,
     elevationAtStation,
