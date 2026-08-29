@@ -269,8 +269,9 @@
                 <label for="project-name-input">Nombre</label>
                 <input id="project-name-input" type="text" />
 
-                <p class="muted">Carga un archivo KMZ/KML para iniciar un nuevo proyecto (reemplaza el actual).</p>
+                <label for="kmz-import-btn">Importar KMZ</label>
                 <button id="kmz-import-btn" class="btn btn-small" type="button">Elegir archivo KMZ/KML…</button>
+                <p class="muted text-justify">Carga un archivo KMZ/KML para iniciar un nuevo proyecto (reemplaza el actual).</p>
                 <input id="kmz-import-file" type="file" accept=".kmz,.kml" hidden />
 
                 <div id="kmz-import-picker" class="kmz-import-picker" hidden>
@@ -286,9 +287,9 @@
                 </div>
 
                 <div class="row-actions row-actions--wrap">
-                  <button id="export-btn" class="btn btn-small" type="button">Exportar JSON</button>
-                  <button id="import-btn" class="btn btn-small" type="button">Importar JSON</button>
-                  <button id="reset-btn" class="btn btn-small btn-danger" type="button">Reiniciar ejemplo</button>
+                  <button id="export-btn" class="btn btn-small" type="button" title="Descarga el proyecto completo (alineamiento, estructuras, hipótesis, conductor…) como un archivo .json">Exportar JSON</button>
+                  <button id="import-btn" class="btn btn-small" type="button" title="Carga un archivo .json exportado antes, reemplazando el proyecto actual">Importar JSON</button>
+                  <button id="reset-btn" class="btn btn-small btn-danger" type="button" title="Descarta tus cambios y vuelve al proyecto de ejemplo (pide confirmación)">Reiniciar ejemplo</button>
                 </div>
                 <input id="import-file" type="file" accept="application/json" hidden />
               </div>

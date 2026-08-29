@@ -644,6 +644,10 @@ input:focus, select:focus, button:focus-visible {
   font-size: 0.85rem;
 }
 
+.text-justify {
+  text-align: justify;
+}
+
 /* Ficha de specs del conductor (diámetro/peso/RTS), justo debajo del
    selector de catálogo: más chica que un párrafo normal y pegada arriba
    (el <p> por defecto trae su propio margen simétrico, que la dejaba

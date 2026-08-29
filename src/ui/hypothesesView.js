@@ -25,10 +25,8 @@
     // propia, sin importar esta preferencia.
     function isSI(project) { return project.displayUnitSystem === 'si'; }
     function forceUnitLabel(project) { return isSI(project) ? 'N' : 'kgF'; }
-    function weightUnitLabel(project) { return isSI(project) ? 'N/m' : 'kg/km'; }
     function toDisplayForce(project, kgf) { return isSI(project) ? units.kgfToNewtons(kgf) : kgf; }
     function fromDisplayForce(project, value) { return isSI(project) ? units.newtonsToKgf(value) : value; }
-    function toDisplayWeight(project, kgKm) { return isSI(project) ? units.kgPerKmToNewtonsPerMeter(kgKm) : kgKm; }
 
     function renderUnitSystemSelect(project) {
       const select = el('select', {
@@ -94,15 +92,13 @@
         el('h2', {}, 'Conductor'),
         el('label', {}, 'Catálogo'),
         conductorSelect,
-        el('p', { class: 'muted conductor-specs' },
-          `Diámetro ${project.conductor.diameter} m · Peso ${toDisplayWeight(project, project.conductor.weightPerLength).toFixed(1)} ${weightUnitLabel(project)} · Carga de rotura ${toDisplayForce(project, project.conductor.ultimateStrength).toFixed(1)} ${forceUnitLabel(project)}`),
         el('label', {}, 'Hipótesis de referencia (tensión instalada)'),
         refHypSelect,
         el('label', {}, `Tensión horizontal de referencia (${forceUnitLabel(project)})`),
         tensionInput,
         usingCalculated
           ? el('p', { class: 'muted conductor-specs' },
-            `Calculada automáticamente desde "Tensiones de tendido" para "${referenceHypothesis.name}" — el campo de arriba queda deshabilitado mientras aplique ese criterio.`)
+            `Calculada desde "Tensiones de tendido" para "${referenceHypothesis.name}" — campo deshabilitado mientras aplique.`)
           : null,
         usingManualFallback
           ? el('div', { class: 'stringing-warning' },
