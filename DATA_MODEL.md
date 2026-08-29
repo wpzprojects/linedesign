@@ -18,6 +18,8 @@
 
 `weightPerLength` del conductor ya es un peso por unidad de longitud en N/m (incluye g); no se vuelve a multiplicar por gravedad al usarlo directamente. El peso adicional por hielo y la carga de viento sí se derivan desde magnitudes físicas (densidad, velocidad) — ver `src/engine/catenary.js`.
 
+Estas son las unidades **internas** que usa el motor de cálculo y en las que se guarda/exporta el proyecto (JSON, `loadTreeView.js`'s `exportLoadTree`). La interfaz, en cambio, le muestra al usuario fuerza y peso por longitud en **kgF** y **kg/km** (más habitual en ingeniería de líneas en español) — `src/ui/units.js` hace la conversión (factor `G = 9.80665`, gravedad estándar) solo en la capa de presentación: cada campo editable en esas unidades (tensión de referencia del conductor, tensión máxima de "Tensiones de tendido", tablas de Árbol de cargas) convierte al mostrar el valor y vuelve a convertir a N/N·m al guardarlo — el dato en memoria y en el JSON exportado sigue siempre en SI.
+
 ## Proyecto (forma completa, ver `src/data/dataSource.js#getInitialProject`)
 
 ```json

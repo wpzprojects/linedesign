@@ -5,6 +5,7 @@
 (function (global) {
   const { el, clear } = global.LineDesignDomUtil;
   const catenary = global.LineDesignCatenary;
+  const units = global.LineDesignUnits;
 
   function createHypothesesView(container, store) {
     function render(project) {
@@ -41,19 +42,20 @@
       const usingManualFallback = project.stringingTensions.length > 0 && !usingCalculated;
 
       const tensionInput = el('input', {
-        type: 'number', step: '10', value: Math.round(resolved.tension),
+        type: 'number', step: '10', value: Math.round(units.newtonsToKgf(resolved.tension)),
         disabled: usingCalculated,
-        onChange: (e) => store.updateConductor({ referenceHorizontalTension: parseFloat(e.target.value) || 0 })
+        onChange: (e) => store.updateConductor({ referenceHorizontalTension: units.kgfToNewtons(parseFloat(e.target.value) || 0) })
       });
 
       return el('div', { class: 'card' }, [
         el('h2', {}, 'Conductor'),
         el('label', {}, 'Catálogo'),
         conductorSelect,
-        el('p', { class: 'muted conductor-specs' }, `Diámetro ${project.conductor.diameter} m · Peso ${project.conductor.weightPerLength} N/m · RTS ${project.conductor.ultimateStrength} N`),
+        el('p', { class: 'muted conductor-specs' },
+          `Diámetro ${project.conductor.diameter} m · Peso ${units.newtonsPerMeterToKgPerKm(project.conductor.weightPerLength).toFixed(1)} kg/km · RTS ${Math.round(units.newtonsToKgf(project.conductor.ultimateStrength))} kgF`),
         el('label', {}, 'Hipótesis de referencia (tensión instalada)'),
         refHypSelect,
-        el('label', {}, 'Tensión horizontal de referencia (N)'),
+        el('label', {}, 'Tensión horizontal de referencia (kgF)'),
         tensionInput,
         usingCalculated
           ? el('p', { class: 'muted conductor-specs' },
@@ -138,7 +140,7 @@
               el('th', {}, 'Caso climático'),
               el('th', {}, 'Condición del cable'),
               el('th', {}, '% de rotura'),
-              el('th', {}, 'Tensión máx. (daN)'),
+              el('th', {}, 'Tensión máx. (kgF)'),
               el('th', {}, 'Catenaria máx. (m)'),
               el('th', {}, 'Cable aplicable'),
               el('th', {}, '')
@@ -180,8 +182,10 @@
           onChange: (e) => store.updateStringingTension(item.id, { percentUltimate: parseFloat(e.target.value) || 0 })
         })),
         el('td', {}, el('input', {
-          type: 'number', value: item.maxTension ?? '', step: '10', min: '0', placeholder: '—',
-          onChange: (e) => store.updateStringingTension(item.id, { maxTension: e.target.value === '' ? null : parseFloat(e.target.value) })
+          type: 'number', value: item.maxTension == null ? '' : Math.round(units.newtonsToKgf(item.maxTension)), step: '10', min: '0', placeholder: '—',
+          onChange: (e) => store.updateStringingTension(item.id, {
+            maxTension: e.target.value === '' ? null : units.kgfToNewtons(parseFloat(e.target.value))
+          })
         })),
         el('td', {}, el('input', {
           type: 'number', value: item.maxCatenary ?? '', step: '0.1', min: '0', placeholder: '—',

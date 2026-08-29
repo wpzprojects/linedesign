@@ -6,9 +6,17 @@
   const { el, clear } = global.LineDesignDomUtil;
   const { downloadFile } = global.LineDesignSvgUtil;
   const loadTree = global.LineDesignLoadTree;
+  const units = global.LineDesignUnits;
 
   function fmt(value) {
     return Number.isFinite(value) ? value.toFixed(1) : '—';
+  }
+
+  // La tabla en pantalla muestra kgF/kgF·m (más habitual en la práctica),
+  // pero el JSON exportado sigue en N/N·m (unidad interna del motor de
+  // cálculo, ver DATA_MODEL.md) — la conversión es solo de presentación.
+  function fmtKgf(newtons) {
+    return fmt(units.newtonsToKgf(newtons));
   }
 
   function createLoadTreeView(container) {
@@ -21,10 +29,10 @@
       const tableRows = rows.map((row) => el('tr', {}, [
         el('td', {}, row.structureId),
         el('td', {}, hypothesisById[row.hypothesisId] || row.hypothesisId),
-        el('td', { class: 'num' }, fmt(row.forces.vertical)),
-        el('td', { class: 'num' }, fmt(row.forces.transversal)),
-        el('td', { class: 'num' }, fmt(row.forces.longitudinal)),
-        el('td', { class: 'num' }, fmt(row.momentEstimate))
+        el('td', { class: 'num' }, fmtKgf(row.forces.vertical)),
+        el('td', { class: 'num' }, fmtKgf(row.forces.transversal)),
+        el('td', { class: 'num' }, fmtKgf(row.forces.longitudinal)),
+        el('td', { class: 'num' }, fmtKgf(row.momentEstimate))
       ]));
 
       const card = el('div', { class: 'card' }, [
@@ -41,10 +49,10 @@
             el('thead', {}, el('tr', {}, [
               el('th', {}, 'Estructura'),
               el('th', {}, 'Hipótesis'),
-              el('th', { class: 'num' }, 'Vertical (N)'),
-              el('th', { class: 'num' }, 'Transversal (N)'),
-              el('th', { class: 'num' }, 'Longitudinal (N)'),
-              el('th', { class: 'num' }, 'Momento est. (N·m)')
+              el('th', { class: 'num' }, 'Vertical (kgF)'),
+              el('th', { class: 'num' }, 'Transversal (kgF)'),
+              el('th', { class: 'num' }, 'Longitudinal (kgF)'),
+              el('th', { class: 'num' }, 'Momento est. (kgF·m)')
             ])),
             el('tbody', {}, tableRows)
           ])

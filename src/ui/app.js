@@ -14,6 +14,7 @@
   const kmzImport = window.LineDesignKmzImport;
   const { el, clear } = window.LineDesignDomUtil;
   const { downloadFile } = window.LineDesignSvgUtil;
+  const units = window.LineDesignUnits;
 
   const planSvg = document.getElementById('plan-svg');
   const planMapContainer = document.getElementById('plan-map');
@@ -531,7 +532,7 @@
       ]));
 
       inspectorPanel.appendChild(el('p', { class: 'muted conductor-specs' },
-        `Diámetro ${conductor.diameter} m · Peso ${conductor.weightPerLength} N/m · RTS ${conductor.ultimateStrength} N`));
+        `Diámetro ${conductor.diameter} m · Peso ${units.newtonsPerMeterToKgPerKm(conductor.weightPerLength).toFixed(1)} kg/km · RTS ${Math.round(units.newtonsToKgf(conductor.ultimateStrength))} kgF`));
     }
   }
 
