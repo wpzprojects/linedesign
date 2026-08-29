@@ -80,7 +80,7 @@ Ninguno de los dos es perfecto — son servicios gratuitos de terceros ("pueden 
 
 ### Importar alineamiento desde KMZ/KML (Fase 2, prompt maestro Apéndice B)
 
-Botón "Importar alineamiento" en la pantalla "Criterios". Flujo completo:
+Botón "Importar alineamiento" en la pantalla "Parámetros de entrada". Flujo completo:
 
 1. `src/data/kmzImport.js#parseKmzOrKml(file)` lee el archivo — si es `.kmz` (un ZIP), lo descomprime con [JSZip](https://stuk.github.io/jszip/) (CDN) y toma el primer `.kml` que encuentre adentro; si es `.kml` suelto, lo lee directo como texto. Límite de tamaño: 20 MB.
 2. `extractCandidates(kmlText)` parsea el XML con `DOMParser` nativo (sin librería) y junta un candidato por cada `Placemark` que tenga un `LineString` con ≥2 puntos: `{ name, points: [{lat, lon, alt}] }` — `alt` es la altitud que trae la tupla `lon,lat,alt` del KML (0 si el KML no la trae; es opcional en el formato).

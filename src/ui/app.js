@@ -545,6 +545,10 @@
         document.querySelectorAll('.screen').forEach((screen) => {
           screen.classList.toggle('is-active', screen.id === `screen-${btn.dataset.screen}`);
         });
+        // La barra de estado (coordenadas en vivo, zoom) solo tiene sentido
+        // con un lienzo de Planta/Perfil visible debajo — en el resto de
+        // pantallas (formularios/tablas) queda oculta.
+        document.body.classList.toggle('screen-plan-active', btn.dataset.screen === 'plan');
         screenTitle.textContent = btn.dataset.title || btn.textContent.trim();
         // planView/profileView miden su <svg> con getBoundingClientRect():
         // mientras la pantalla estaba oculta (display:none) esa medida daba

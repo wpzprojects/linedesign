@@ -255,7 +255,8 @@
       structures: sampleStructures(),
       conductorCatalog,
       conductor: conductorCatalog[0],
-      hypotheses: sampleHypotheses()
+      hypotheses: sampleHypotheses(),
+      stringingTensions: []
     };
   }
 

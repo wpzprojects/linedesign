@@ -1098,6 +1098,13 @@ circle.sync-marker {
 
 /* ---------- Barra de estado ---------- */
 
+/* Solo tiene sentido con un lienzo de Planta/Perfil debajo (coordenadas en
+   vivo, zoom); en el resto de pantallas (formularios/tablas) queda oculta —
+   ver el toggle de la clase screen-plan-active en app.js. */
+body:not(.screen-plan-active) .status-bar {
+  display: none;
+}
+
 .status-bar {
   flex: 0 0 auto;
   display: flex;

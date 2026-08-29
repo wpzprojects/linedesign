@@ -13,7 +13,7 @@
   const dataSource = global.LineDesignDataSource;
 
   let project = null;
-  let nextIdCounters = { vertex: 0, structure: 0, catalog: 0, hypothesis: 0 };
+  let nextIdCounters = { vertex: 0, structure: 0, catalog: 0, hypothesis: 0, stringingTension: 0 };
   const listeners = new Set();
 
   function notify() {
@@ -43,7 +43,8 @@
       vertex: maxFrom(project.alignment.vertices, 'PI-'),
       structure: maxFrom(project.structures, 'EST-'),
       catalog: maxFrom(project.structureCatalog, 'TIPO-'),
-      hypothesis: maxFrom(project.hypotheses, 'H')
+      hypothesis: maxFrom(project.hypotheses, 'H'),
+      stringingTension: maxFrom(project.stringingTensions, 'ST-')
     };
   }
 
@@ -61,6 +62,7 @@
       console.warn('No se pudo leer el proyecto guardado, se usará el proyecto de ejemplo:', error);
     }
     project = restored || dataSource.getInitialProject();
+    if (!project.stringingTensions) project.stringingTensions = [];
     recalculateIdCounters();
     notify();
   }
@@ -275,6 +277,38 @@
     return { ok: true };
   }
 
+  // ---------- Tensiones de tendido ----------
+
+  function addStringingTension(partial = {}) {
+    const item = {
+      id: nextId('stringingTension', 'ST-'),
+      weatherCase: partial.weatherCase || '',
+      cableCondition: partial.cableCondition || '',
+      percentUltimate: partial.percentUltimate ?? 0,
+      maxTension: partial.maxTension ?? null,
+      maxCatenary: partial.maxCatenary ?? null,
+      applicableCable: partial.applicableCable || ''
+    };
+    project.stringingTensions.push(item);
+    persist();
+    notify();
+    return item;
+  }
+
+  function updateStringingTension(id, patch) {
+    const item = project.stringingTensions.find((t) => t.id === id);
+    if (!item) return;
+    Object.assign(item, patch);
+    persist();
+    notify();
+  }
+
+  function removeStringingTension(id) {
+    project.stringingTensions = project.stringingTensions.filter((t) => t.id !== id);
+    persist();
+    notify();
+  }
+
   // ---------- Conductor ----------
 
   function setConductor(conductorId) {
@@ -341,6 +375,9 @@
     addHypothesis,
     updateHypothesis,
     removeHypothesis,
+    addStringingTension,
+    updateStringingTension,
+    removeStringingTension,
     setConductor,
     updateConductor,
     setProjectName,

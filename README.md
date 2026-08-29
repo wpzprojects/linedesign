@@ -32,13 +32,13 @@ Abrir `http://localhost:8000/`. El navegador ofrecerá el botón de instalación
 
 Shell de aplicación de escritorio (no una página que hace scroll), con la estructura que comparten PLS-CADD, AutoCAD, QGIS y Figma: barra de actividad fija + pantallas por función + lienzo central con zoom/pan + panel de propiedades + barra de estado. Ver "Fundamento de diseño" abajo.
 
-- **Barra de actividad** (extremo izquierdo, ~56px, nunca se esconde): íconos para cambiar de pantalla (Criterios / Planta y Perfil / Catálogo / Árbol de cargas / Resumen), más el engranaje de Configuración y el toggle de tema al fondo.
+- **Barra de actividad** (extremo izquierdo, ~56px, nunca se esconde): íconos para cambiar de pantalla (Parámetros de entrada / Planta y Perfil / Catálogo / Árbol de cargas / Resumen), más el engranaje de Configuración y el toggle de tema al fondo.
 - **Configuración**: sin contenido por ahora — pensada para ajustes de la app (no del proyecto) más adelante.
-- **Criterios**: nombre del proyecto, sistema de unidades, importación de alineamiento desde KMZ/KML (ver "Importar KMZ/KML" abajo) y las hipótesis de carga (conductor, hipótesis de referencia, tabla de hipótesis) — todo lo que condiciona el cálculo, agrupado en un solo lugar; pensada para ir sumando más ajustes globales.
-- **Resumen**: Explorador (árbol de vértices y estructuras — clic para seleccionar y saltar a Planta y Perfil), tarjeta de Proyecto (exportar/importar/reiniciar) y Resumen del proyecto.
+- **Parámetros de entrada** (antes "Criterios"): tarjeta de Proyecto (nombre, exportar/importar/reiniciar), sistema de unidades, importación de alineamiento desde KMZ/KML (ver "Importar KMZ/KML" abajo), los casos climáticos (conductor, hipótesis de referencia, tabla de casos climáticos) y las tensiones de tendido (criterios de flechado por caso climático/cable, sin motor de cálculo detrás por ahora) — todo lo que condiciona el cálculo, agrupado en un solo lugar; pensada para ir sumando más ajustes globales.
+- **Resumen**: Explorador (árbol de vértices y estructuras — clic para seleccionar y saltar a Planta y Perfil) y Resumen del proyecto.
 - **Planta y Perfil**: lado a lado, cada una llenando el alto disponible — el `viewBox` del SVG se recalcula según el tamaño real del panel. **Zoom con rueda del mouse y pan arrastrando el fondo** (independiente por lienzo, con botones +/−/ajustar en cada cabecera). El proyector centra el contenido dentro del panel (no lo ancla a una esquina) y dibuja una regla con marcas numeradas en ambos ejes — en Planta, coordenadas reales (Este/Norte, EPSG:9377), no un sistema local arbitrario. **Las dos vistas están sincronizadas**: al pasar el cursor sobre una, aparece un marcador en la posición correspondiente de la otra — igual que en PLS-CADD. Arrastra vértices o estructuras para moverlos; un clic (sin arrastrar) los selecciona. El botón de mapa en la cabecera de Planta muestra/oculta un **mapa base real** (Leaflet: calles/OpenStreetMap o satélite/Esri, con control para alternar) detrás del alineamiento, ubicado a partir de las propias coordenadas del alineamiento — ver "Mapa base" abajo. El botón de montaña en la cabecera de Perfil consulta la **elevación real del terreno** a lo largo del alineamiento y ajusta el perfil a ella — ver "Perfil de terreno real" abajo.
 - **Panel de propiedades** (derecha): edición del vértice o estructura seleccionada — reemplaza cualquier formulario flotante por un inspector fijo, como en Figma/AutoCAD/QGIS.
-- **Barra de estado** (inferior, siempre visible): coordenadas en vivo bajo el cursor (X/Y en Planta, station/elevación en Perfil), resumen del proyecto, mensajes transitorios de las últimas acciones, y el zoom vigente de cada lienzo.
+- **Barra de estado** (inferior, solo visible en "Planta y Perfil"): coordenadas en vivo bajo el cursor (X/Y en Planta, station/elevación en Perfil), resumen del proyecto, mensajes transitorios de las últimas acciones, y el zoom vigente de cada lienzo.
 - **Catálogo de estructuras**: crear/editar tipos (nombre, categoría, alturas disponibles, puntos de fijación del conductor por fase).
 - **Árbol de cargas**: tabla de fuerzas (vertical/transversal/longitudinal + momento estimado) por estructura y por hipótesis; botón "Exportar JSON".
 
@@ -56,7 +56,7 @@ El botón de montaña en la cabecera de Perfil consulta un servicio de elevació
 
 ### Importar KMZ/KML (Fase 2)
 
-En Criterios, "Importar alineamiento" carga un KMZ o KML (p.ej. exportado de Google Earth) y reemplaza el alineamiento del proyecto:
+En Parámetros de entrada, "Importar alineamiento" carga un KMZ o KML (p.ej. exportado de Google Earth) y reemplaza el alineamiento del proyecto:
 
 1. `src/data/kmzImport.js` lee el archivo (`JSZip`, CDN, si es `.kmz`; texto directo si es `.kml`) y extrae todos los `LineString` que encuentre, con su lat/lon/altitud (si el KML la trae).
 2. Si hay más de un candidato, el usuario elige cuál importar (con la cantidad de puntos de cada uno) — no se asume el primero.
@@ -91,4 +91,4 @@ La distribución no es una preferencia estética: se investigó la interfaz real
 
 - ✅ Mapa base real en Planta (Leaflet: calles/OpenStreetMap + satélite/Esri), con el alineamiento en coordenadas reales (MAGNA-SIRGAS / Origen-Nacional, EPSG:9377).
 - ✅ Perfil de elevación real (OpenTopoData) — botón en Perfil, ver "Perfil de terreno real" arriba.
-- ✅ Importar alineamiento desde KMZ/KML — botón en Criterios, ver "Importar KMZ/KML" arriba.
+- ✅ Importar alineamiento desde KMZ/KML — botón en Parámetros de entrada, ver "Importar KMZ/KML" arriba.
