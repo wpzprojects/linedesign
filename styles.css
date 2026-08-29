@@ -716,7 +716,7 @@ p.conductor-specs {
   background: var(--toolbar-bg);
   border: 1px solid var(--line);
   border-radius: 0;
-  padding: 6px 14px;
+  padding: 3px 14px 6px;
   /* Bleed adicional por el lado izquierdo (el derecho ya lo hereda del
      margen negativo de #screen-plan): pegada de lado a lado, sin correr
      el lienzo de Planta que está debajo. */
@@ -754,7 +754,7 @@ p.conductor-specs {
   background: var(--panel-alt);
   border: 1px solid var(--line);
   border-radius: 8px;
-  padding: 3px 10px;
+  padding: 2px 10px 4px;
 }
 
 /* Mismo acento que el botón activo de la barra de actividad
