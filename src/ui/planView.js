@@ -39,12 +39,16 @@
     // proyector/zoomLayer actuales y no sobre los de un render anterior.
     const current = { project: null, selection: null, projector: null, zoomLayer: null, markers: [] };
 
-    // Marcadores (círculos de vértice/estructura): viven dentro de zoomLayer
-    // para que su posición pan/zoquee junto al resto del dibujo, pero cada
-    // uno lleva su propia escala inversa (1/scale) al zoom actual para que
-    // su tamaño en pantalla se mantenga constante (mismo motivo que en
-    // profileView.js — un <circle> no tiene equivalente a vector-effect
-    // para su radio, solo para el stroke).
+    // Marcadores (círculos de vértice/estructura, sus etiquetas y el
+    // sync-marker): viven dentro de zoomLayer para que su posición
+    // pan/zoquee junto al resto del dibujo, pero cada uno lleva su propia
+    // escala inversa (1/scale) al zoom actual para que su tamaño en
+    // pantalla (incl. el font-size de las etiquetas) se mantenga constante
+    // (mismo motivo que en profileView.js — un <circle>/<text> no tiene
+    // equivalente a vector-effect para su radio/tamaño, solo para el
+    // stroke). La etiqueta de cada marcador vive DENTRO del mismo <g> que
+    // su círculo, con un desplazamiento local fijo — así se mueve/escala
+    // junto con él sin necesidad de actualizarla aparte.
     function markerTransform(x, y) {
       return `translate(${x} ${y}) scale(${1 / viewport.state.scale})`;
     }
@@ -183,15 +187,19 @@
             cx: 0, cy: 0, r: 7, 'data-id': structure.id
           });
           marker.appendChild(circle);
+          // La etiqueta vive DENTRO del mismo marcador (mismo <g> con escala
+          // inversa que el círculo) con un desplazamiento local fijo (10,-10)
+          // en vez de sumarlo a p.x/p.y: así el offset y el tamaño de fuente
+          // se mantienen constantes en pantalla en cualquier zoom, y no hace
+          // falta reposicionarla aparte durante el arrastre.
+          const label = svgEl('text', { class: 'annotation-label', x: 10, y: -10 });
+          label.textContent = structure.id;
+          marker.appendChild(label);
           const markerRecord = { el: marker, x: p.x, y: p.y, type: 'structure' };
           current.markers.push(markerRecord);
 
-          const g = svgEl('g');
-          g.appendChild(marker);
-          g.appendChild(svgEl('text', { class: 'annotation-label', x: p.x + 10, y: p.y - 10 }, {}));
-          g.lastChild.textContent = structure.id;
-          structureLayer.appendChild(g);
-          attachStructureDrag(circle, structure.id, markerRecord, g.lastChild);
+          structureLayer.appendChild(marker);
+          attachStructureDrag(circle, structure.id, markerRecord);
         });
       }
 
@@ -231,7 +239,7 @@
         });
       }
 
-      function attachStructureDrag(circle, structureId, markerRecord, label) {
+      function attachStructureDrag(circle, structureId, markerRecord) {
         circle.addEventListener('pointerdown', (evt) => {
           evt.stopPropagation();
           svg.setPointerCapture(evt.pointerId);
@@ -245,10 +253,6 @@
             const pos = stationing.pointAtStation(vertices, lastStation);
             const p = projector.toScreen(pos.x, pos.y);
             setMarkerPos(markerRecord, p.x, p.y);
-            if (label) {
-              label.setAttribute('x', p.x + 10);
-              label.setAttribute('y', p.y - 10);
-            }
             if (callbacks.onStructureDragMove) callbacks.onStructureDragMove(structureId, lastStation);
           }
 
@@ -273,12 +277,12 @@
           cx: 0, cy: 0, r: 6, 'data-id': vertex.id
         });
         marker.appendChild(circle);
+        const label = svgEl('text', { class: 'annotation-label vertex-label', x: 8, y: 18 });
+        label.textContent = vertex.id;
+        marker.appendChild(label);
         const markerRecord = { el: marker, x: p.x, y: p.y, type: 'vertex' };
         current.markers.push(markerRecord);
-        const label = svgEl('text', { class: 'annotation-label vertex-label', x: p.x + 8, y: p.y + 18 });
-        label.textContent = vertex.id;
         zoomLayer.appendChild(marker);
-        zoomLayer.appendChild(label);
         attachVertexDrag(circle, vertex.id, markerRecord);
       });
 

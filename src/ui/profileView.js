@@ -27,12 +27,13 @@
     const viewport = createViewport();
     const current = { projector: null, zoomLayer: null, height: 0, vExaggeration: 1, markers: [] };
 
-    // Marcadores (círculos de poste): viven dentro de zoomLayer para que su
-    // posición pan/zoquee junto con el resto del dibujo, pero cada uno lleva
-    // su propia escala inversa (1/scale) para que su tamaño en pantalla se
-    // mantenga constante — si no, al hacer zoom-in crecerían igual que el
+    // Marcadores (círculos de poste, sus etiquetas y las de "flecha"): viven
+    // dentro de zoomLayer para que su posición pan/zoquee junto con el resto
+    // del dibujo, pero cada uno lleva su propia escala inversa (1/scale)
+    // para que su tamaño en pantalla (incl. el font-size de las etiquetas)
+    // se mantenga constante — si no, al hacer zoom-in crecerían igual que el
     // resto de la geometría (mismo motivo que vector-effect en los trazos,
-    // pero eso no aplica al radio de un <circle>, solo al stroke).
+    // pero eso no aplica al radio de un <circle> ni al tamaño de <text>).
     function updateMarkers() {
       const inv = 1 / viewport.state.scale;
       current.markers.forEach((m) => {
@@ -147,9 +148,12 @@
         zoomLayer.appendChild(svgEl('path', { class: 'conductor-line', d: pathFromPoints(screenPoints) }));
 
         const midScreen = projector.toScreen(from.station + spanLength / 2, Math.min(fromTop, toTop));
-        const sagLabel = svgEl('text', { class: 'sag-label', x: midScreen.x, y: midScreen.y + 16 });
+        const sagMarker = svgEl('g');
+        const sagLabel = svgEl('text', { class: 'sag-label', x: 0, y: 16 });
         sagLabel.textContent = `flecha ${curve.sag.toFixed(2)} m`;
-        zoomLayer.appendChild(sagLabel);
+        sagMarker.appendChild(sagLabel);
+        zoomLayer.appendChild(sagMarker);
+        current.markers.push({ el: sagMarker, x: midScreen.x, y: midScreen.y });
       }
 
       // Arrastre horizontal de estructuras (mueve su station a lo largo del
@@ -204,11 +208,11 @@
         attachStructureDrag(pole, structure.id);
         const marker = svgEl('g');
         marker.appendChild(svgEl('circle', { class: 'structure-point', cx: 0, cy: 0, r: 6 }));
+        const label = svgEl('text', { class: 'annotation-label', x: 8, y: -8 });
+        label.textContent = structure.id;
+        marker.appendChild(label);
         zoomLayer.appendChild(marker);
         current.markers.push({ el: marker, x: topScreen.x, y: topScreen.y });
-        const label = svgEl('text', { class: 'annotation-label', x: topScreen.x + 8, y: topScreen.y - 8 });
-        label.textContent = structure.id;
-        zoomLayer.appendChild(label);
       });
 
       const syncMarker = svgEl('line', { class: 'sync-marker sync-marker--line', x1: -9999, y1: 0, x2: -9999, y2: HEIGHT });
