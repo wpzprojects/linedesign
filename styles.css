@@ -742,13 +742,14 @@ p.conductor-specs {
 }
 
 /* Grupos de la barra de herramientas como "tarjetas": el botón de acción
-   (si lo hay) a la izquierda, del mismo alto que sus campos derivados,
-   cada campo con su micro-etiqueta encima (no dependen del placeholder).
-   Fondo levemente distinto al de la barra + separador vertical entre
-   tarjetas (.toolbar-sep, ya existente). */
+   (si lo hay) a la izquierda, justificado contra el borde inferior de sus
+   campos derivados (no contra todo el alto de la tarjeta, que incluye la
+   micro-etiqueta), cada campo con su micro-etiqueta encima (no dependen
+   del placeholder). Fondo levemente distinto al de la barra + separador
+   vertical entre tarjetas (.toolbar-sep, ya existente). */
 .toolbar-card {
   display: flex;
-  align-items: stretch;
+  align-items: flex-end;
   gap: 10px;
   background: var(--panel-alt);
   border: 1px solid var(--line);
@@ -756,8 +757,24 @@ p.conductor-specs {
   padding: 5px 10px;
 }
 
+/* Mismo acento que el botón activo de la barra de actividad
+   (.nav-btn.is-active): fondo suave + texto en el color primario, en vez
+   del botón sólido genérico. Border transparente (no "none") para que su
+   caja mida lo mismo que la de los inputs/selects vecinos, que sí tienen
+   borde de 1px — así quedan a la misma altura. */
 .toolbar-card-btn {
+  background: var(--primary-soft);
+  color: var(--primary);
+  border: 1px solid transparent;
+  border-radius: 7px;
+  padding: 4px 10px;
+  font-size: 0.82rem;
+  font-weight: 600;
   white-space: nowrap;
+}
+
+.toolbar-card-btn:hover {
+  opacity: 0.8;
 }
 
 .toolbar-field {
