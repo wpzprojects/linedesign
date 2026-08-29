@@ -372,10 +372,13 @@
         return;
       }
 
-      // Paso de muestreo adaptable: al menos cada 20 m, pero sin superar
-      // ~150 puntos en total (una sola consulta en lote al servicio de
-      // elevación, ver elevationSource.js) para trazados largos.
-      const step = Math.max(20, totalLength / 150);
+      // Muestreo cada metro sobre el alineamiento (una sola consulta en
+      // lote al servicio de elevación, ver elevationSource.js). Para
+      // trazados absurdamente largos (>10 km) se cae a un paso más grueso
+      // que deje un lote manejable, en vez de pedir decenas de miles de
+      // puntos de una sola vez.
+      const MAX_POINTS = 10000;
+      const step = totalLength / MAX_POINTS > 1 ? totalLength / MAX_POINTS : 1;
       const stations = stationing.sampleStations(vertices, step);
       const points = stations.map((s) => {
         const pos = stationing.pointAtStation(vertices, s);

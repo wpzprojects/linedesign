@@ -51,7 +51,7 @@ El alineamiento (`vertex.x`/`vertex.y`) usa coordenadas **reales**, no un sistem
 
 ### Perfil de terreno real (Fase 2)
 
-El botón de montaña en la cabecera de Perfil consulta [Open-Elevation](https://open-elevation.com/) (`src/data/elevationSource.js`, servicio público sin API key) para un muestreo del alineamiento (paso adaptable, mínimo cada 20 m, acotado a ~150 puntos por trazado — una sola consulta en lote) y guarda el resultado como `alignment.terrainProfile`. Con ese perfil presente, `profileView.js` dibuja el terreno real (línea de otro color) en vez de la interpolación lineal simulada entre vértices, y cada vértice actualiza su elevación (`vertex.z`) al valor real de su propia station — ver `DATA_MODEL.md` para el detalle y la limitación (las estructuras siguen derivando su elevación por interpolación lineal *entre* vértices, no del perfil denso).
+El botón de montaña en la cabecera de Perfil consulta [Open-Elevation](https://open-elevation.com/) (`src/data/elevationSource.js`, servicio público sin API key) para un muestreo del alineamiento **cada metro** (paso más grueso solo si el trazado supera los 10 km — una sola consulta en lote) y guarda el resultado como `alignment.terrainProfile`. Con ese perfil presente, `profileView.js` dibuja el terreno real (línea de otro color) en vez de la interpolación lineal simulada entre vértices, y cada vértice actualiza su elevación (`vertex.z`) al valor real de su propia station — ver `DATA_MODEL.md` para el detalle y la limitación (las estructuras siguen derivando su elevación por interpolación lineal *entre* vértices, no del perfil denso).
 
 ### Fundamento de diseño
 
