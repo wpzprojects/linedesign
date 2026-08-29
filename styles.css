@@ -818,8 +818,15 @@ p.conductor-specs {
   background: var(--toolbar-bg);
 }
 
+/* 75% del ancho que tenían antes (68px). */
 .toolbar-mini-input {
-  width: 68px;
+  width: 51px;
+}
+
+/* El input de station no tenía ancho fijo (heredaba el intrínseco del
+   navegador, ~158px); se fija aquí para poder reducirlo al 75% (~118px). */
+.toolbar-station-input {
+  width: 118px;
 }
 
 /* ---------- Área CAD: lienzos + panel de propiedades ---------- */
