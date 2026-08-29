@@ -58,10 +58,10 @@ El botón de montaña en la cabecera de Perfil consulta un servicio de elevació
 
 En Criterios, "Importar alineamiento" carga un KMZ o KML (p.ej. exportado de Google Earth) y reemplaza el alineamiento del proyecto:
 
-1. `src/data/kmzImport.js` lee el archivo (`JSZip`, CDN, si es `.kmz`; texto directo si es `.kml`) y extrae todos los `LineString` que encuentre en lat/lon, ignorando la altitud del KML a propósito (no debe usarse como perfil de terreno — para eso está "Ajustar al terreno real" en Perfil, que consulta un servicio de elevación real).
+1. `src/data/kmzImport.js` lee el archivo (`JSZip`, CDN, si es `.kmz`; texto directo si es `.kml`) y extrae todos los `LineString` que encuentre, con su lat/lon/altitud (si el KML la trae).
 2. Si hay más de un candidato, el usuario elige cuál importar (con la cantidad de puntos de cada uno) — no se asume el primero.
-3. Las coordenadas del candidato elegido se convierten a Este/Norte (EPSG:9377, `geo.latLonToEpsg9377`) y se simplifican con Douglas-Peucker (`stationing.simplifyPolyline`, tolerancia de 5 m) — los trazados dibujados a mano en Google Earth suelen traer muchos más puntos de los que hacen falta para un alineamiento de diseño (unos pocos PIs en los quiebres).
-4. `store.importAlignment` reemplaza `alignment.vertices` (con `z = 0`, ya que la elevación real se obtiene aparte) y limpia `structures`/`terrainProfile` del proyecto anterior, que ya no tendrían sentido sobre la geometría nueva.
+3. Las coordenadas del candidato elegido se convierten a Este/Norte (EPSG:9377, `geo.latLonToEpsg9377`), conservando la altitud como `z`, y se simplifican con Douglas-Peucker (`stationing.simplifyPolyline`, tolerancia de 5 m) — los trazados dibujados a mano en Google Earth suelen traer muchos más puntos de los que hacen falta para un alineamiento de diseño (unos pocos PIs en los quiebres); si el KML no traía altitud, la app avisa y sugiere usar "Ajustar al terreno real" en Perfil en vez de la `z = 0` por defecto.
+4. `store.importAlignment` reemplaza `alignment.vertices` y limpia `structures`/`terrainProfile` del proyecto anterior, que ya no tendrían sentido sobre la geometría nueva.
 5. La app salta automáticamente a "Planta y Perfil" para que el usuario vea el resultado y siga editando a mano si hace falta (mover vértices, agregar estructuras, "Ajustar al terreno real").
 
 ### Fundamento de diseño

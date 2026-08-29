@@ -474,14 +474,18 @@
       const orderedPoints = kmzImportInvert.checked ? [...candidate.points].reverse() : candidate.points;
 
       // lat/lon (KML) -> Este/Norte (EPSG:9377, el sistema nativo del
-      // proyecto) y luego simplificado: los trazados de Google Earth
-      // suelen venir sobre-muestreados (cientos de puntos siguiendo el
-      // trazo dibujado a mano) — 5 m de tolerancia es denso mientras
-      // sigue reduciendo bien ese sobre-muestreo; el usuario puede seguir
-      // ajustando vértices a mano en Planta después.
-      const localPoints = orderedPoints.map((p) => geo.latLonToEpsg9377(p.lat, p.lon));
+      // proyecto), conservando la altitud del KML como z; y luego
+      // simplificado: los trazados de Google Earth suelen venir
+      // sobre-muestreados (cientos de puntos siguiendo el trazo dibujado a
+      // mano) — 5 m de tolerancia es denso mientras sigue reduciendo bien
+      // ese sobre-muestreo; el usuario puede seguir ajustando vértices a
+      // mano en Planta después. simplifyPolyline solo descarta puntos (no
+      // interpola nuevos), así que la z de cada punto sobreviviente sigue
+      // siendo la altitud real de ESE punto del archivo, sin inventar nada.
+      const localPoints = orderedPoints.map((p) => ({ ...geo.latLonToEpsg9377(p.lat, p.lon), z: p.alt }));
       const simplified = stationing.simplifyPolyline(localPoints, 5);
-      const vertexPoints = simplified.map((p) => ({ x: p.x, y: p.y, z: 0 }));
+      const vertexPoints = simplified.map((p) => ({ x: p.x, y: p.y, z: p.z }));
+      const hasAltitude = orderedPoints.some((p) => p.alt !== 0);
 
       const result = store.importAlignment(vertexPoints);
       if (!result.ok) {
@@ -489,7 +493,10 @@
         return;
       }
 
-      showStatusMessage(`Alineamiento importado: ${orderedPoints.length} puntos → ${vertexPoints.length} vértices.`);
+      const altitudeNote = hasAltitude
+        ? '(altitud del KML)'
+        : '(el KML no traía altitud — z quedó en 0; usa "Ajustar al terreno real" en Perfil)';
+      showStatusMessage(`Alineamiento importado: ${orderedPoints.length} puntos → ${vertexPoints.length} vértices ${altitudeNote}.`);
       resetKmzImportPicker();
       selection = null;
       goToPlanScreen();

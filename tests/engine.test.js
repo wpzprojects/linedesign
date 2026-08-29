@@ -158,6 +158,18 @@ check('simplifyPolyline con tolerancia muy alta reduce siempre a los 2 extremos'
   assert.deepStrictEqual(simplified, [{ x: 0, y: 0 }, { x: 50, y: 30 }]);
 });
 
+check('simplifyPolyline conserva campos extra (p.ej. z, de la altitud de un KML) de los puntos sobrevivientes', () => {
+  const bend = [
+    { x: 0, y: 0, z: 100 },
+    { x: 10, y: 0, z: 110 },
+    { x: 20, y: 0, z: 120 },
+    { x: 30, y: 10, z: 130 },
+    { x: 50, y: 30, z: 150 }
+  ];
+  const simplified = stationing.simplifyPolyline(bend, 0.5);
+  assert.deepStrictEqual(simplified, [{ x: 0, y: 0, z: 100 }, { x: 20, y: 0, z: 120 }, { x: 50, y: 30, z: 150 }]);
+});
+
 // --- catenary ---
 const conductor = {
   name: 'ACSR 4/0',

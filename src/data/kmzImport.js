@@ -11,10 +11,16 @@
  * cuando hay más de uno, ver Apéndice B.1 del prompt maestro).
  *
  * Un KMZ es un ZIP que contiene un .kml (se descomprime con JSZip, cargado
- * por CDN — ver index.html); un .kml suelto se lee directo como texto. La
- * altitud que trae el KML (si trae) se ignora a propósito: no debe usarse
- * como perfil de terreno (Apéndice B.3) — para eso está el botón "Ajustar
- * al terreno real" en Perfil, que consulta un servicio de elevación real.
+ * por CDN — ver index.html); un .kml suelto se lee directo como texto.
+ *
+ * La altitud que trae cada punto del KML (si trae — el tercer valor de la
+ * tupla `lon,lat,alt`, opcional en KML) se usa como elevación INICIAL del
+ * vértice importado, a falta de algo mejor; sigue siendo responsabilidad
+ * del usuario reemplazarla por elevación real (botón "Ajustar al terreno
+ * real" en Perfil, que sí consulta un servicio de elevación real) si la
+ * altitud del archivo es poco confiable (0, "sujeta al suelo", o en un
+ * datum vertical distinto) — no se puede saber de antemano cuál es el
+ * caso, así que se ofrece tal cual viene.
  */
 (function (global) {
   const MAX_FILE_SIZE = 20 * 1024 * 1024; // 20 MB
@@ -42,17 +48,18 @@
       .split(/\s+/)
       .filter(Boolean)
       .map((tuple) => {
-        const [lonStr, latStr] = tuple.split(',');
+        const [lonStr, latStr, altStr] = tuple.split(',');
         const lon = parseFloat(lonStr);
         const lat = parseFloat(latStr);
+        const alt = parseFloat(altStr);
         if (!Number.isFinite(lat) || !Number.isFinite(lon) || lat < -90 || lat > 90 || lon < -180 || lon > 180) {
           throw new Error(`Coordenada inválida en el KML: "${tuple}".`);
         }
-        return { lat, lon };
+        return { lat, lon, alt: Number.isFinite(alt) ? alt : 0 };
       });
   }
 
-  /** `[{ name, points: [{lat,lon}] }]` — un candidato por cada LineString con ≥2 puntos. */
+  /** `[{ name, points: [{lat,lon,alt}] }]` — un candidato por cada LineString con ≥2 puntos. */
   function extractCandidates(kmlText) {
     const doc = new DOMParser().parseFromString(kmlText, 'text/xml');
     if (doc.getElementsByTagName('parsererror').length) {
@@ -81,7 +88,7 @@
     return candidates;
   }
 
-  /** `file`: File de un <input type="file">. Devuelve `[{ name, points: [{lat,lon}] }]`. */
+  /** `file`: File de un <input type="file">. Devuelve `[{ name, points: [{lat,lon,alt}] }]`. */
   async function parseKmzOrKml(file) {
     if (file.size > MAX_FILE_SIZE) {
       throw new Error(`El archivo es demasiado grande (${(file.size / 1024 / 1024).toFixed(1)} MB, máx. 20 MB).`);
