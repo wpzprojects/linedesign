@@ -208,7 +208,6 @@
         zoomLayer.appendChild(pole);
         attachStructureDrag(pole, structure.id);
         const marker = svgEl('g');
-        marker.appendChild(svgEl('circle', { class: 'structure-point', cx: 0, cy: 0, r: 6 }));
         const label = svgEl('text', { class: 'annotation-label', x: 8, y: -8 });
         label.textContent = structure.id;
         marker.appendChild(label);
