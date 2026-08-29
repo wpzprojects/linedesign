@@ -25,7 +25,7 @@
   "name": "string",
   "units": "SI-métrico",
   "alignment": {
-    "vertices": [{ "id": "PI-1", "x": 4608644, "y": 1938538, "z": 1180 }]
+    "vertices": [{ "id": "PI-1", "x": 4754865, "y": 2052853, "z": 1180 }]
   },
   "structureCatalog": [
     {
@@ -59,7 +59,7 @@
 
 ### Sistema de coordenadas: MAGNA-SIRGAS / Origen-Nacional (EPSG:9377)
 
-`vertex.x`/`vertex.y` (y por lo tanto todo lo que se deriva de ellos: station, posición de estructuras, distancias) son directamente **Este/Norte reales** en el sistema de referencia oficial de Colombia para cartografía a escala nacional (IGAC), no un sistema local arbitrario: `x` = Este, `y` = Norte, en metros, sin rotación ni desplazamiento adicional. Un vértice con `x ≈ 4 600 000, y ≈ 1 940 000` cae, en el mundo real, cerca de Cali (Valle del Cauca) — son coordenadas de 7 cifras porque incluyen el falso este (5 000 000 m) y falso norte (2 000 000 m) de la proyección.
+`vertex.x`/`vertex.y` (y por lo tanto todo lo que se deriva de ellos: station, posición de estructuras, distancias) son directamente **Este/Norte reales** en el sistema de referencia oficial de Colombia para cartografía a escala nacional (IGAC), no un sistema local arbitrario: `x` = Este, `y` = Norte, en metros, sin rotación ni desplazamiento adicional. El proyecto de ejemplo (`x ≈ 4 754 865, y ≈ 2 052 853`) cae, en el mundo real, al norte de Ibagué (Tolima), donde empieza a levantarse la Cordillera Central — son coordenadas de 7 cifras porque incluyen el falso este (5 000 000 m) y falso norte (2 000 000 m) de la proyección.
 
 `src/engine/geo.js` implementa la conversión Este/Norte (EPSG:9377) ↔ lat/lon (WGS84/MAGNA-SIRGAS, EPSG:4326) — Transversa de Mercator sobre elipsoide GRS80, meridiano central 73° O, latitud de origen 4° N, factor de escala 0.9992 — que usa `src/ui/mapRenderer.js` para ubicar el mapa base de Planta (Leaflet solo entiende lat/lon) y `app.js` para mostrar lat/lon bajo el cursor en la barra de estado. El motor de cálculo (`stationing`, `catenary`, `loadTree`) nunca necesita lat/lon — trabaja siempre en Este/Norte, como cualquier distancia relativa.
 

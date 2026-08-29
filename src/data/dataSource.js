@@ -11,17 +11,18 @@
   function sampleAlignment() {
     // Coordenadas reales en MAGNA-SIRGAS / Origen-Nacional (EPSG:9377) —
     // Este/Norte en metros, el sistema nativo de todo el proyecto (ver
-    // DATA_MODEL.md y src/engine/geo.js). PI-1 ubicado en una zona rural
-    // cerca de Cali (Valle del Cauca); el resto conserva la misma forma
-    // relativa (offsets en metros) que tenía el trazado de ejemplo original.
+    // DATA_MODEL.md y src/engine/geo.js). PI-1 ubicado al norte de Ibagué
+    // (Tolima), donde empieza a levantarse la Cordillera Central; el resto
+    // conserva la misma forma relativa (offsets en metros) que tenía el
+    // trazado de ejemplo original.
     return {
       vertices: [
-        { id: 'PI-1', x: 4608644, y: 1938538, z: 1180 },
-        { id: 'PI-2', x: 4608824, y: 1938598, z: 1195 },
-        { id: 'PI-3', x: 4609004, y: 1938578, z: 1230 },
-        { id: 'PI-4', x: 4609184, y: 1938648, z: 1205 },
-        { id: 'PI-5', x: 4609364, y: 1938628, z: 1240 },
-        { id: 'PI-6', x: 4609544, y: 1938688, z: 1215 }
+        { id: 'PI-1', x: 4754865, y: 2052853, z: 1180 },
+        { id: 'PI-2', x: 4755045, y: 2052913, z: 1195 },
+        { id: 'PI-3', x: 4755225, y: 2052893, z: 1230 },
+        { id: 'PI-4', x: 4755405, y: 2052963, z: 1205 },
+        { id: 'PI-5', x: 4755585, y: 2052943, z: 1240 },
+        { id: 'PI-6', x: 4755765, y: 2053003, z: 1215 }
       ]
     };
   }
