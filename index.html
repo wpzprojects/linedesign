@@ -278,13 +278,10 @@
               <div class="card">
                 <h2>Unidades</h2>
                 <div class="project-meta">
-                  <span>Sistema</span>
-                  <strong>SI métrico</strong>
-                </div>
-                <div class="project-meta">
                   <span>Coordenadas</span>
                   <strong>MAGNA-SIRGAS / Origen-Nacional (EPSG:9377)</strong>
                 </div>
+                <div id="unit-system-container"></div>
               </div>
 
               <div class="card">
@@ -293,9 +290,13 @@
                 <input id="ground-clearance-input" type="number" step="0.1" min="0" />
                 <label for="right-of-way-input">Ancho de servidumbre (m)</label>
                 <input id="right-of-way-input" type="number" step="0.5" min="0" />
-                <label for="pole-safety-factor-input">Factor de seguridad de postes (sobre resistencia última)</label>
+              </div>
+
+              <div class="card">
+                <h2>Factores de seguridad</h2>
+                <label for="pole-safety-factor-input">Postes (sobre resistencia última)</label>
                 <input id="pole-safety-factor-input" type="number" step="0.05" min="1" />
-                <label for="guy-safety-factor-input">Factor de seguridad de contravientos (sobre resistencia última)</label>
+                <label for="guy-safety-factor-input">Contravientos (sobre resistencia última)</label>
                 <input id="guy-safety-factor-input" type="number" step="0.05" min="1" />
               </div>
 
@@ -430,7 +431,8 @@
               <ul>
                 <li><strong>Proyecto</strong>: nombre del proyecto, exportar/importar el proyecto completo como JSON, botón para reiniciar al proyecto de ejemplo (borra tus cambios, pide confirmación del navegador).</li>
                 <li><strong>Unidades</strong>: longitudes y coordenadas fijas — sistema internacional (métrico) y MAGNA-SIRGAS / Origen-Nacional (EPSG:9377). Fuerza y peso por longitud (tensión del conductor, carga de rotura, tensión de tendido) sí tienen un selector, kgF/kg-km o N/N-m — solo cambia cómo se muestran y editan esos campos en pantalla; lo guardado y lo exportado siempre queda en kgF/kg-km.</li>
-                <li><strong>Terreno</strong>: distancia de seguridad al terreno y ancho de servidumbre (ver Planta y Perfil arriba para cómo se dibujan), y los factores de seguridad de postes y de contravientos (ver "Cumple poste"/"Cumple contraviento" más abajo).</li>
+                <li><strong>Terreno</strong>: distancia de seguridad al terreno y ancho de servidumbre (ver Planta y Perfil arriba para cómo se dibujan).</li>
+                <li><strong>Factores de seguridad</strong>: de postes y de contravientos, ambos sobre resistencia última (ver "Cumple poste"/"Cumple contraviento" más abajo).</li>
                 <li><strong>Importar alineamiento</strong>: carga un archivo KMZ o KML (p. ej. exportado de Google Earth) y reemplaza el alineamiento, las estructuras y el perfil de terreno del proyecto actual. Si hay más de un trazado en el archivo, puedes elegir cuál importar y si invertir su orden. Si el archivo no trae altitud, usa después "Ajustar al terreno real" en Perfil.</li>
                 <li><strong>Conductor</strong>: catálogo de conductores (ACSR, AAAC, ACAR, cables de guarda), hipótesis de referencia (bajo qué caso climático se considera "instalado" el conductor) y tensión horizontal de referencia.</li>
                 <li><strong>Casos climáticos</strong>: tabla de hipótesis de carga (nombre, temperatura, viento, hielo) — mínimo 1, la app pide al menos 3 para el criterio de aceptación de Fase 1 (everyday, temperatura alta, viento).</li>

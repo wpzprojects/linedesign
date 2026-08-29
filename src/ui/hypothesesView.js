@@ -8,6 +8,12 @@
   const units = global.LineDesignUnits;
 
   function createHypothesesView(container, store) {
+    // Selector embebido en la tarjeta "Unidades" de Parámetros de entrada
+    // (index.html), no en `container` — vive fuera del flujo de
+    // hypotheses-container porque conceptualmente es parte de esa tarjeta,
+    // no una tarjeta propia.
+    const unitSystemContainer = document.getElementById('unit-system-container');
+
     // Unidad de INTERFAZ (kgF/kg-km o N/N-m) para mostrar y editar fuerza y
     // peso por longitud — puramente de despliegue, ver
     // projectStore.js#setDisplayUnitSystem. Lo guardado en el proyecto y lo
@@ -27,17 +33,17 @@
         el('option', { value: 'kgf', selected: !isSI(project) }, 'kgF / kg-km'),
         el('option', { value: 'si', selected: isSI(project) }, 'N / N-m (SI)')
       ]);
-      return el('div', { class: 'card' }, [
-        el('h2', {}, 'Unidades de la interfaz'),
-        el('p', { class: 'muted' }, 'Solo cambia cómo se muestran y editan los campos de fuerza y peso por longitud en esta pantalla. El proyecto guardado y el árbol de cargas exportado siempre usan kgF/kg-km, su unidad propia.'),
-        el('label', {}, 'Sistema de unidades'),
-        select
-      ]);
+      clear(unitSystemContainer);
+      unitSystemContainer.appendChild(el('label', { for: 'unit-system-select' }, 'Sistema de unidades'));
+      select.id = 'unit-system-select';
+      unitSystemContainer.appendChild(select);
+      unitSystemContainer.appendChild(el('p', { class: 'muted' },
+        'Solo cambia cómo se ve en pantalla — se guarda siempre en kgF/kg-km.'));
     }
 
     function render(project) {
+      renderUnitSystemSelect(project);
       clear(container);
-      container.appendChild(renderUnitSystemSelect(project));
       container.appendChild(renderConductorCard(project));
       container.appendChild(renderHypothesesCard(project));
       container.appendChild(renderStringingTensionsCard(project));
