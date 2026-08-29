@@ -533,6 +533,15 @@ select {
   color: var(--text);
 }
 
+/* Campo con valor calculado (ej. "Tensión horizontal de referencia" cuando
+   "Tensiones de tendido" ya lo determina): deshabilitado pero con el
+   propio color del tema, no el gris genérico del navegador. */
+input:disabled {
+  background: var(--panel-alt);
+  color: var(--muted);
+  cursor: not-allowed;
+}
+
 input[type="color"] {
   width: 56px;
   height: 34px;

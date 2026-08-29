@@ -27,21 +27,24 @@
         value: h.id, selected: h.id === project.conductor.referenceHypothesisId
       }, h.name)));
 
+      // Si alguna fila de "Tensiones de tendido" aplica a este conductor
+      // bajo su hipótesis de referencia, ESA tensión calculada es la que se
+      // usa de verdad (ver catenary.resolveReferenceTension) — el campo
+      // manual de abajo queda deshabilitado y muestra el valor calculado
+      // en vez del guardado, para que no parezca editable sin serlo. Si
+      // NINGUNA hipótesis tiene fila para el conductor (ni siquiera otra a
+      // la que app.js pudiera cambiar automáticamente), sí se usa el valor
+      // manual de respaldo, con un aviso grande y persistente.
+      const referenceHypothesis = project.hypotheses.find((h) => h.id === project.conductor.referenceHypothesisId) || project.hypotheses[0];
+      const resolved = catenary.resolveReferenceTension(project.conductor, referenceHypothesis, project.stringingTensions);
+      const usingCalculated = resolved.matched;
+      const usingManualFallback = project.stringingTensions.length > 0 && !usingCalculated;
+
       const tensionInput = el('input', {
-        type: 'number', step: '10', value: project.conductor.referenceHorizontalTension,
+        type: 'number', step: '10', value: Math.round(resolved.tension),
+        disabled: usingCalculated,
         onChange: (e) => store.updateConductor({ referenceHorizontalTension: parseFloat(e.target.value) || 0 })
       });
-
-      // Si "Tensiones de tendido" tiene filas cargadas pero NINGUNA hipótesis
-      // del proyecto tiene una que aplique a este conductor (app.js ya
-      // intentó cambiar automáticamente la hipótesis de referencia a una que
-      // sí tuviera — este es el caso en que ni eso funcionó), el valor de
-      // abajo es el manual de respaldo, no uno calculado. Se avisa aquí
-      // mismo, de forma persistente (no un popup que se cierra solo),
-      // justo donde vive ese valor.
-      const referenceHypothesis = project.hypotheses.find((h) => h.id === project.conductor.referenceHypothesisId) || project.hypotheses[0];
-      const usingManualFallback = project.stringingTensions.length > 0
-        && catenary.findStringingRows(project.conductor, referenceHypothesis, project.stringingTensions).length === 0;
 
       return el('div', { class: 'card' }, [
         el('h2', {}, 'Conductor'),
@@ -52,6 +55,10 @@
         refHypSelect,
         el('label', {}, 'Tensión horizontal de referencia (N)'),
         tensionInput,
+        usingCalculated
+          ? el('p', { class: 'muted conductor-specs' },
+            `Calculada automáticamente desde "Tensiones de tendido" para "${referenceHypothesis.name}" — el campo de arriba queda deshabilitado mientras aplique ese criterio.`)
+          : null,
         usingManualFallback
           ? el('div', { class: 'stringing-warning' },
             `Se está usando esta tensión de referencia manual: ningún caso climático tiene una fila en "Tensiones de tendido" para "${project.conductor.name}".`)

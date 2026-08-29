@@ -164,9 +164,13 @@
    * hay varias filas que aplican, se toma la más restrictiva (mínima). Si
    * ninguna aplica, cae a `conductor.referenceHorizontalTension` (el
    * campo manual) — `matched` indica si de verdad se usó un criterio de
-   * la tabla o si fue ese respaldo manual.
+   * la tabla o si fue ese respaldo manual. Nótese que ningún criterio
+   * depende de la longitud del vano: "% de rotura" y "tensión máxima" son
+   * valores fijos, y "catenaria máxima" (C = H/w) es por definición
+   * independiente del vano (para eso existe, a diferencia de un límite de
+   * flecha máxima, que si dependería del vano y esta app no modela).
    */
-  function resolveReferenceTension(conductor, referenceHypothesis, spanLength, stringingTensions) {
+  function resolveReferenceTension(conductor, referenceHypothesis, stringingTensions) {
     const rows = findStringingRows(conductor, referenceHypothesis, stringingTensions);
     if (!rows.length) {
       return { tension: conductor.referenceHorizontalTension, matched: false };
@@ -193,7 +197,7 @@
   function computeSpanTension(conductor, referenceHypothesis, hypothesis, spanLength, stringingTensions) {
     const w1 = resultantUnitWeight(conductor, referenceHypothesis);
     const w2 = resultantUnitWeight(conductor, hypothesis);
-    const H1 = resolveReferenceTension(conductor, referenceHypothesis, spanLength, stringingTensions).tension;
+    const H1 = resolveReferenceTension(conductor, referenceHypothesis, stringingTensions).tension;
 
     const H2 = hypothesis.id === referenceHypothesis.id
       ? H1
