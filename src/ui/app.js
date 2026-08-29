@@ -343,18 +343,24 @@
     statusSummary.textContent = `Vértices ${project.alignment.vertices.length} · Estructuras ${project.structures.length} · Vanos ${spans.length} · ${totalLength.toFixed(1)} m`;
   }
 
+  // Tolerancia (m) para considerar que una estructura "está sobre" un
+  // vértice — evita que un desfase de unos centímetros entre la station
+  // de la estructura y la del vértice (redondeos, arrastres previos)
+  // haga que se trate como si estuviera en tangente en vez de en el PI.
+  const VERTEX_STATION_TOLERANCE = 1;
+
   /**
    * Station sugerida para "+ estructura" cuando el campo se deja vacío
    * (se muestra como placeholder, no como valor — así el usuario ve la
    * sugerencia en gris sin que cuente como algo que ya escribió):
    * - Vértice seleccionado: la station exacta de ese vértice.
-   * - Estructura seleccionada: la de esa estructura + 10 m (para meter
-   *   una intermedia justo después).
+   * - Estructura seleccionada: si tiene una estructura siguiente (vano
+   *   adelante), la mitad de ese vano; si es la última, esa station + 10 m.
    * - Nada seleccionado (o una sección): la de la última estructura del
    *   alineamiento + 10 m; sin estructuras todavía, 0.
-   * En los tres casos, recortada a [0, largo total] — si el +10 se pasa
-   * del final del alineamiento, queda en el final (se traslapa con la
-   * anterior, sin problema).
+   * Recortada a [0, largo total] — si un +10 se pasa del final del
+   * alineamiento, queda en el final (se traslapa con la anterior, sin
+   * problema).
    */
   function computeSuggestedStructureStation(project) {
     const vertices = project.alignment.vertices;
@@ -366,8 +372,14 @@
     }
 
     if (selection && selection.type === 'structure') {
-      const structure = project.structures.find((s) => s.id === selection.id);
-      if (structure) return Math.min(structure.station + 10, totalLength);
+      const sorted = [...project.structures].sort((a, b) => a.station - b.station);
+      const index = sorted.findIndex((s) => s.id === selection.id);
+      if (index !== -1) {
+        const structure = sorted[index];
+        const next = sorted[index + 1];
+        if (next) return (structure.station + next.station) / 2;
+        return Math.min(structure.station + 10, totalLength);
+      }
     }
 
     if (!project.structures.length) return 0;
@@ -377,6 +389,82 @@
 
   function updateNewStructureStationPlaceholder(project) {
     newStructureStation.placeholder = computeSuggestedStructureStation(project).toFixed(1);
+  }
+
+  /** Punto extrapolado tras el último vértice — mismo cálculo que el
+   * default de store.addVertex() (continúa la dirección del último
+   * tramo), expuesto acá para poder mostrarlo como sugerencia ANTES de
+   * agregar el vértice, no solo aplicarlo al agregar. */
+  function extrapolateNextVertex(vertices) {
+    const last = vertices[vertices.length - 1];
+    const secondLast = vertices[vertices.length - 2] || last;
+    return {
+      x: last.x + (last.x - secondLast.x || 60),
+      y: last.y + (last.y - secondLast.y || 0)
+    };
+  }
+
+  /** Índice del vértice cuya station cae dentro de VERTEX_STATION_TOLERANCE
+   * de `station`, o -1 si ninguno — el más cercano si hay más de uno. */
+  function findVertexIndexNearStation(vertices, station, tolerance) {
+    const distances = stationing.cumulativeDistances(vertices);
+    let bestIndex = -1;
+    let bestDiff = Infinity;
+    distances.forEach((d, i) => {
+      const diff = Math.abs(d - station);
+      if (diff <= tolerance && diff < bestDiff) {
+        bestDiff = diff;
+        bestIndex = i;
+      }
+    });
+    return bestIndex;
+  }
+
+  /**
+   * Posición (x, y) sugerida para "+ vértice" cuando X/Y se dejan vacíos:
+   * - Vértice seleccionado: si tiene un vértice siguiente, la mitad de
+   *   ese tramo (para meter uno intermedio); si es el último, el punto
+   *   extrapolado tras él.
+   * - Estructura seleccionada: si esa estructura está sobre un vértice
+   *   (dentro de VERTEX_STATION_TOLERANCE), se trata igual que si ese
+   *   vértice estuviera seleccionado (mitad del tramo siguiente, o
+   *   extrapolado si es el último); si no, se sugiere la posición exacta
+   *   de la estructura (para "promoverla" a vértice/PI ahí mismo).
+   * - Nada seleccionado (o una sección): el punto extrapolado tras el
+   *   último vértice.
+   */
+  function computeSuggestedVertexPosition(project) {
+    const vertices = project.alignment.vertices;
+
+    function midpointOrExtrapolate(index) {
+      const vertex = vertices[index];
+      const next = vertices[index + 1];
+      if (next) return { x: (vertex.x + next.x) / 2, y: (vertex.y + next.y) / 2 };
+      return extrapolateNextVertex(vertices);
+    }
+
+    if (selection && selection.type === 'vertex') {
+      const index = vertices.findIndex((v) => v.id === selection.id);
+      if (index !== -1) return midpointOrExtrapolate(index);
+    }
+
+    if (selection && selection.type === 'structure') {
+      const structure = project.structures.find((s) => s.id === selection.id);
+      if (structure) {
+        const nearIndex = findVertexIndexNearStation(vertices, structure.station, VERTEX_STATION_TOLERANCE);
+        if (nearIndex !== -1) return midpointOrExtrapolate(nearIndex);
+        const pos = stationing.pointAtStation(vertices, structure.station);
+        return { x: pos.x, y: pos.y };
+      }
+    }
+
+    return extrapolateNextVertex(vertices);
+  }
+
+  function updateNewVertexPlaceholders(project) {
+    const pos = computeSuggestedVertexPosition(project);
+    newVertexX.placeholder = pos.x.toFixed(2);
+    newVertexY.placeholder = pos.y.toFixed(2);
   }
 
   function syncStructureTypeOptions(project) {
@@ -815,6 +903,7 @@
     renderSummary(project);
     syncStructureTypeOptions(project);
     updateNewStructureStationPlaceholder(project);
+    updateNewVertexPlaceholders(project);
     syncPlanHypothesisOptions(project);
     renderStructuresTable(project);
     renderAlignmentTable(project);
@@ -833,9 +922,14 @@
 
   function wireToolbar() {
     document.getElementById('add-vertex-btn').addEventListener('click', () => {
-      const x = newVertexX.value === '' ? undefined : parseFloat(newVertexX.value);
-      const y = newVertexY.value === '' ? undefined : parseFloat(newVertexY.value);
-      const vertex = store.addVertex(x !== undefined && y !== undefined ? { x, y } : undefined);
+      // Vacío -> la sugerencia mostrada como placeholder (ver
+      // computeSuggestedVertexPosition), no el default propio de
+      // store.addVertex (siempre extrapola tras el último). Cada campo
+      // es independiente: si solo escribiste X, Y toma la sugerencia.
+      const suggested = computeSuggestedVertexPosition(store.getProject());
+      const x = newVertexX.value === '' ? suggested.x : parseFloat(newVertexX.value);
+      const y = newVertexY.value === '' ? suggested.y : parseFloat(newVertexY.value);
+      const vertex = store.addVertex({ x, y });
       newVertexX.value = '';
       newVertexY.value = '';
       showStatusMessage(`Vértice ${vertex.id} agregado.`);
