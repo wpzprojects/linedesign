@@ -822,7 +822,10 @@ p.conductor-specs {
    una clase sola (class+type vs. class) y ganaba pase lo que pasara acá
    — por eso ningún ancho anterior se vio reflejado. Selector reforzado
    con .toolbar-field para empatar/superar esa especificidad. */
-.toolbar-field input.toolbar-mini-input,
+.toolbar-field input.toolbar-mini-input {
+  width: 120px;
+}
+
 .toolbar-field input.toolbar-station-input {
   width: 100px;
 }
