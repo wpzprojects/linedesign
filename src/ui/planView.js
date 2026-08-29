@@ -197,13 +197,30 @@
       // configurado (offsetPolyline calcula el desplazamiento perpendicular
       // al propio trazado, no a los ejes X/Y). Se dibujan antes que el
       // alineamiento para que este quede por encima.
+      //
+      // Igual que alignmentPath/circuitPath: se crean UNA VEZ acá y se
+      // actualizan en el lugar (updateRowLines) durante el arrastre de un
+      // vértice, en vez de esperar al próximo render() completo (que solo
+      // llega al soltar) — si no, se veían "congeladas" mientras se
+      // arrastraba.
+      const rowLinePaths = [];
       if (rightOfWayWidth > 0) {
         const half = rightOfWayWidth / 2;
         [half, -half].forEach((offset) => {
-          const side = stationing.offsetPolyline(vertices, offset).map((p) => projector.toScreen(p.x, p.y));
-          zoomLayer.appendChild(svgEl('path', { class: 'row-line', d: pathFromPoints(side) }));
+          const rowLineEl = svgEl('path', { class: 'row-line' });
+          zoomLayer.appendChild(rowLineEl);
+          rowLinePaths.push({ offset, el: rowLineEl });
         });
       }
+
+      function updateRowLines(vertexList) {
+        rowLinePaths.forEach(({ offset, el }) => {
+          const side = stationing.offsetPolyline(vertexList, offset).map((p) => projector.toScreen(p.x, p.y));
+          el.setAttribute('d', pathFromPoints(side));
+        });
+      }
+
+      updateRowLines(vertices);
 
       const alignmentPath = svgEl('path', {
         class: 'alignment-line',
@@ -326,6 +343,7 @@
             const screenPos = projector.toScreen(draftVertex.x, draftVertex.y);
             alignmentPath.setAttribute('d', pathFromPoints(draft.map((v) => projector.toScreen(v.x, v.y))));
             setMarkerPos(markerRecord, screenPos.x, screenPos.y);
+            updateRowLines(draft);
             redrawStructures(draft);
             updateCircuit(project.structures, draft);
             if (callbacks.onVertexDragMove) callbacks.onVertexDragMove(vertexId, draftVertex.x, draftVertex.y);
