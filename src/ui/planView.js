@@ -193,13 +193,16 @@
 
       // Circuito (conductor) entre estructuras: delgada y encima del
       // alineamiento para no taparlo, solo entre la primera y la última
-      // estructura (antes/después no hay conductor tendido). Sigue la
-      // forma real del alineamiento, no una recta entre extremos — ver
-      // stationing.polylineBetweenStations.
+      // estructura (antes/después no hay conductor tendido). Recta entre
+      // estructuras CONSECUTIVAS — no sigue los quiebres del alineamiento
+      // (un vértice sin estructura no es un punto de apoyo real) — así,
+      // si hay un vértice sin estructura ahí, el circuito se despega
+      // visiblemente del alineamiento en vez de seguirlo, alertando de
+      // que ese vértice necesita una estructura.
       if (project.structures.length >= 2) {
-        const structureStations = project.structures.map((s) => s.station);
-        const circuitPoints = stationing
-          .polylineBetweenStations(vertices, Math.min(...structureStations), Math.max(...structureStations))
+        const circuitPoints = [...project.structures]
+          .sort((a, b) => a.station - b.station)
+          .map((s) => stationing.pointAtStation(vertices, s.station))
           .map((p) => projector.toScreen(p.x, p.y));
         zoomLayer.appendChild(svgEl('path', { class: 'circuit-line', d: pathFromPoints(circuitPoints) }));
       }
