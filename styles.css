@@ -1295,18 +1295,34 @@ body:not(.screen-plan-active) .status-bar {
 /* ---------- Responsive ---------- */
 
 @media (max-width: 980px) {
+  /* La pantalla Planta y Perfil deja el layout tipo CAD (alto fijo al
+     viewport, cada panel con su propio scroll interno) y pasa a fluir
+     como cualquier otra pantalla: alto natural + un único scroll, el de
+     .workspace-body. Si no, Propiedades se queda con max-height/overflow
+     propios y termina con su propia barra de desplazamiento en vez de
+     compartir la general. */
+  #screen-plan.screen.is-active {
+    flex: 0 0 auto;
+  }
+
   .cad-area {
+    flex: 0 0 auto;
     flex-direction: column;
+  }
+
+  .split-view {
+    flex: 0 0 auto;
   }
 
   .inspector {
     width: auto;
     flex: 0 0 auto;
-    max-height: 240px;
+    max-height: none;
+    overflow-y: visible;
     /* Ahora queda apilado debajo de Planta/Perfil (ya no al lado de
        Perfil), así que necesita su propio sangrado izquierdo — igual al
        de .split-view — en vez de compartir borde/alineación con ella. */
-    margin-top: 12px;
+    margin-top: 0;
     margin-left: -20px;
     border-left: 1px solid var(--line);
   }
