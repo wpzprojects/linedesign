@@ -32,6 +32,7 @@
   const planHypothesisSelect = document.getElementById('plan-hypothesis-select');
   const profileVExagSelect = document.getElementById('profile-vexag-select');
   const terrainFetchBtn = document.getElementById('terrain-fetch-btn');
+  const sagLabelsToggle = document.getElementById('sag-labels-toggle');
   const kmzImportBtn = document.getElementById('kmz-import-btn');
   const kmzImportFile = document.getElementById('kmz-import-file');
   const kmzImportPicker = document.getElementById('kmz-import-picker');
@@ -156,6 +157,19 @@
     setPlanMapVisible(localStorage.getItem('linedesign-plan-map') === 'true');
   } catch (error) {
     console.warn('No se pudo leer el estado del mapa base:', error);
+  }
+
+  function setSagLabelsVisible(visible) {
+    profileView.setSagLabelsVisible(visible);
+    sagLabelsToggle.setAttribute('aria-pressed', String(visible));
+    sagLabelsToggle.classList.toggle('is-active', visible);
+    sagLabelsToggle.title = visible ? 'Ocultar valores de flecha' : 'Mostrar valores de flecha';
+  }
+
+  try {
+    setSagLabelsVisible(localStorage.getItem('linedesign-sag-labels') !== 'false');
+  } catch (error) {
+    console.warn('No se pudo leer el estado de los valores de flecha:', error);
   }
 
   const catalogView = window.LineDesignCatalogView.createCatalogView(document.getElementById('catalog-container'), store);
@@ -513,6 +527,16 @@
         console.warn('No se pudo guardar el estado del mapa base:', error);
       }
       render(store.getProject());
+    });
+
+    sagLabelsToggle.addEventListener('click', () => {
+      const next = sagLabelsToggle.getAttribute('aria-pressed') !== 'true';
+      setSagLabelsVisible(next);
+      try {
+        localStorage.setItem('linedesign-sag-labels', String(next));
+      } catch (error) {
+        console.warn('No se pudo guardar el estado de los valores de flecha:', error);
+      }
     });
 
     document.querySelectorAll('.nav-btn').forEach((btn) => {

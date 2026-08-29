@@ -25,7 +25,7 @@
 
   function createProfileView(svg, callbacks) {
     const viewport = createViewport();
-    const current = { projector: null, zoomLayer: null, height: 0, vExaggeration: 1, markers: [] };
+    const current = { projector: null, zoomLayer: null, height: 0, vExaggeration: 1, markers: [], showSag: true };
 
     // Marcadores (círculos de poste, sus etiquetas y las de "flecha"): viven
     // dentro de zoomLayer para que su posición pan/zoquee junto con el resto
@@ -148,9 +148,10 @@
         zoomLayer.appendChild(svgEl('path', { class: 'conductor-line', d: pathFromPoints(screenPoints) }));
 
         const midScreen = projector.toScreen(from.station + spanLength / 2, Math.min(fromTop, toTop));
-        const sagMarker = svgEl('g');
+        const sagMarker = svgEl('g', { class: 'sag-marker' });
+        if (!current.showSag) sagMarker.style.display = 'none';
         const sagLabel = svgEl('text', { class: 'sag-label', x: 0, y: 16 });
-        sagLabel.textContent = `flecha ${curve.sag.toFixed(2)} m`;
+        sagLabel.textContent = `${curve.sag.toFixed(2)} m`;
         sagMarker.appendChild(sagLabel);
         zoomLayer.appendChild(sagMarker);
         current.markers.push({ el: sagMarker, x: midScreen.x, y: midScreen.y });
@@ -231,7 +232,26 @@
       return current.vExaggeration;
     }
 
-    return { render, zoomBy, resetZoom, showSyncMarker, hideSyncMarker, setVerticalExaggeration, getVerticalExaggeration };
+    // Alterna solo la visibilidad de las etiquetas ya dibujadas (sin
+    // re-render completo, para que responda al instante); el estado queda
+    // en current.showSag para que los vanos que se dibujen después (nuevo
+    // render, p. ej. al cambiar de hipótesis) también respeten la elección.
+    function setSagLabelsVisible(visible) {
+      current.showSag = visible;
+      svg.querySelectorAll('.sag-marker').forEach((el) => {
+        el.style.display = visible ? '' : 'none';
+      });
+    }
+
+    function getSagLabelsVisible() {
+      return current.showSag;
+    }
+
+    return {
+      render, zoomBy, resetZoom, showSyncMarker, hideSyncMarker,
+      setVerticalExaggeration, getVerticalExaggeration,
+      setSagLabelsVisible, getSagLabelsVisible
+    };
   }
 
   global.LineDesignProfileView = { createProfileView };

@@ -296,13 +296,6 @@ button, input, select, textarea {
   white-space: nowrap;
 }
 
-.panel-tools .toolbar-label--stacked {
-  font-size: 0.62rem;
-  line-height: 1.05;
-  text-align: right;
-  white-space: normal;
-}
-
 .panel-tools .toolbar-sep {
   height: 20px;
   width: 1px;
