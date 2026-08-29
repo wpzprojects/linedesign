@@ -380,7 +380,7 @@
 
     if (!selection) {
       inspectorPanel.appendChild(el('p', { class: 'muted inspector-hint' },
-        'Selecciona un vértice, una estructura o un vano en el lienzo para ver y editar sus propiedades.'));
+        'Selecciona un vértice, estructura o vano en el lienzo para ver y editar sus propiedades.'));
       return;
     }
 
