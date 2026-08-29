@@ -37,7 +37,27 @@
     // Referencias mutables al render vigente, para que los listeners
     // registrados una sola vez (wheel, hover) siempre operen sobre el
     // proyector/zoomLayer actuales y no sobre los de un render anterior.
-    const current = { project: null, selection: null, projector: null, zoomLayer: null };
+    const current = { project: null, selection: null, projector: null, zoomLayer: null, markers: [] };
+
+    // Marcadores (círculos de vértice/estructura): viven dentro de zoomLayer
+    // para que su posición pan/zoquee junto al resto del dibujo, pero cada
+    // uno lleva su propia escala inversa (1/scale) al zoom actual para que
+    // su tamaño en pantalla se mantenga constante (mismo motivo que en
+    // profileView.js — un <circle> no tiene equivalente a vector-effect
+    // para su radio, solo para el stroke).
+    function markerTransform(x, y) {
+      return `translate(${x} ${y}) scale(${1 / viewport.state.scale})`;
+    }
+
+    function setMarkerPos(marker, x, y) {
+      marker.x = x;
+      marker.y = y;
+      marker.el.setAttribute('transform', markerTransform(x, y));
+    }
+
+    function updateMarkers() {
+      current.markers.forEach((m) => m.el.setAttribute('transform', markerTransform(m.x, m.y)));
+    }
 
     function updateMapView() {
       if (!current.bounds || !current.projector) return;
@@ -51,6 +71,7 @@
     function applyTransform() {
       if (current.zoomLayer) current.zoomLayer.setAttribute('transform', viewport.transformAttr());
       updateMapView();
+      updateMarkers();
     }
 
     const pan = viewport.attach(svg, {
@@ -107,6 +128,7 @@
     function render(project, selection) {
       current.project = project;
       current.selection = selection;
+      current.markers = [];
       clear(svg);
 
       // El viewBox se ajusta al tamaño real renderizado del <svg> (que llena
@@ -151,25 +173,32 @@
 
       function redrawStructures(vertexList) {
         clear(structureLayer);
+        current.markers = current.markers.filter((m) => m.type !== 'structure');
         const resolved = stationing.resolveStructures(vertexList, project.structures);
         resolved.forEach((structure) => {
           const p = projector.toScreen(structure.x, structure.y);
           const isSelected = selection && selection.type === 'structure' && selection.id === structure.id;
-          const g = svgEl('g');
-          g.appendChild(svgEl('circle', {
+          const marker = svgEl('g', { transform: markerTransform(p.x, p.y) });
+          const circle = svgEl('circle', {
             class: `structure-point${isSelected ? ' is-selected' : ''}`,
-            cx: p.x, cy: p.y, r: 7, 'data-id': structure.id
-          }));
+            cx: 0, cy: 0, r: 7, 'data-id': structure.id
+          });
+          marker.appendChild(circle);
+          const markerRecord = { el: marker, x: p.x, y: p.y, type: 'structure' };
+          current.markers.push(markerRecord);
+
+          const g = svgEl('g');
+          g.appendChild(marker);
           g.appendChild(svgEl('text', { class: 'annotation-label', x: p.x + 10, y: p.y - 10 }, {}));
           g.lastChild.textContent = structure.id;
           structureLayer.appendChild(g);
-          attachStructureDrag(g.firstChild, structure.id);
+          attachStructureDrag(circle, structure.id, markerRecord, g.lastChild);
         });
       }
 
       redrawStructures(vertices);
 
-      function attachVertexDrag(circle, vertexId) {
+      function attachVertexDrag(circle, vertexId, markerRecord) {
         circle.addEventListener('pointerdown', (evt) => {
           evt.stopPropagation();
           svg.setPointerCapture(evt.pointerId);
@@ -183,9 +212,9 @@
             draftVertex.x = dataPoint.x;
             draftVertex.y = dataPoint.y;
 
+            const screenPos = projector.toScreen(draftVertex.x, draftVertex.y);
             alignmentPath.setAttribute('d', pathFromPoints(draft.map((v) => projector.toScreen(v.x, v.y))));
-            circle.setAttribute('cx', projector.toScreen(draftVertex.x, draftVertex.y).x);
-            circle.setAttribute('cy', projector.toScreen(draftVertex.x, draftVertex.y).y);
+            setMarkerPos(markerRecord, screenPos.x, screenPos.y);
             redrawStructures(draft);
             if (callbacks.onVertexDragMove) callbacks.onVertexDragMove(vertexId, draftVertex.x, draftVertex.y);
           }
@@ -203,7 +232,7 @@
         });
       }
 
-      function attachStructureDrag(circle, structureId) {
+      function attachStructureDrag(circle, structureId, markerRecord, label) {
         circle.addEventListener('pointerdown', (evt) => {
           evt.stopPropagation();
           svg.setPointerCapture(evt.pointerId);
@@ -216,9 +245,7 @@
             lastStation = stationing.nearestStation(vertices, dataPoint);
             const pos = stationing.pointAtStation(vertices, lastStation);
             const p = projector.toScreen(pos.x, pos.y);
-            circle.setAttribute('cx', p.x);
-            circle.setAttribute('cy', p.y);
-            const label = circle.nextSibling;
+            setMarkerPos(markerRecord, p.x, p.y);
             if (label) {
               label.setAttribute('x', p.x + 10);
               label.setAttribute('y', p.y - 10);
@@ -241,15 +268,19 @@
       vertices.forEach((vertex) => {
         const p = projector.toScreen(vertex.x, vertex.y);
         const isSelected = selection && selection.type === 'vertex' && selection.id === vertex.id;
+        const marker = svgEl('g', { transform: markerTransform(p.x, p.y) });
         const circle = svgEl('circle', {
           class: `vertex-point${isSelected ? ' is-selected' : ''}`,
-          cx: p.x, cy: p.y, r: 6, 'data-id': vertex.id
+          cx: 0, cy: 0, r: 6, 'data-id': vertex.id
         });
+        marker.appendChild(circle);
+        const markerRecord = { el: marker, x: p.x, y: p.y, type: 'vertex' };
+        current.markers.push(markerRecord);
         const label = svgEl('text', { class: 'annotation-label vertex-label', x: p.x + 8, y: p.y + 18 });
         label.textContent = vertex.id;
-        zoomLayer.appendChild(circle);
+        zoomLayer.appendChild(marker);
         zoomLayer.appendChild(label);
-        attachVertexDrag(circle, vertex.id);
+        attachVertexDrag(circle, vertex.id, markerRecord);
       });
 
       const syncMarker = svgEl('circle', { class: 'sync-marker', r: 9, cx: -9999, cy: -9999 });
