@@ -22,6 +22,7 @@
   --structure-color: var(--accent);
   --alignment-color: var(--primary);
   --terrain-color: #7a8f5c;
+  --vertex-line-color: #2f3fa8;
   --shadow: 0 8px 24px rgba(16, 16, 16, 0.08);
   --focus-ring: 0 0 0 3px rgba(37, 99, 235, 0.25);
   --sidebar-width: 280px;
@@ -1469,6 +1470,19 @@ svg#plan-svg {
    lienzo) — ver --terrain-color arriba. */
 .profile-line--real {
   stroke: var(--terrain-color);
+}
+
+/* Línea vertical punteada en la station de cada vértice del alineamiento
+   (toggle en la barra de Perfil, junto a flecha/distancia al terreno) —
+   azul oscuro, deliberadamente distinto de --primary (ya usado para el
+   alineamiento/selección) y de --conductor-color/--structure-color, para
+   no confundirse con ninguna otra línea del lienzo. */
+.vertex-line {
+  stroke: var(--vertex-line-color);
+  stroke-width: 1;
+  stroke-dasharray: 5 4;
+  vector-effect: non-scaling-stroke;
+  pointer-events: none;
 }
 
 .conductor-line {

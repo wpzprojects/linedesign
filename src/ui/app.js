@@ -52,6 +52,7 @@
   const terrainFetchBtn = document.getElementById('terrain-fetch-btn');
   const sagLabelsToggle = document.getElementById('sag-labels-toggle');
   const clearanceLabelsToggle = document.getElementById('clearance-labels-toggle');
+  const vertexLinesToggle = document.getElementById('vertex-lines-toggle');
   const kmzImportBtn = document.getElementById('kmz-import-btn');
   const kmzImportFile = document.getElementById('kmz-import-file');
   const kmzImportPicker = document.getElementById('kmz-import-picker');
@@ -268,6 +269,22 @@
     setClearanceLabelsVisible(localStorage.getItem('linedesign-clearance-labels') === 'true');
   } catch (error) {
     console.warn('No se pudo leer el estado de la distancia mínima al terreno:', error);
+  }
+
+  function setVertexLinesVisible(visible) {
+    profileView.setVertexLinesVisible(visible);
+    vertexLinesToggle.setAttribute('aria-pressed', String(visible));
+    vertexLinesToggle.classList.toggle('is-active', visible);
+    vertexLinesToggle.title = visible ? 'Ocultar líneas de los vértices' : 'Mostrar líneas de los vértices';
+  }
+
+  // Apagado por defecto, igual que la distancia mínima al terreno: es una
+  // línea de referencia nueva, no algo que quien ya usaba Perfil esperaría
+  // ver de entrada.
+  try {
+    setVertexLinesVisible(localStorage.getItem('linedesign-vertex-lines') === 'true');
+  } catch (error) {
+    console.warn('No se pudo leer el estado de las líneas de los vértices:', error);
   }
 
   // Reparto Planta/Perfil (arrastre del divisor entre las dos ventanas):
@@ -1262,6 +1279,16 @@
         localStorage.setItem('linedesign-clearance-labels', String(next));
       } catch (error) {
         console.warn('No se pudo guardar el estado de la distancia mínima al terreno:', error);
+      }
+    });
+
+    vertexLinesToggle.addEventListener('click', () => {
+      const next = vertexLinesToggle.getAttribute('aria-pressed') !== 'true';
+      setVertexLinesVisible(next);
+      try {
+        localStorage.setItem('linedesign-vertex-lines', String(next));
+      } catch (error) {
+        console.warn('No se pudo guardar el estado de las líneas de los vértices:', error);
       }
     });
 

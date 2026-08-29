@@ -25,7 +25,7 @@
 
   function createProfileView(svg, callbacks) {
     const viewport = createViewport();
-    const current = { projector: null, zoomLayer: null, height: 0, vExaggeration: 1, markers: [], showSag: true, showClearance: false };
+    const current = { projector: null, zoomLayer: null, height: 0, vExaggeration: 1, markers: [], showSag: true, showClearance: false, showVertexLines: false };
 
     // Marcadores (círculos de poste, sus etiquetas y las de "flecha"): viven
     // dentro de zoomLayer para que su posición pan/zoquee junto con el resto
@@ -156,6 +156,20 @@
           d: pathFromPoints(clearancePoints)
         }));
       }
+
+      // Líneas verticales punteadas en la station de cada vértice (PI) del
+      // alineamiento — no de cada estructura, ver "Cumple poste" para eso.
+      // Ayudan a ubicar visualmente dónde cae cada punto de inflexión del
+      // trazado sobre el perfil, sobre todo cuando no coincide con ninguna
+      // estructura. Toda la altura del lienzo (0 a HEIGHT), no solo hasta
+      // el terreno — igual que el resto del contenido de zoomLayer, así
+      // que hereda el pan/zoom sin recalcular nada.
+      vertices.forEach((v, i) => {
+        const x = projector.toScreen(distances[i], 0).x;
+        const line = svgEl('line', { class: 'vertex-line', x1: x, y1: 0, x2: x, y2: HEIGHT });
+        if (!current.showVertexLines) line.style.display = 'none';
+        zoomLayer.appendChild(line);
+      });
 
       const hypothesis = project.hypotheses.find((h) => h.id === hypothesisId) || project.hypotheses[0];
 
@@ -348,11 +362,23 @@
       return current.showClearance;
     }
 
+    function setVertexLinesVisible(visible) {
+      current.showVertexLines = visible;
+      svg.querySelectorAll('.vertex-line').forEach((el) => {
+        el.style.display = visible ? '' : 'none';
+      });
+    }
+
+    function getVertexLinesVisible() {
+      return current.showVertexLines;
+    }
+
     return {
       render, zoomBy, resetZoom, showSyncMarker, hideSyncMarker,
       setClearanceLabelsVisible, getClearanceLabelsVisible,
       setVerticalExaggeration, getVerticalExaggeration,
-      setSagLabelsVisible, getSagLabelsVisible
+      setSagLabelsVisible, getSagLabelsVisible,
+      setVertexLinesVisible, getVertexLinesVisible
     };
   }
 
