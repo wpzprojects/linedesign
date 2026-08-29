@@ -53,6 +53,19 @@
               <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82A1.65 1.65 0 0 0 3 13.09H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z" />
             </svg>
           </button>
+          <button class="nav-btn" type="button" data-screen="help" data-title="Ayuda" title="Ayuda">
+            <svg class="icon" viewBox="0 0 24 24">
+              <circle cx="12" cy="12" r="10" />
+              <path d="M9.5 9a2.5 2.5 0 0 1 5 0c0 1.5-2 2-2 3.5" />
+              <line x1="12" y1="17" x2="12" y2="17.01" />
+            </svg>
+          </button>
+        </div>
+      </nav>
+
+      <main class="workspace">
+        <header class="topbar">
+          <h2 id="screen-title" class="screen-title">Planta y Perfil</h2>
           <button id="theme-toggle" class="icon-btn" type="button" aria-label="Alternar tema" title="Alternar tema">
             <svg class="icon icon-sun" viewBox="0 0 24 24">
               <circle cx="12" cy="12" r="4" />
@@ -63,12 +76,6 @@
             </svg>
             <svg class="icon icon-moon" viewBox="0 0 24 24"><path d="M21 12.5A9 9 0 1 1 11.5 3 7 7 0 0 0 21 12.5z" /></svg>
           </button>
-        </div>
-      </nav>
-
-      <main class="workspace">
-        <header class="topbar">
-          <h2 id="screen-title" class="screen-title">Planta y Perfil</h2>
         </header>
 
         <div class="workspace-body">
@@ -292,6 +299,150 @@
               <div class="row-actions">
                 <button id="reset-colors-btn" class="btn btn-small" type="button">Restablecer colores por defecto</button>
               </div>
+            </div>
+          </section>
+
+          <section id="screen-help" class="screen">
+            <div class="card">
+              <h2>Qué es LineDesign HTML</h2>
+              <p>
+                Aplicación web (PWA, funciona sin conexión una vez cargada) para diseño preliminar de líneas de
+                transmisión/distribución aéreas, al estilo de PLS-CADD: alineamiento en planta → distribución de
+                estructuras → hipótesis de carga → tendido del conductor (sag-tension) → árbol de cargas. Todo el
+                proyecto vive en un único objeto JSON (exportable/importable) y se autoguarda en el navegador
+                (localStorage) en cada cambio — no hay servidor ni cuenta, todo el cálculo ocurre en tu propio
+                navegador.
+              </p>
+              <p class="muted">
+                Es una herramienta de Fase 1/2 con simplificaciones deliberadas frente a un software de diseño
+                real (documentadas en cada sección de esta ayuda con el texto "Simplificación"). Úsala para
+                estudios preliminares y aprendizaje, no para el diseño final de una línea real.
+              </p>
+            </div>
+
+            <div class="card">
+              <h2>Barra de actividad (columna izquierda)</h2>
+              <p>Cambia entre las pantallas de la aplicación. De arriba a abajo:</p>
+              <ul>
+                <li><strong>Parámetros de entrada</strong> — datos del proyecto, del conductor y del terreno.</li>
+                <li><strong>Planta y Perfil</strong> — el lienzo de dibujo principal (pantalla de inicio).</li>
+                <li><strong>Catálogo de estructuras</strong> — tipos de poste/torre disponibles.</li>
+                <li><strong>Resumen</strong> — tablas de estructuras y alineamiento.</li>
+                <li><strong>Cálculo mecánico</strong> — árbol de cargas por estructura e hipótesis.</li>
+                <li><strong>Configuración</strong> (engranaje, al fondo) — ajustes de la app en sí (colores), no del proyecto.</li>
+                <li><strong>Ayuda</strong> (signo de pregunta) — esta pantalla.</li>
+              </ul>
+              <p>El botón de sol/luna en la esquina superior derecha de la barra de título alterna entre tema claro y oscuro; se recuerda entre sesiones.</p>
+            </div>
+
+            <div class="card">
+              <h2>Planta y Perfil</h2>
+              <p>La pantalla principal: dos lienzos lado a lado (Planta arriba a la izquierda del alineamiento visto desde arriba; Perfil, la elevación a lo largo de él) más un panel de Propiedades a la derecha y una barra de herramientas arriba.</p>
+
+              <h3>Barra de herramientas</h3>
+              <ul>
+                <li><strong>+ vértice</strong>: agrega un punto de inflexión (PI) al final del alineamiento.</li>
+                <li><strong>+ estructura</strong>: agrega una estructura del tipo elegido en el desplegable, en la station (m) indicada (o a la mitad del alineamiento si se deja en blanco).</li>
+                <li><strong>Catenaria bajo hipótesis</strong>: bajo qué caso climático se dibuja la curva del conductor en Perfil. No cambia la tensión instalada del conductor (eso lo define la hipótesis de referencia en Parámetros de entrada) — solo qué hipótesis se está "mirando".</li>
+              </ul>
+
+              <h3>Planta</h3>
+              <ul>
+                <li>Rueda del mouse: zoom (centrado en el cursor). Botones +/−/ajustar en la cabecera hacen lo mismo.</li>
+                <li>Arrastrar el fondo: pan. Arrastrar un vértice o una estructura: los mueve (un clic sin arrastrar los selecciona).</li>
+                <li>Coordenadas reales, no un sistema local: Este/Norte en MAGNA-SIRGAS / Origen-Nacional (EPSG:9377), el sistema oficial de Colombia de origen único. Ver más abajo.</li>
+                <li>Botón de mapa (icono de capas): muestra/oculta un mapa base real (OpenStreetMap o satélite Esri, con control para alternar) detrás del alineamiento, ubicado a partir de sus propias coordenadas.</li>
+                <li>Si defines un "Ancho de servidumbre" en Parámetros de entrada § Terreno, se dibujan dos líneas punteadas grises paralelas al alineamiento (la franja de servidumbre).</li>
+                <li>Si un poste cae justo sobre un vértice, el poste queda "encima" para el arrastre — no se mueve el vértice de abajo por accidente.</li>
+              </ul>
+
+              <h3>Perfil</h3>
+              <ul>
+                <li>Zoom/pan igual que en Planta, independiente por lienzo.</li>
+                <li>El eje horizontal es la station (distancia acumulada); el vertical, la elevación. El control "Escala vertical" (5×, 10×...) exagera el eje vertical para que el relieve se note — como en cualquier software de diseño de líneas.</li>
+                <li>Botón de montaña ("Ajustar al terreno real"): consulta un servicio de elevación real (gratuito, sin API key) para el terreno bajo el alineamiento y lo reemplaza por datos reales en vez de la interpolación lineal simulada entre vértices. Actualiza también la elevación (z) de cada vértice.</li>
+                <li>Botón de ojo: muestra/oculta los valores de flecha ("X.XX m") sobre cada vano.</li>
+                <li>Si defines una "Distancia de seguridad al terreno" en Parámetros de entrada § Terreno, se dibuja una línea punteada gris con la forma del terreno, desplazada esa distancia hacia arriba.</li>
+                <li>Clic sobre la curva de un vano lo selecciona (se resalta en azul) — en Propiedades puedes cambiar el conductor del proyecto desde ahí.</li>
+                <li>Los círculos rojos que aparecen en Planta o Perfil al mover el cursor sobre el otro lienzo son marcadores de sincronización: muestran la posición correspondiente en la otra vista.</li>
+              </ul>
+              <p class="muted">Simplificación: cada vano se resuelve de forma independiente (no hay "vano regulador" compartido por una sección de anclajes, como sí modela PLS-CADD real). No se modela creep/relajación de largo plazo.</p>
+
+              <h3>Divisor Planta/Perfil</h3>
+              <p>La franja angosta entre los dos lienzos se puede arrastrar (cursor de redimensionar) para cambiar el ancho relativo entre ambos; se recuerda entre sesiones.</p>
+
+              <h3>Propiedades (panel derecho)</h3>
+              <p>Muestra y edita la selección vigente en el lienzo (o elegida desde una tabla en Resumen):</p>
+              <ul>
+                <li><strong>Vértice</strong>: coordenadas Este/Norte/elevación editables, botón para eliminarlo (mínimo 2 vértices).</li>
+                <li><strong>Estructura</strong>: tipo, altura, resistencia (si el tipo la trae), station, botón "Ajustar al vértice más cercano" y botón para eliminarla.</li>
+                <li><strong>Vano</strong>: el conductor del proyecto (uno solo por ahora, no uno distinto por vano).</li>
+              </ul>
+              <p>El botón de la esquina superior colapsa el panel a una franja angosta cuando no lo necesitas.</p>
+
+              <h3>Barra de estado (inferior)</h3>
+              <p>Solo visible en esta pantalla: coordenadas en vivo bajo el cursor (X/Y en Planta, station/elevación real del perfil en Perfil — la proyección vertical del cursor sobre el terreno, no la altura cruda del mouse), resumen del proyecto, mensajes transitorios de la última acción, y el zoom vigente de cada lienzo.</p>
+            </div>
+
+            <div class="card">
+              <h2>Parámetros de entrada</h2>
+              <p>Todo lo que condiciona el cálculo, agrupado en un solo lugar:</p>
+              <ul>
+                <li><strong>Proyecto</strong>: nombre del proyecto, exportar/importar el proyecto completo como JSON, botón para reiniciar al proyecto de ejemplo (borra tus cambios, pide confirmación del navegador).</li>
+                <li><strong>Unidades</strong>: fijas para todo el proyecto — sistema internacional (métrico) y coordenadas MAGNA-SIRGAS / Origen-Nacional (EPSG:9377).</li>
+                <li><strong>Terreno</strong>: distancia de seguridad al terreno y ancho de servidumbre (ver Planta y Perfil arriba para cómo se dibujan).</li>
+                <li><strong>Importar alineamiento</strong>: carga un archivo KMZ o KML (p. ej. exportado de Google Earth) y reemplaza el alineamiento, las estructuras y el perfil de terreno del proyecto actual. Si hay más de un trazado en el archivo, puedes elegir cuál importar y si invertir su orden. Si el archivo no trae altitud, usa después "Ajustar al terreno real" en Perfil.</li>
+                <li><strong>Conductor</strong>: catálogo de conductores (ACSR, AAAC, ACAR, cables de guarda), hipótesis de referencia (bajo qué caso climático se considera "instalado" el conductor) y tensión horizontal de referencia.</li>
+                <li><strong>Casos climáticos</strong>: tabla de hipótesis de carga (nombre, temperatura, viento, hielo) — mínimo 1, la app pide al menos 3 para el criterio de aceptación de Fase 1 (everyday, temperatura alta, viento).</li>
+                <li><strong>Tensiones de tendido</strong>: ver sección propia más abajo.</li>
+              </ul>
+            </div>
+
+            <div class="card">
+              <h2>Tensiones de tendido (criterio automático de tensado)</h2>
+              <p>Equivalente al "Automatic Sagging Criteria" de PLS-CADD: en vez de escribir a mano la tensión horizontal de referencia del conductor, defines por fila un caso climático, un cable aplicable (en blanco = todos), un % de la resistencia de rotura (RTS), y opcionalmente una tensión máxima y una catenaria máxima (el parámetro C = H/peso, no una distancia física).</p>
+              <p>Para el caso climático marcado como "hipótesis de referencia" del conductor, la app calcula <code>H = mín(%rotura·RTS, tensión máxima, peso vertical·catenaria máxima)</code> — la más restrictiva si aplica más de una fila — y la usa como tensión instalada, reemplazando el valor manual.</p>
+              <p>Si la hipótesis de referencia vigente no tiene fila que aplique al conductor, la app busca otra hipótesis del proyecto que sí tenga y cambia la referencia a esa automáticamente (aviso en la barra de estado). Si NINGUNA hipótesis tiene fila para ese conductor, se usa el valor manual de todos modos, con un aviso grande y persistente en la tarjeta Conductor mientras la condición siga vigente. Si la tabla está vacía del todo, no se avisa nada — simplemente no se está usando este criterio.</p>
+              <p class="muted">Simplificación: la columna "Condición del cable" es solo dato de referencia, no hay modelo de creep/relajación en esta fase.</p>
+            </div>
+
+            <div class="card">
+              <h2>Catálogo de estructuras</h2>
+              <p>Tipos de poste/torre reutilizables por las estructuras distribuidas en el alineamiento. Cada tipo tiene: nombre, categoría (Suspensión/Ángulo/Retención/Poste), alturas disponibles (m), resistencias disponibles (kgF, opcional) y puntos de fijación del conductor (nombre de fase, desplazamiento lateral y vertical respecto al eje del poste).</p>
+              <p>Los puntos de fijación determinan cuántas fases tiene la estructura para el árbol de cargas (se pondera la fuerza por vano por esa cantidad), aunque en Perfil la catenaria se dibuja como una sola curva representativa por vano (no una por fase).</p>
+              <p class="muted">Un tipo en uso por alguna estructura distribuida no se puede eliminar hasta reasignar o borrar esas estructuras primero.</p>
+            </div>
+
+            <div class="card">
+              <h2>Resumen</h2>
+              <ul>
+                <li><strong>Resumen</strong>: conteo de vértices/estructuras/vanos, longitud total, conductor e hipótesis en uso.</li>
+                <li><strong>Tabla de estructuras</strong>: ID, tipo, station, altura, cota de terreno, cota de punta (elevación del enganche), resistencia, y del vano hacia la siguiente estructura — su longitud, la flecha y la distancia mínima al piso (la separación real mínima entre la curva de catenaria y el terreno a lo largo de ese vano), todo bajo la hipótesis de referencia del conductor.</li>
+                <li><strong>Alineamiento</strong>: ID, station, Este, Norte y elevación de cada vértice.</li>
+              </ul>
+              <p>Clic en cualquier fila selecciona ese elemento y salta a Planta y Perfil.</p>
+            </div>
+
+            <div class="card">
+              <h2>Cálculo mecánico (árbol de cargas)</h2>
+              <p>Para cada estructura y cada caso climático: fuerza vertical (peso tributario del conductor de los vanos adyacentes), transversal (viento + desequilibrio de tensión entre vanos, relevante en ángulos) y longitudinal (desequilibrio de tensión — máxima en un remate, donde un solo vano tracciona sin contrapeso), más una estimación simplificada de momento de vuelco en la base. Botón para exportar la tabla completa a JSON.</p>
+              <p class="muted">Simplificaciones: no incluye peso propio de la estructura ni de herrajes/aisladores; todas las fases se asumen con la misma longitud de vano que el eje de la estructura; no se modela el balanceo de cadenas de aisladores en remates/ángulos.</p>
+            </div>
+
+            <div class="card">
+              <h2>Configuración</h2>
+              <p>Ajustes de la aplicación en sí (no del proyecto): se guardan en tu navegador (localStorage), no viajan en el JSON exportado. Por ahora: color de los conductores en Perfil y color de los postes en Planta y Perfil, con botón para restablecer el color por defecto del tema activo.</p>
+            </div>
+
+            <div class="card">
+              <h2>Sistema de coordenadas: MAGNA-SIRGAS / Origen-Nacional (EPSG:9377)</h2>
+              <p>Sistema de coordenadas planas oficial de Colombia con un único origen para todo el país (Transversa de Mercator, meridiano central 73° O, latitud de origen 4° N, factor de escala 0.9992, falso este 5.000.000 m, falso norte 2.000.000 m). Todas las coordenadas del alineamiento (<code>vertex.x</code>/<code>vertex.y</code>) están en este sistema, en metros — no un origen local arbitrario. El mapa base, la importación de KMZ/KML y la consulta de elevación real convierten automáticamente entre este sistema y latitud/longitud (WGS84) cuando hace falta.</p>
+            </div>
+
+            <div class="card">
+              <h2>Guardado, exportar/importar y funcionamiento sin conexión</h2>
+              <p>El proyecto se autoguarda en el navegador (localStorage) en cada cambio — no hace falta guardar manualmente, pero tampoco se sincroniza entre dispositivos ni navegadores distintos. "Exportar JSON" (en Proyecto, Parámetros de entrada) descarga el proyecto completo como archivo; "Importar JSON" lo reemplaza a partir de un archivo así.</p>
+              <p>Es una PWA: una vez cargada la primera vez, sigue funcionando sin conexión a internet (excepto las funciones que consultan un servicio externo — mapa base, elevación real — que sí necesitan conexión la primera vez que se usan). El Service Worker se actualiza solo; si algo se ve desactualizado tras una actualización, recarga con Ctrl+Shift+R.</p>
             </div>
           </section>
         </div>

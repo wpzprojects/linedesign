@@ -176,6 +176,12 @@ button, input, select, textarea {
   background: var(--panel);
 }
 
+/* El toggle de tema vive en la barra de título, no en la barra de
+   actividad (ver comentario en index.html) — pegado al borde derecho. */
+.topbar #theme-toggle {
+  margin-left: auto;
+}
+
 .screen-title {
   margin: 0;
   font-size: 1.05rem;
@@ -340,6 +346,48 @@ body.dark-theme .icon-moon {
 
 .card a {
   color: var(--primary);
+}
+
+/* Contenido de texto largo (pantalla Ayuda): párrafos/listas/subtítulos
+   dentro de una tarjeta, con espaciado legible en vez del default del
+   navegador (que en el tema oscuro se ve apretado/con viñetas fuera de
+   lugar). */
+.card h3 {
+  margin: 16px 0 6px;
+  font-size: 0.95rem;
+  color: var(--text);
+}
+
+.card p {
+  margin: 0 0 10px;
+  line-height: 1.5;
+}
+
+.card p:last-child {
+  margin-bottom: 0;
+}
+
+.card ul {
+  margin: 0 0 10px;
+  padding-left: 20px;
+  line-height: 1.5;
+}
+
+.card ul:last-child {
+  margin-bottom: 0;
+}
+
+.card li {
+  margin-bottom: 4px;
+}
+
+.card code {
+  background: var(--panel);
+  border: 1px solid var(--line);
+  border-radius: 4px;
+  padding: 1px 5px;
+  font-size: 0.85em;
+  font-family: "Cascadia Mono", "Consolas", "SFMono-Regular", Menlo, monospace;
 }
 
 /* Selector de trazado al importar un KMZ/KML con más de un candidato. */
@@ -553,8 +601,11 @@ input:focus, select:focus, button:focus-visible {
    selector de catálogo: más chica que un párrafo normal y pegada arriba
    (el <p> por defecto trae su propio margen simétrico, que la dejaba
    "flotando" a media distancia entre el selector y la siguiente
-   etiqueta). */
-.conductor-specs {
+   etiqueta). Selector reforzado con el tag (p.conductor-specs, no solo
+   .conductor-specs) para empatar en especificidad con .card p (misma
+   ficha aparece tanto en la tarjeta Conductor como en Propiedades) y
+   ganar por ir despues en el archivo. */
+p.conductor-specs {
   margin: 2px 0 10px;
   font-size: 0.63rem;
 }
