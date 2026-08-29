@@ -711,15 +711,16 @@ p.conductor-specs {
 .toolbar {
   display: flex;
   align-items: center;
-  gap: 10px;
+  gap: 6px;
   flex-wrap: wrap;
   background: var(--toolbar-bg);
   border: 1px solid var(--line);
   border-radius: 0;
-  /* Simétrico (no como antes, top < bottom): con align-items: center,
-     un padding parejo es lo que deja la tarjeta centrada dentro de la
-     barra en vez de pegada hacia abajo. */
-  padding: 5px 14px;
+  /* Simétrico arriba/abajo (con align-items: center, un padding parejo
+     es lo que deja la tarjeta centrada dentro de la barra); a la
+     izquierda se achica para que la primera tarjeta quede más cerca del
+     borde. */
+  padding: 5px 14px 5px 8px;
   /* Bleed adicional por el lado izquierdo (el derecho ya lo hereda del
      margen negativo de #screen-plan): pegada de lado a lado, sin correr
      el lienzo de Planta que está debajo. */
@@ -734,7 +735,7 @@ p.conductor-specs {
   width: 1px;
   align-self: stretch;
   background: var(--line);
-  margin: 0 4px;
+  margin: 0 2px;
 }
 
 .toolbar-label {
