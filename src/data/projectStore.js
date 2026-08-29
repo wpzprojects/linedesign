@@ -65,7 +65,20 @@
     if (!project.stringingTensions) project.stringingTensions = [];
     if (project.groundClearance == null) project.groundClearance = 0;
     if (project.rightOfWayWidth == null) project.rightOfWayWidth = 0;
+    // Un proyecto restaurado de localStorage quedó guardado con el
+    // conductorCatalog vigente en el momento de guardarlo — si luego se
+    // agregan conductores nuevos al catálogo base (dataSource.js), un
+    // proyecto ya guardado nunca los ve, porque load() no vuelve a llamar
+    // getInitialProject() para él. Se completan por id (sin tocar
+    // conductores existentes, por si el usuario los editó) y se persiste
+    // el resultado para no repetir el merge en cada carga.
+    if (restored) {
+      const existingIds = new Set(project.conductorCatalog.map((c) => c.id));
+      const missing = dataSource.getConductorCatalog().filter((c) => !existingIds.has(c.id));
+      if (missing.length) project.conductorCatalog = project.conductorCatalog.concat(missing);
+    }
     recalculateIdCounters();
+    persist();
     notify();
   }
 
