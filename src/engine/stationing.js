@@ -318,6 +318,26 @@
   }
 
   /**
+   * Puntos (x, y) del alineamiento entre dos stations — el tramo del
+   * circuito que realmente tiene conductor, usado en Planta para dibujar
+   * el circuito entre estructuras (primera a última, no antes ni
+   * después). Incluye los vértices intermedios que caigan en el tramo,
+   * para seguir la forma real del alineamiento y no solo una línea recta
+   * entre extremos.
+   */
+  function polylineBetweenStations(vertices, startStation, endStation) {
+    if (!vertices.length || endStation <= startStation) return [];
+    const distances = cumulativeDistances(vertices);
+    const points = [pointAtStation(vertices, startStation)];
+    vertices.forEach((v, i) => {
+      const d = distances[i];
+      if (d > startStation + 1e-9 && d < endStation - 1e-9) points.push({ x: v.x, y: v.y });
+    });
+    points.push(pointAtStation(vertices, endStation));
+    return points;
+  }
+
+  /**
    * Station (distancia acumulada) del punto de la polilínea más cercano a un
    * punto (x, y) arbitrario. Se usa para convertir la posición de arrastre
    * (drag) de una estructura en planta de vuelta a una station válida sobre
@@ -495,6 +515,7 @@
     padBoundsByStep,
     makeProjector,
     resolveStructures,
+    polylineBetweenStations,
     elevationAtStation,
     smoothTerrainProfile,
     simplifyPolyline,

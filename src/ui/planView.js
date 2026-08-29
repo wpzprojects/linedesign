@@ -191,6 +191,19 @@
       });
       zoomLayer.appendChild(alignmentPath);
 
+      // Circuito (conductor) entre estructuras: delgada y encima del
+      // alineamiento para no taparlo, solo entre la primera y la última
+      // estructura (antes/después no hay conductor tendido). Sigue la
+      // forma real del alineamiento, no una recta entre extremos — ver
+      // stationing.polylineBetweenStations.
+      if (project.structures.length >= 2) {
+        const structureStations = project.structures.map((s) => s.station);
+        const circuitPoints = stationing
+          .polylineBetweenStations(vertices, Math.min(...structureStations), Math.max(...structureStations))
+          .map((p) => projector.toScreen(p.x, p.y));
+        zoomLayer.appendChild(svgEl('path', { class: 'circuit-line', d: pathFromPoints(circuitPoints) }));
+      }
+
       // structureLayer se crea aquí (redrawStructures y el arrastre de
       // vértices ya lo necesitan) pero se agrega al DOM más abajo, DESPUÉS
       // de los marcadores de vértice: en SVG el orden de pintado sigue el

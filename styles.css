@@ -1267,6 +1267,19 @@ svg#plan-svg {
   vector-effect: non-scaling-stroke;
 }
 
+/* Circuito entre estructuras en Planta: delgada (a diferencia de
+   .alignment-line) para no tapar el alineamiento que queda debajo,
+   mismo color que el conductor en Perfil (var(--conductor-color)). */
+.circuit-line {
+  stroke: var(--conductor-color);
+  stroke-width: 1.5;
+  fill: none;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  vector-effect: non-scaling-stroke;
+  pointer-events: none;
+}
+
 .profile-line {
   stroke: var(--accent);
   stroke-width: 3;
