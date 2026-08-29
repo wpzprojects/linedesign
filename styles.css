@@ -696,9 +696,7 @@ input:focus, select:focus, button:focus-visible {
 }
 
 .split-view {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 0;
+  display: flex;
   flex: 1 1 auto;
   min-height: 0;
   min-width: 0;
@@ -706,14 +704,51 @@ input:focus, select:focus, button:focus-visible {
      gap de 10px que #screen-plan deja contra la barra de herramientas; a
      la izquierda cancela el padding de .workspace-body). Abajo y a la
      derecha ya quedan a ras porque .cad-area ocupa el alto/ancho completo
-     de #screen-plan, que a su vez ya sangra sobre esos bordes. Planta,
-     Perfil y Propiedades comparten borde entre sí (sin gap) — el segundo
-     panel de cada par cancela su borde de contacto para no duplicarlo. */
+     de #screen-plan, que a su vez ya sangra sobre esos bordes. Propiedades
+     sigue compartiendo borde con Perfil sin gap (border-left:none en
+     .inspector, más abajo); Planta/Perfil ya no son adyacentes en el DOM
+     (el divisor arrastrable queda entre los dos), así que ambos conservan
+     su propio borde. */
   margin: -10px 0 0 -20px;
 }
 
-.split-view .panel + .panel {
-  border-left: none;
+.split-view .panel:first-child {
+  flex: 0 0 var(--split-plan, 50%);
+  min-width: 160px;
+}
+
+.split-view .panel:last-child {
+  flex: 1 1 auto;
+  min-width: 160px;
+}
+
+/* Manija de arrastre entre Planta y Perfil: una franja angosta con cursor
+   de redimensionar, resaltada al pasar el mouse o mientras se arrastra
+   (ver el wiring en app.js — mueve --split-plan en el <div class="split-
+   view">, clampado entre 20% y 80%). */
+.split-divider {
+  flex: 0 0 6px;
+  cursor: col-resize;
+  background: transparent;
+  position: relative;
+  touch-action: none;
+}
+
+.split-divider::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: 2px;
+  width: 2px;
+  background: var(--line);
+}
+
+.split-divider:hover::after,
+.split-divider.is-dragging::after {
+  left: 0;
+  width: 6px;
+  background: var(--primary);
 }
 
 .inspector {

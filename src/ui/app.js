@@ -16,6 +16,8 @@
   const planSvg = document.getElementById('plan-svg');
   const planMapContainer = document.getElementById('plan-map');
   const planMapToggle = document.getElementById('plan-map-toggle');
+  const splitView = document.querySelector('.split-view');
+  const splitDivider = document.getElementById('split-divider');
   const profileSvg = document.getElementById('profile-svg');
   const summaryList = document.getElementById('summary-list');
   const projectNameInput = document.getElementById('project-name-input');
@@ -173,6 +175,23 @@
     setSagLabelsVisible(localStorage.getItem('linedesign-sag-labels') !== 'false');
   } catch (error) {
     console.warn('No se pudo leer el estado de los valores de flecha:', error);
+  }
+
+  // Reparto Planta/Perfil (arrastre del divisor entre las dos ventanas):
+  // --split-plan es el ancho de Planta como porcentaje; Perfil toma el
+  // resto (flex: 1 1 auto). Clampado para que ninguna de las dos quede
+  // demasiado angosta para ser útil.
+  function setSplitRatio(percent) {
+    const clamped = Math.min(80, Math.max(20, percent));
+    splitView.style.setProperty('--split-plan', `${clamped}%`);
+    return clamped;
+  }
+
+  try {
+    const savedSplit = parseFloat(localStorage.getItem('linedesign-split-ratio'));
+    setSplitRatio(Number.isFinite(savedSplit) ? savedSplit : 50);
+  } catch (error) {
+    console.warn('No se pudo leer el reparto Planta/Perfil guardado:', error);
   }
 
   const catalogView = window.LineDesignCatalogView.createCatalogView(document.getElementById('catalog-container'), store);
@@ -556,6 +575,51 @@
       } catch (error) {
         console.warn('No se pudo guardar el estado de los valores de flecha:', error);
       }
+    });
+
+    // Arrastre del divisor Planta/Perfil: cambia --split-plan en cada frame
+    // (rAF, para no recalcular más seguido de lo que el navegador pinta) y
+    // re-renderiza esas dos vistas — su <svg> mide su propio ancho real vía
+    // getBoundingClientRect(), así que necesitan un render para tomar el
+    // tamaño nuevo (mismo motivo que el resize al cambiar de pantalla).
+    splitDivider.addEventListener('pointerdown', (evt) => {
+      evt.preventDefault();
+      splitDivider.setPointerCapture(evt.pointerId);
+      splitDivider.classList.add('is-dragging');
+      let rafId = null;
+      let lastPercent = null;
+
+      function applyPending() {
+        rafId = null;
+        if (lastPercent === null) return;
+        const project = store.getProject();
+        planView.render(project, selection);
+        profileView.render(project, planHypothesisId, selection);
+      }
+
+      function onMove(moveEvt) {
+        const rect = splitView.getBoundingClientRect();
+        const percent = ((moveEvt.clientX - rect.left) / rect.width) * 100;
+        lastPercent = setSplitRatio(percent);
+        if (rafId === null) rafId = requestAnimationFrame(applyPending);
+      }
+
+      function onUp() {
+        splitDivider.removeEventListener('pointermove', onMove);
+        splitDivider.removeEventListener('pointerup', onUp);
+        splitDivider.classList.remove('is-dragging');
+        if (rafId !== null) cancelAnimationFrame(rafId);
+        if (lastPercent !== null) {
+          try {
+            localStorage.setItem('linedesign-split-ratio', String(lastPercent));
+          } catch (error) {
+            console.warn('No se pudo guardar el reparto Planta/Perfil:', error);
+          }
+        }
+      }
+
+      splitDivider.addEventListener('pointermove', onMove);
+      splitDivider.addEventListener('pointerup', onUp);
     });
 
     document.querySelectorAll('.nav-btn').forEach((btn) => {
