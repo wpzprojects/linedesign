@@ -40,8 +40,12 @@
     const current = { project: null, selection: null, projector: null, zoomLayer: null };
 
     function updateMapView() {
-      if (!current.project || !current.projector) return;
-      mapRenderer.updateView(current.project.alignment.origin, current.projector, current.width, current.height, viewport.state);
+      if (!current.bounds || !current.projector) return;
+      const refPoint = {
+        x: (current.bounds.minX + current.bounds.maxX) / 2,
+        y: (current.bounds.minY + current.bounds.maxY) / 2
+      };
+      mapRenderer.updateView(refPoint, current.projector, current.width, current.height, viewport.state);
     }
 
     function applyTransform() {
@@ -118,6 +122,7 @@
       const vertices = project.alignment.vertices;
       current.vertices = vertices;
       const bounds = stationing.planBounds(vertices);
+      current.bounds = bounds;
       const projector = stationing.makeProjector(bounds, WIDTH, HEIGHT, PADDING);
       current.projector = projector;
 

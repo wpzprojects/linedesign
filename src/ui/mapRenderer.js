@@ -68,37 +68,39 @@
       return visible;
     }
 
-    function applyUpdate({ origin, projector, width, height, viewportState }) {
+    function applyUpdate({ refPoint, projector, width, height, viewportState }) {
       if (!visible || !map) return;
+      const refLatLon = geo.epsg9377ToLatLon(refPoint.x, refPoint.y);
       const effectiveScale = projector.scale * viewportState.scale;
       const metersPerPixel = 1 / effectiveScale;
-      const zoom = geo.zoomForScale(metersPerPixel, origin.lat);
-      map.setView([origin.lat, origin.lon], zoom, { animate: false });
+      const zoom = geo.zoomForScale(metersPerPixel, refLatLon.lat);
+      map.setView([refLatLon.lat, refLatLon.lon], zoom, { animate: false });
 
-      // Punto local (0,0) = `origin`, en pantalla, con el zoom/pan vigente
-      // del SVG aplicado (misma fórmula que usa el <g> de zoomLayer).
-      const p0 = projector.toScreen(0, 0);
-      const screenX = viewportState.scale * p0.x + viewportState.tx;
-      const screenY = viewportState.scale * p0.y + viewportState.ty;
+      // Posición en pantalla de `refPoint`, con el zoom/pan vigente del SVG
+      // aplicado (misma fórmula que usa el <g> de zoomLayer).
+      const pRef = projector.toScreen(refPoint.x, refPoint.y);
+      const screenX = viewportState.scale * pRef.x + viewportState.tx;
+      const screenY = viewportState.scale * pRef.y + viewportState.ty;
       // map.panBy(offset) mueve la VISTA por `offset` (como un scroll): el
       // contenido se desplaza en el sentido CONTRARIO a `offset`. Para que
-      // el contenido (el origen) quede en (screenX, screenY) en vez de en
-      // el centro del contenedor (donde lo dejó setView), hay que pedirle
-      // el desplazamiento inverso — si no, el mapa arrastra al revés.
+      // el contenido (refPoint) quede en (screenX, screenY) en vez de en el
+      // centro del contenedor (donde lo dejó setView), hay que pedirle el
+      // desplazamiento inverso — si no, el mapa arrastra al revés.
       map.panBy([width / 2 - screenX, height / 2 - screenY], { animate: false });
     }
 
     /**
-     * Centra/escala Leaflet para que el punto local (0,0) — `origin` — caiga
-     * en `projector.toScreen(0,0)` transformado por el zoom/pan vigente del
-     * SVG (`viewportState`), y su escala coincida con la del proyector. Se
-     * llama tanto en cada render() como en cada cambio de zoom/pan (acotado
-     * a 1 vez por frame) para que Leaflet siempre sepa dónde está y pida
-     * las teselas que le correspondan.
+     * Centra/escala Leaflet para que `refPoint` (coordenadas EPSG:9377,
+     * típicamente el centro del bounding box del alineamiento) caiga en
+     * `projector.toScreen(refPoint)` transformado por el zoom/pan vigente
+     * del SVG (`viewportState`), y su escala coincida con la del proyector.
+     * Se llama tanto en cada render() como en cada cambio de zoom/pan
+     * (acotado a 1 vez por frame) para que Leaflet siempre sepa dónde está
+     * y pida las teselas que le correspondan.
      */
-    function updateView(origin, projector, width, height, viewportState) {
+    function updateView(refPoint, projector, width, height, viewportState) {
       if (!visible || !map) return;
-      const args = { origin, projector, width, height, viewportState };
+      const args = { refPoint, projector, width, height, viewportState };
       if (pendingUpdate !== null) {
         pendingUpdate = args;
         return;

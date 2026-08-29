@@ -9,22 +9,20 @@
  */
 (function (global) {
   function sampleAlignment() {
+    // Coordenadas reales en MAGNA-SIRGAS / Origen-Nacional (EPSG:9377) —
+    // Este/Norte en metros, el sistema nativo de todo el proyecto (ver
+    // DATA_MODEL.md y src/engine/geo.js). PI-1 ubicado en una zona rural
+    // cerca de Cali (Valle del Cauca); el resto conserva la misma forma
+    // relativa (offsets en metros) que tenía el trazado de ejemplo original.
     return {
       vertices: [
-        { id: 'PI-1', x: 0, y: 0, z: 1180 },
-        { id: 'PI-2', x: 180, y: 60, z: 1195 },
-        { id: 'PI-3', x: 360, y: 40, z: 1230 },
-        { id: 'PI-4', x: 540, y: 110, z: 1205 },
-        { id: 'PI-5', x: 720, y: 90, z: 1240 },
-        { id: 'PI-6', x: 900, y: 150, z: 1215 }
-      ],
-      // Georreferencia del alineamiento (Fase 2): punto real (lat/lon) que
-      // corresponde al vértice local (0,0), más el rumbo (grados, sentido
-      // horario desde el norte) hacia el que apunta el eje Y local. Permite
-      // ubicar el trazo simulado sobre un mapa real sin necesidad de un KMZ
-      // importado; ver Apéndice A del prompt maestro. Punto de ejemplo: zona
-      // rural cerca de Cali (Valle del Cauca).
-      origin: { lat: 3.4372, lon: -76.5225, bearingDeg: 0 }
+        { id: 'PI-1', x: 4608644, y: 1938538, z: 1180 },
+        { id: 'PI-2', x: 4608824, y: 1938598, z: 1195 },
+        { id: 'PI-3', x: 4609004, y: 1938578, z: 1230 },
+        { id: 'PI-4', x: 4609184, y: 1938648, z: 1205 },
+        { id: 'PI-5', x: 4609364, y: 1938628, z: 1240 },
+        { id: 'PI-6', x: 4609544, y: 1938688, z: 1215 }
+      ]
     };
   }
 

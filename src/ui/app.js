@@ -17,9 +17,6 @@
   const profileSvg = document.getElementById('profile-svg');
   const summaryList = document.getElementById('summary-list');
   const projectNameInput = document.getElementById('project-name-input');
-  const originLatInput = document.getElementById('origin-lat-input');
-  const originLonInput = document.getElementById('origin-lon-input');
-  const originBearingInput = document.getElementById('origin-bearing-input');
   const themeToggle = document.getElementById('theme-toggle');
   const inspectorPanel = document.getElementById('inspector-body');
   const inspectorAside = document.getElementById('inspector-panel');
@@ -95,9 +92,9 @@
         profileView.hideSyncMarker();
         return;
       }
-      let text = `X: ${dataPoint.x.toFixed(1)} m · Y: ${dataPoint.y.toFixed(1)} m`;
+      let text = `E: ${dataPoint.x.toFixed(1)} m · N: ${dataPoint.y.toFixed(1)} m`;
       try {
-        const latLon = geo.localToLatLon(store.getProject().alignment.origin, dataPoint);
+        const latLon = geo.epsg9377ToLatLon(dataPoint.x, dataPoint.y);
         text += ` · ${latLon.lat.toFixed(5)}, ${latLon.lon.toFixed(5)}`;
       } catch (error) {
         console.warn('No se pudo calcular lat/lon:', error);
@@ -239,12 +236,12 @@
     if (selection.type === 'vertex') {
       const vertex = project.alignment.vertices.find((v) => v.id === selection.id);
       inspectorPanel.appendChild(el('div', { class: 'inspector-title' }, `Vértice ${vertex.id}`));
-      inspectorPanel.appendChild(el('label', {}, 'X (m)'));
+      inspectorPanel.appendChild(el('label', {}, 'Este (m) — EPSG:9377'));
       inspectorPanel.appendChild(el('input', {
         type: 'number', step: '0.5', value: roundTo4(vertex.x),
         onChange: (e) => store.moveVertex(vertex.id, parseFloat(e.target.value) || 0, vertex.y)
       }));
-      inspectorPanel.appendChild(el('label', {}, 'Y (m)'));
+      inspectorPanel.appendChild(el('label', {}, 'Norte (m) — EPSG:9377'));
       inspectorPanel.appendChild(el('input', {
         type: 'number', step: '0.5', value: roundTo4(vertex.y),
         onChange: (e) => store.moveVertex(vertex.id, vertex.x, parseFloat(e.target.value) || 0)
@@ -319,9 +316,6 @@
 
   function render(project) {
     projectNameInput.value = project.name;
-    originLatInput.value = project.alignment.origin.lat;
-    originLonInput.value = project.alignment.origin.lon;
-    originBearingInput.value = project.alignment.origin.bearingDeg;
     renderSummary(project);
     syncStructureTypeOptions(project);
     syncPlanHypothesisOptions(project);
@@ -368,10 +362,6 @@
     });
 
     projectNameInput.addEventListener('change', (e) => store.setProjectName(e.target.value.trim() || 'Proyecto sin nombre'));
-
-    originLatInput.addEventListener('change', (e) => store.setOrigin({ lat: parseFloat(e.target.value) || 0 }));
-    originLonInput.addEventListener('change', (e) => store.setOrigin({ lon: parseFloat(e.target.value) || 0 }));
-    originBearingInput.addEventListener('change', (e) => store.setOrigin({ bearingDeg: parseFloat(e.target.value) || 0 }));
 
     planMapToggle.addEventListener('click', () => {
       const next = planMapToggle.getAttribute('aria-pressed') !== 'true';

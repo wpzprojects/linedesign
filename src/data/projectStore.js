@@ -52,15 +52,6 @@
     return `${prefix}${String(nextIdCounters[kind]).padStart(2, '0')}`;
   }
 
-  /** Completa campos que proyectos guardados/importados antes de agregar
-   *  esta funcionalidad no tienen (p.ej. `alignment.origin`, Fase 2). */
-  function normalizeProject(proj) {
-    if (!proj.alignment.origin) {
-      proj.alignment.origin = dataSource.getInitialProject().alignment.origin;
-    }
-    return proj;
-  }
-
   function load() {
     let restored = null;
     try {
@@ -69,7 +60,7 @@
     } catch (error) {
       console.warn('No se pudo leer el proyecto guardado, se usará el proyecto de ejemplo:', error);
     }
-    project = normalizeProject(restored || dataSource.getInitialProject());
+    project = restored || dataSource.getInitialProject();
     recalculateIdCounters();
     notify();
   }
@@ -118,12 +109,6 @@
     persist();
     notify();
     return vertex;
-  }
-
-  function setOrigin(patch) {
-    project.alignment.origin = { ...project.alignment.origin, ...patch };
-    persist();
-    notify();
   }
 
   function removeVertex(id) {
@@ -302,7 +287,6 @@
     subscribe,
     moveVertex,
     setVertexElevation,
-    setOrigin,
     addVertex,
     removeVertex,
     addCatalogType,

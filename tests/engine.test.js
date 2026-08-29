@@ -219,39 +219,40 @@ check('vanos desbalanceados en hipótesis no-referencia producen longitudinal no
   assert.ok(midHot.forces.longitudinal > 1e-6, `hot longitudinal=${midHot.forces.longitudinal}`);
 });
 
-// --- geo ---
-const origin = { lat: 3.4372, lon: -76.5225, bearingDeg: 0 };
+// --- geo (EPSG:9377 <-> lat/lon) ---
+const sampleLatLon = { lat: 3.4372, lon: -76.5225 }; // zona rural cerca de Cali
 
-check('localToLatLon: el origen local (0,0) es el propio origen', () => {
-  const latLon = geo.localToLatLon(origin, { x: 0, y: 0 });
-  assert.ok(Math.abs(latLon.lat - origin.lat) < 1e-9);
-  assert.ok(Math.abs(latLon.lon - origin.lon) < 1e-9);
+check('latLonToEpsg9377 / epsg9377ToLatLon son inversas (roundtrip)', () => {
+  const xy = geo.latLonToEpsg9377(sampleLatLon.lat, sampleLatLon.lon);
+  const back = geo.epsg9377ToLatLon(xy.x, xy.y);
+  assert.ok(Math.abs(back.lat - sampleLatLon.lat) < 1e-8, `lat=${back.lat}`);
+  assert.ok(Math.abs(back.lon - sampleLatLon.lon) < 1e-8, `lon=${back.lon}`);
 });
 
-check('localToLatLon: con bearing 0, +Y es hacia el norte (lat crece)', () => {
-  const latLon = geo.localToLatLon(origin, { x: 0, y: 1000 });
-  assert.ok(latLon.lat > origin.lat);
-  assert.ok(Math.abs(latLon.lon - origin.lon) < 1e-9);
+check('latLonToEpsg9377 da coordenadas con la magnitud esperada (falso este/norte)', () => {
+  const xy = geo.latLonToEpsg9377(sampleLatLon.lat, sampleLatLon.lon);
+  // Cerca de Cali: al oeste del meridiano central (73°O) y al sur del
+  // paralelo de origen (4°N), así que debe quedar por debajo del falso
+  // este (5 000 000) y del falso norte (2 000 000).
+  assert.ok(xy.x > 4000000 && xy.x < 5000000, `x=${xy.x}`);
+  assert.ok(xy.y > 1000000 && xy.y < 2000000, `y=${xy.y}`);
 });
 
-check('localToLatLon / latLonToLocal son inversas (roundtrip)', () => {
-  const point = { x: 342.5, y: -128.7 };
-  const latLon = geo.localToLatLon(origin, point);
-  const back = geo.latLonToLocal(origin, latLon);
-  assert.ok(Math.abs(back.x - point.x) < 1e-6, `x=${back.x}`);
-  assert.ok(Math.abs(back.y - point.y) < 1e-6, `y=${back.y}`);
+check('epsg9377ToLatLon: al aumentar Este (x), aumenta la longitud', () => {
+  const xy = geo.latLonToEpsg9377(sampleLatLon.lat, sampleLatLon.lon);
+  const east = geo.epsg9377ToLatLon(xy.x + 1000, xy.y);
+  assert.ok(east.lon > sampleLatLon.lon);
 });
 
-check('localToLatLon respeta el rumbo: bearing 90 hace que +Y apunte al este', () => {
-  const rotated = { ...origin, bearingDeg: 90 };
-  const latLon = geo.localToLatLon(rotated, { x: 0, y: 1000 });
-  assert.ok(Math.abs(latLon.lat - origin.lat) < 1e-9, `lat=${latLon.lat}`);
-  assert.ok(latLon.lon > origin.lon);
+check('epsg9377ToLatLon: al aumentar Norte (y), aumenta la latitud', () => {
+  const xy = geo.latLonToEpsg9377(sampleLatLon.lat, sampleLatLon.lon);
+  const north = geo.epsg9377ToLatLon(xy.x, xy.y + 1000);
+  assert.ok(north.lat > sampleLatLon.lat);
 });
 
 check('zoomForScale / metersPerPixel son inversas', () => {
-  const zoom = geo.zoomForScale(2.5, origin.lat);
-  const metersPerPx = geo.metersPerPixel(zoom, origin.lat);
+  const zoom = geo.zoomForScale(2.5, sampleLatLon.lat);
+  const metersPerPx = geo.metersPerPixel(zoom, sampleLatLon.lat);
   assert.ok(Math.abs(metersPerPx - 2.5) < 1e-9, `metersPerPx=${metersPerPx}`);
 });
 

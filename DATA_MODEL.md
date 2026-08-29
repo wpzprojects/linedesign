@@ -4,7 +4,8 @@
 
 | Magnitud | Unidad |
 |---|---|
-| Longitud, coordenadas, altura | metros (m) |
+| Longitud, altura | metros (m) |
+| Coordenadas del alineamiento (`vertex.x`/`vertex.y`) | metros (m), MAGNA-SIRGAS / Origen-Nacional (EPSG:9377) — ver abajo |
 | Fuerza | newtons (N) |
 | Peso por longitud (conductor) | N/m |
 | Temperatura | °C |
@@ -24,8 +25,7 @@
   "name": "string",
   "units": "SI-métrico",
   "alignment": {
-    "vertices": [{ "id": "PI-1", "x": 0, "y": 0, "z": 1180 }],
-    "origin": { "lat": 3.4372, "lon": -76.5225, "bearingDeg": 0 }
+    "vertices": [{ "id": "PI-1", "x": 4608644, "y": 1938538, "z": 1180 }]
   },
   "structureCatalog": [
     {
@@ -57,9 +57,11 @@
 
 `structures[i]` **no** guarda `x`/`y`/`z`. Guarda `station` (distancia acumulada sobre el alineamiento) y `height`. La posición (x, y, z) se deriva en caliente con `stationing.resolveStructures(vertices, structures)` interpolando sobre la polilínea vigente. Esto es lo que permite que mover un vértice del alineamiento reubique automáticamente las estructuras y recalcule vanos, catenaria y árbol de cargas sin lógica de sincronización adicional (criterios de aceptación §10.2 y §10.4 del prompt maestro).
 
-### `alignment.origin` (Fase 2 — georreferencia)
+### Sistema de coordenadas: MAGNA-SIRGAS / Origen-Nacional (EPSG:9377)
 
-Ancla el alineamiento (coordenadas locales en metros) a un punto real del mundo, para poder mostrarlo sobre un mapa real en Planta sin depender de un KMZ importado. `lat`/`lon` son las coordenadas geográficas del vértice local `(0, 0)`; `bearingDeg` es el rumbo (grados, sentido horario desde el norte) hacia el que apunta el eje **Y** local — con `bearingDeg = 0`, Y = norte y X = este. Ver `src/engine/geo.js` (conversión local↔lat/lon, aproximación de plano tangente) y `src/ui/mapRenderer.js` (mapa base con Leaflet). Editable en la pantalla "Criterios".
+`vertex.x`/`vertex.y` (y por lo tanto todo lo que se deriva de ellos: station, posición de estructuras, distancias) son directamente **Este/Norte reales** en el sistema de referencia oficial de Colombia para cartografía a escala nacional (IGAC), no un sistema local arbitrario: `x` = Este, `y` = Norte, en metros, sin rotación ni desplazamiento adicional. Un vértice con `x ≈ 4 600 000, y ≈ 1 940 000` cae, en el mundo real, cerca de Cali (Valle del Cauca) — son coordenadas de 7 cifras porque incluyen el falso este (5 000 000 m) y falso norte (2 000 000 m) de la proyección.
+
+`src/engine/geo.js` implementa la conversión Este/Norte (EPSG:9377) ↔ lat/lon (WGS84/MAGNA-SIRGAS, EPSG:4326) — Transversa de Mercator sobre elipsoide GRS80, meridiano central 73° O, latitud de origen 4° N, factor de escala 0.9992 — que usa `src/ui/mapRenderer.js` para ubicar el mapa base de Planta (Leaflet solo entiende lat/lon) y `app.js` para mostrar lat/lon bajo el cursor en la barra de estado. El motor de cálculo (`stationing`, `catenary`, `loadTree`) nunca necesita lat/lon — trabaja siempre en Este/Norte, como cualquier distancia relativa.
 
 ### `attachmentPoints`
 
