@@ -1070,7 +1070,7 @@ p.conductor-specs {
   min-width: 0;
   text-align: right;
   font-size: 0.76rem;
-  color: var(--text);
+  color: var(--muted);
   padding: 2px 5px;
   overflow: hidden;
   text-overflow: ellipsis;
