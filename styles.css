@@ -902,18 +902,23 @@ p.conductor-specs {
   color: var(--primary);
   border: 1px solid transparent;
   border-radius: 7px;
-  padding: 4px 10px;
   font-size: 0.82rem;
   font-weight: 600;
   white-space: nowrap;
-  /* Un <button> y un <select> con el mismo padding/borde no siempre
-     renderizan igual de alto — el line-height "normal" por defecto del
-     navegador difiere entre ambos tipos de control. Se fija el mismo
-     line-height explícito acá y en .toolbar-field input/select (abajo)
-     para que ambos calculen la misma altura de caja y sus etiquetas
-     queden a la misma altura cuando comparten tarjeta (ver Visualización
-     + Hipótesis mostrada). */
-  line-height: 1.2;
+  /* Un <button> y un <select> con el mismo padding vertical no
+     necesariamente renderizan igual de alto (line-height "normal" por
+     defecto del navegador difiere entre tipos de control) — en vez de
+     pelear con eso, ambos fijan la MISMA altura explícita (ver
+     .toolbar-field input/select abajo) y centran su contenido con
+     flexbox, sin depender del padding vertical para la altura. Así sus
+     cajas miden exactamente lo mismo y las etiquetas encima (Visualización
+     + Hipótesis mostrada) quedan a la misma altura. */
+  height: 27px;
+  padding: 0 10px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  box-sizing: border-box;
 }
 
 .toolbar-card-btn:hover {
@@ -945,10 +950,11 @@ p.conductor-specs {
 }
 
 .toolbar-field input, .toolbar-field select {
-  padding: 4px 8px;
+  height: 27px;
+  padding: 0 8px;
   font-size: 0.82rem;
   background: var(--toolbar-bg);
-  line-height: 1.2;
+  box-sizing: border-box;
 }
 
 /* ".toolbar input { width: auto }" (arriba) tiene más especificidad que
