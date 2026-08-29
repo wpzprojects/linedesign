@@ -1533,6 +1533,15 @@ circle.sync-marker {
   overflow-x: auto;
 }
 
+/* Botón "+ agregar..." bajo una tabla (Casos climáticos, Tensiones de
+   tendido): separado de la línea inferior de la última fila (si no,
+   quedaba pegado a ella) y alineado con el arranque del texto de las
+   celdas (10px, su padding horizontal — si no, el botón quedaba más a
+   la izquierda que el contenido de la tabla). */
+.table-add-btn {
+  margin: 12px 0 0 10px;
+}
+
 .data-table {
   width: 100%;
   border-collapse: collapse;

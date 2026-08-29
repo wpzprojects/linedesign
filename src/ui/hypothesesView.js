@@ -124,7 +124,7 @@
           ])
         ]),
         el('button', {
-          class: 'btn btn-small', type: 'button',
+          class: 'btn toolbar-card-btn table-add-btn', type: 'button',
           onClick: () => store.addHypothesis({ name: 'Nueva hipótesis', temperature: 15, windSpeed: 0, iceThickness: 0 })
         }, '+ agregar hipótesis')
       ]);
@@ -187,7 +187,7 @@
           ])
         ]),
         el('button', {
-          class: 'btn btn-small', type: 'button',
+          class: 'btn toolbar-card-btn table-add-btn', type: 'button',
           onClick: () => store.addStringingTension({ weatherCase: project.hypotheses[0] ? project.hypotheses[0].name : '' })
         }, '+ agregar tensión de tendido')
       ]);
