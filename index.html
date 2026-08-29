@@ -224,34 +224,7 @@
           </section>
 
           <section id="screen-config" class="screen">
-            <div class="card">
-              <h2>Servicio de elevación de terreno</h2>
-              <p class="muted">
-                Usado por el botón "Ajustar al terreno real" en Perfil. Los servicios gratuitos (OpenTopoData /
-                Open-Elevation) alcanzan en la mayoría de zonas, pero en terreno muy montañoso pueden devolver datos
-                de baja resolución (perfil "en escalones"). Si eso pasa, activa aquí Google Elevation API con tu
-                propia key.
-              </p>
-              <label for="elevation-provider-select">Proveedor</label>
-              <select id="elevation-provider-select">
-                <option value="auto">Automático (gratis, sin key) — OpenTopoData / Open-Elevation</option>
-                <option value="google">Google Elevation API (requiere API key propia)</option>
-              </select>
-
-              <div id="elevation-google-fields" hidden>
-                <label for="elevation-google-key-input">API key de Google</label>
-                <input id="elevation-google-key-input" type="text" placeholder="AIza…" autocomplete="off" spellcheck="false" />
-                <p class="muted">
-                  Se guarda solo en este navegador (localStorage) — nunca se sube a ningún lado, pero por ser una app
-                  100% de cliente queda visible en las herramientas de desarrollador, como con cualquier key usada
-                  desde el navegador. Para obtenerla: consola de
-                  <a href="https://console.cloud.google.com/" target="_blank" rel="noopener">Google Cloud</a> →
-                  crear/seleccionar un proyecto → habilitar la <strong>Elevation API</strong> → Credenciales → Crear
-                  credenciales → Clave de API. Requiere una cuenta de facturación activa en el proyecto (Google da
-                  crédito mensual gratis, pero pide una tarjeta registrada).
-                </p>
-              </div>
-            </div>
+            <!-- Sin contenido por ahora: pensada para ajustes de la app (no del proyecto) más adelante. -->
           </section>
         </div>
 

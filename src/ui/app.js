@@ -31,9 +31,6 @@
   const planHypothesisSelect = document.getElementById('plan-hypothesis-select');
   const profileVExagSelect = document.getElementById('profile-vexag-select');
   const terrainFetchBtn = document.getElementById('terrain-fetch-btn');
-  const elevationProviderSelect = document.getElementById('elevation-provider-select');
-  const elevationGoogleFields = document.getElementById('elevation-google-fields');
-  const elevationGoogleKeyInput = document.getElementById('elevation-google-key-input');
   const screenTitle = document.getElementById('screen-title');
   const statusCoords = document.getElementById('status-coords');
   const statusSummary = document.getElementById('status-summary');
@@ -151,24 +148,6 @@
   } catch (error) {
     console.warn('No se pudo leer el estado del mapa base:', error);
   }
-
-  // Preferencia de proveedor de elevación (ajuste de la app, no del
-  // proyecto — vive en localStorage, no en el JSON del proyecto).
-  function updateElevationProviderFields() {
-    elevationGoogleFields.hidden = elevationProviderSelect.value !== 'google';
-  }
-
-  function getElevationOptions() {
-    return { provider: elevationProviderSelect.value, apiKey: elevationGoogleKeyInput.value.trim() };
-  }
-
-  try {
-    elevationProviderSelect.value = localStorage.getItem('linedesign-elevation-provider') || 'auto';
-    elevationGoogleKeyInput.value = localStorage.getItem('linedesign-elevation-google-key') || '';
-  } catch (error) {
-    console.warn('No se pudo leer la preferencia de servicio de elevación:', error);
-  }
-  updateElevationProviderFields();
 
   const catalogView = window.LineDesignCatalogView.createCatalogView(document.getElementById('catalog-container'), store);
   const hypothesesView = window.LineDesignHypothesesView.createHypothesesView(document.getElementById('hypotheses-container'), store);
@@ -373,23 +352,6 @@
       render(store.getProject());
     });
 
-    elevationProviderSelect.addEventListener('change', (e) => {
-      updateElevationProviderFields();
-      try {
-        localStorage.setItem('linedesign-elevation-provider', e.target.value);
-      } catch (error) {
-        console.warn('No se pudo guardar la preferencia de servicio de elevación:', error);
-      }
-    });
-
-    elevationGoogleKeyInput.addEventListener('change', (e) => {
-      try {
-        localStorage.setItem('linedesign-elevation-google-key', e.target.value.trim());
-      } catch (error) {
-        console.warn('No se pudo guardar la API key de Google:', error);
-      }
-    });
-
     profileVExagSelect.addEventListener('change', (e) => {
       const factor = parseFloat(e.target.value);
       profileView.setVerticalExaggeration(factor);
@@ -430,7 +392,7 @@
       showStatusMessage(`Consultando elevación real (${points.length} puntos)...`);
 
       try {
-        const rawElevations = await elevationSource.fetchElevations(points, getElevationOptions());
+        const rawElevations = await elevationSource.fetchElevations(points);
         const rawTerrainProfile = stations.map((s, i) => ({ station: s, elevation: rawElevations[i] }));
         // El dato crudo de los servicios de elevación gratuitos puede venir
         // "saltado" entre puntos consecutivos — se suaviza antes de
