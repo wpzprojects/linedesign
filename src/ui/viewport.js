@@ -79,6 +79,11 @@
      */
     function attach(svg, callbacks) {
       let panState = null;
+      // Dedos activos en pantalla (pointerType 'touch'), para detectar el
+      // segundo dedo y pasar de pan a pinch-zoom. El pan de un solo dedo
+      // sigue el mismo camino que el mouse (panState); el pinch es un modo
+      // aparte que toma el control exclusivo mientras haya 2+ dedos.
+      const activeTouches = new Map();
 
       svg.addEventListener('wheel', (evt) => {
         evt.preventDefault();
@@ -88,12 +93,71 @@
         callbacks.onChange();
       }, { passive: false });
 
-      function startPan(evt) {
-        if (evt.button !== undefined && evt.button !== 0) return;
-        panState = { startClientX: evt.clientX, startClientY: evt.clientY, startTx: state.tx, startTy: state.ty, moved: false };
-        svg.setPointerCapture(evt.pointerId);
+      function endPan() {
+        if (!panState) return;
+        svg.removeEventListener('pointermove', panState.onMove);
+        svg.removeEventListener('pointerup', panState.onUp);
+        svg.removeEventListener('pointercancel', panState.onUp);
+        panState = null;
+      }
+
+      function startPinch() {
+        function currentPair() {
+          return [...activeTouches.values()];
+        }
+        const [p1, p2] = currentPair();
+        const startDist = Math.hypot(p2.x - p1.x, p2.y - p1.y) || 1;
+        const startScale = state.scale;
+        const startTx = state.tx;
+        const startTy = state.ty;
+        // Punto medio inicial, en coordenadas del SVG (mismo espacio que
+        // zoomAt): se mantiene fijo bajo los dedos mientras se pellizca.
+        const startMid = toSvgPoint(svg, (p1.x + p2.x) / 2, (p1.y + p2.y) / 2);
 
         function onMove(moveEvt) {
+          if (!activeTouches.has(moveEvt.pointerId)) return;
+          activeTouches.set(moveEvt.pointerId, { x: moveEvt.clientX, y: moveEvt.clientY });
+          if (activeTouches.size < 2) return;
+          const [a, b] = currentPair();
+          const dist = Math.hypot(b.x - a.x, b.y - a.y) || 1;
+          const nextScale = clampScale(startScale * (dist / startDist));
+          state.tx = startMid.x - ((startMid.x - startTx) / startScale) * nextScale;
+          state.ty = startMid.y - ((startMid.y - startTy) / startScale) * nextScale;
+          state.scale = nextScale;
+          callbacks.onChange();
+        }
+
+        function onUp(upEvt) {
+          activeTouches.delete(upEvt.pointerId);
+          if (activeTouches.size >= 2) return;
+          svg.removeEventListener('pointermove', onMove);
+          svg.removeEventListener('pointerup', onUp);
+          svg.removeEventListener('pointercancel', onUp);
+        }
+
+        svg.addEventListener('pointermove', onMove);
+        svg.addEventListener('pointerup', onUp);
+        svg.addEventListener('pointercancel', onUp);
+      }
+
+      function startPan(evt) {
+        if (evt.button !== undefined && evt.button !== 0) return;
+
+        if (evt.pointerType === 'touch') {
+          activeTouches.set(evt.pointerId, { x: evt.clientX, y: evt.clientY });
+          svg.setPointerCapture(evt.pointerId);
+          if (activeTouches.size >= 2) {
+            endPan();
+            startPinch();
+            return;
+          }
+        }
+
+        panState = { startClientX: evt.clientX, startClientY: evt.clientY, startTx: state.tx, startTy: state.ty, moved: false };
+        if (evt.pointerType !== 'touch') svg.setPointerCapture(evt.pointerId);
+
+        function onMove(moveEvt) {
+          if (activeTouches.size >= 2) return; // el pinch tomó el control
           const dx = moveEvt.clientX - panState.startClientX;
           const dy = moveEvt.clientY - panState.startClientY;
           if (Math.abs(dx) > 3 || Math.abs(dy) > 3) panState.moved = true;
@@ -109,15 +173,18 @@
           callbacks.onChange();
         }
 
-        function onUp() {
-          svg.removeEventListener('pointermove', onMove);
-          svg.removeEventListener('pointerup', onUp);
-          if (!panState.moved && callbacks.onBackgroundClick) callbacks.onBackgroundClick();
-          panState = null;
+        function onUp(upEvt) {
+          activeTouches.delete(upEvt.pointerId);
+          const wasPan = panState && !panState.moved;
+          endPan();
+          if (wasPan && callbacks.onBackgroundClick) callbacks.onBackgroundClick();
         }
 
+        panState.onMove = onMove;
+        panState.onUp = onUp;
         svg.addEventListener('pointermove', onMove);
         svg.addEventListener('pointerup', onUp);
+        svg.addEventListener('pointercancel', onUp);
       }
 
       return { startPan };
