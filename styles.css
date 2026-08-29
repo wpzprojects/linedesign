@@ -712,17 +712,16 @@ p.conductor-specs {
 
 .toolbar {
   display: flex;
-  align-items: center;
-  gap: 6px;
+  align-items: stretch;
+  gap: 0;
   flex-wrap: wrap;
   background: var(--toolbar-bg);
   border: 1px solid var(--line);
   border-radius: 0;
-  /* Simétrico arriba/abajo (con align-items: center, un padding parejo
-     es lo que deja la tarjeta centrada dentro de la barra); a la
-     izquierda se achica para que la primera tarjeta quede más cerca del
-     borde. */
-  padding: 5px 14px 5px 8px;
+  /* Sin padding: las tarjetas llegan a los bordes de la barra (arriba,
+     abajo e izquierda) — el espacio que antes dejaba ese padding ahora
+     lo ocupa el propio gutter de .toolbar-sep entre grupos. */
+  padding: 0;
   /* Bleed adicional por el lado izquierdo (el derecho ya lo hereda del
      margen negativo de #screen-plan): pegada de lado a lado, sin correr
      el lienzo de Planta que está debajo. */
@@ -733,11 +732,25 @@ p.conductor-specs {
   width: auto;
 }
 
+/* Mismo lenguaje visual que .split-divider (el divisor arrastrable
+   entre Planta y Perfil): una franja con una línea delgada centrada,
+   en vez de una línea de 1px pegada. Sin cursor de arrastre ni
+   resaltado en hover — a diferencia de ese, este separador es
+   puramente decorativo (los grupos del toolbar no se redimensionan),
+   así que no debe insinuar una interacción que no existe. */
 .toolbar-sep {
-  width: 1px;
-  align-self: stretch;
+  flex: 0 0 6px;
+  position: relative;
+}
+
+.toolbar-sep::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: 2px;
+  width: 2px;
   background: var(--line);
-  margin: 0 2px;
 }
 
 .toolbar-label {
