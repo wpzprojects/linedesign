@@ -197,6 +197,36 @@
   }
 
   /**
+   * Suaviza un perfil de terreno real crudo (Fase 2, ver
+   * elevationSource.js) con un promedio ponderado gaussiano por distancia
+   * en station — cada punto se recalcula como el promedio de TODOS los
+   * puntos del perfil, pesados por qué tan cerca están de él (`sigma`, m:
+   * a esa distancia el peso cae a ~61%; a 2×sigma, a ~14%). Conserva las
+   * mismas stations, solo cambia `elevation`.
+   *
+   * Por qué hace falta: el dato que devuelven los servicios de elevación
+   * gratuitos puede venir "saltado" (ver Apéndice de `DATA_MODEL.md`) —
+   * este suavizado no es solo cosmético para la curva dibujada: al usarse
+   * también para la elevación de las estructuras (`resolveStructures`),
+   * evita postes con una base que salta de forma poco realista de un
+   * punto muestreado al siguiente.
+   */
+  function smoothTerrainProfile(terrainProfile, sigma = 40) {
+    if (!terrainProfile || terrainProfile.length < 3) return terrainProfile;
+    return terrainProfile.map((point) => {
+      let weightedSum = 0;
+      let weightTotal = 0;
+      terrainProfile.forEach((other) => {
+        const d = other.station - point.station;
+        const weight = Math.exp(-(d * d) / (2 * sigma * sigma));
+        weightedSum += other.elevation * weight;
+        weightTotal += weight;
+      });
+      return { station: point.station, elevation: weightedSum / weightTotal };
+    });
+  }
+
+  /**
    * Devuelve las estructuras con su posición (x, y, z) derivada de la station
    * sobre el alineamiento vigente. La posición NO se almacena en el proyecto:
    * se deriva siempre a partir de `station`, de modo que mover un vértice del
@@ -276,6 +306,7 @@
     makeProjector,
     resolveStructures,
     elevationAtStation,
+    smoothTerrainProfile,
     nearestStation,
     computeSpans,
     niceStep,

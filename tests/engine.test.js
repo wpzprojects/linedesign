@@ -114,6 +114,31 @@ check('resolveStructures usa el terreno real (no interpolación entre vértices)
   assert.strictEqual(resolved[0].z, 10, `debería tomar el terreno real (10), no la interpolación entre vértices (15); z=${resolved[0].z}`);
 });
 
+check('smoothTerrainProfile reduce un salto puntual sin mover las stations', () => {
+  const jagged = [
+    { station: 0, elevation: 100 },
+    { station: 25, elevation: 100 },
+    { station: 50, elevation: 100 },
+    { station: 75, elevation: 250 }, // salto puntual, aislado
+    { station: 100, elevation: 100 },
+    { station: 125, elevation: 100 },
+    { station: 150, elevation: 100 }
+  ];
+  const smooth = stationing.smoothTerrainProfile(jagged, 40);
+  assert.strictEqual(smooth.length, jagged.length);
+  smooth.forEach((p, i) => assert.strictEqual(p.station, jagged[i].station, 'las stations no cambian'));
+  const spike = smooth.find((p) => p.station === 75);
+  assert.ok(spike.elevation < 250 && spike.elevation > 100, `el salto puntual debería atenuarse; elevation=${spike.elevation}`);
+  const flat = smooth.find((p) => p.station === 0);
+  assert.ok(flat.elevation > 100 && flat.elevation < 250, `un punto lejano al salto debería subir un poco por su influencia; elevation=${flat.elevation}`);
+});
+
+check('smoothTerrainProfile no toca un perfil ya perfectamente plano', () => {
+  const flat = [0, 25, 50, 75, 100].map((s) => ({ station: s, elevation: 1000 }));
+  const smooth = stationing.smoothTerrainProfile(flat, 40);
+  smooth.forEach((p) => assert.ok(Math.abs(p.elevation - 1000) < 1e-9));
+});
+
 // --- catenary ---
 const conductor = {
   name: 'ACSR 4/0',

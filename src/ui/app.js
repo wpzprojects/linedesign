@@ -430,17 +430,24 @@
       showStatusMessage(`Consultando elevación real (${points.length} puntos)...`);
 
       try {
-        const elevations = await elevationSource.fetchElevations(points, getElevationOptions());
-        const terrainProfile = stations.map((s, i) => ({ station: s, elevation: elevations[i] }));
+        const rawElevations = await elevationSource.fetchElevations(points, getElevationOptions());
+        const rawTerrainProfile = stations.map((s, i) => ({ station: s, elevation: rawElevations[i] }));
+        // El dato crudo de los servicios de elevación gratuitos puede venir
+        // "saltado" entre puntos consecutivos — se suaviza antes de
+        // guardarlo, así tanto la curva dibujada como la elevación que
+        // toman las estructuras (resolveStructures) usan el dato ya
+        // suave, no el crudo.
+        const terrainProfile = stationing.smoothTerrainProfile(rawTerrainProfile);
 
         // Cada vértice ya tiene su station exacta incluida en `stations`
         // (ver stationing.sampleStations), así que se reusa el mismo lote
-        // de resultados para actualizar su elevación — sin otra consulta.
+        // de resultados (ya suavizado) para actualizar su elevación — sin
+        // otra consulta.
         const distances = stationing.cumulativeDistances(vertices);
         const vertexElevations = vertices.map((v, i) => {
           const targetStation = Math.round(distances[i] * 100) / 100;
           const idx = stations.findIndex((s) => Math.abs(s - targetStation) < 0.01);
-          return { id: v.id, z: idx >= 0 ? elevations[idx] : v.z };
+          return { id: v.id, z: idx >= 0 ? terrainProfile[idx].elevation : v.z };
         });
 
         store.applyTerrainProfile(terrainProfile, vertexElevations);
