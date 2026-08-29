@@ -49,9 +49,20 @@
   },
   "hypotheses": [
     { "id": "H1", "name": "Everyday (EDS)", "temperature": 15, "windSpeed": 0, "iceThickness": 0 }
-  ]
+  ],
+  "stringingTensions": [
+    {
+      "id": "ST-01", "weatherCase": "Everyday (EDS)", "cableCondition": "",
+      "percentUltimate": 22, "maxTension": null, "maxCatenary": null, "applicableCable": ""
+    }
+  ],
+  "groundClearance": 0
 }
 ```
+
+`stringingTensions` (Parámetros de entrada § Tensiones de tendido): tabla de datos de entrada, sin motor de cálculo asociado por ahora (no hay modelo de creep en esta fase). `weatherCase`/`applicableCable` guardan el *nombre* (no el id) del caso climático/conductor elegido en el desplegable — texto libre en la práctica, no una referencia validada. `maxTension`/`maxCatenary` son `null` cuando el campo queda en blanco (opcional).
+
+`groundClearance` (Parámetros de entrada § Terreno, m): distancia de seguridad al terreno. Cuando es mayor que 0, `profileView.js` dibuja una línea punteada gris con la misma forma del terreno, desplazada esa distancia hacia arriba (en espacio de datos, antes de proyectar — respeta la exageración vertical igual que el resto del perfil).
 
 ### Decisión clave: posición de estructuras derivada, no almacenada
 

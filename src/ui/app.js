@@ -30,6 +30,7 @@
   const newStructureType = document.getElementById('new-structure-type');
   const newStructureStation = document.getElementById('new-structure-station');
   const planHypothesisSelect = document.getElementById('plan-hypothesis-select');
+  const groundClearanceInput = document.getElementById('ground-clearance-input');
   const profileVExagSelect = document.getElementById('profile-vexag-select');
   const terrainFetchBtn = document.getElementById('terrain-fetch-btn');
   const sagLabelsToggle = document.getElementById('sag-labels-toggle');
@@ -351,6 +352,7 @@
     const scrollTop = workspaceBody ? workspaceBody.scrollTop : 0;
 
     projectNameInput.value = project.name;
+    groundClearanceInput.value = project.groundClearance;
     renderSummary(project);
     syncStructureTypeOptions(project);
     syncPlanHypothesisOptions(project);
@@ -529,6 +531,8 @@
     });
 
     projectNameInput.addEventListener('change', (e) => store.setProjectName(e.target.value.trim() || 'Proyecto sin nombre'));
+
+    groundClearanceInput.addEventListener('change', (e) => store.setGroundClearance(parseFloat(e.target.value) || 0));
 
     planMapToggle.addEventListener('click', () => {
       const next = planMapToggle.getAttribute('aria-pressed') !== 'true';

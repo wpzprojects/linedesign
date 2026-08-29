@@ -63,6 +63,7 @@
     }
     project = restored || dataSource.getInitialProject();
     if (!project.stringingTensions) project.stringingTensions = [];
+    if (project.groundClearance == null) project.groundClearance = 0;
     recalculateIdCounters();
     notify();
   }
@@ -309,6 +310,14 @@
     notify();
   }
 
+  // ---------- Terreno ----------
+
+  function setGroundClearance(value) {
+    project.groundClearance = Math.max(0, value || 0);
+    persist();
+    notify();
+  }
+
   // ---------- Conductor ----------
 
   function setConductor(conductorId) {
@@ -378,6 +387,7 @@
     addStringingTension,
     updateStringingTension,
     removeStringingTension,
+    setGroundClearance,
     setConductor,
     updateConductor,
     setProjectName,

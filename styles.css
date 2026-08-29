@@ -935,6 +935,14 @@ svg#plan-svg {
   text-anchor: middle;
 }
 
+.clearance-line {
+  stroke: var(--muted);
+  stroke-width: 1;
+  stroke-dasharray: 4 3;
+  fill: none;
+  vector-effect: non-scaling-stroke;
+}
+
 .structure-point {
   fill: var(--accent);
   stroke: var(--panel);

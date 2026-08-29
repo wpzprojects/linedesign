@@ -77,13 +77,17 @@
    * elevationSource.js), array de `{ station, elevation }`. Cuando está
    * presente se incluye en el rango de elevaciones — puede tener picos/
    * valles entre vértices que la sola interpolación lineal no captura.
+   * `groundClearance` (opcional, m): distancia de seguridad al terreno —
+   * se incluye terreno+distancia en el rango para que la línea punteada
+   * de distancia de seguridad (ver profileView.js) nunca quede recortada.
    */
-  function profileBounds(vertices, structures, terrainProfile) {
+  function profileBounds(vertices, structures, terrainProfile, groundClearance = 0) {
     const distances = cumulativeDistances(vertices);
     const elevations = vertices.map((v) => v.z);
     const structureTops = structures.map((s) => s.z + s.height);
     const terrainZ = (terrainProfile || []).map((p) => p.elevation);
-    const allZ = elevations.concat(structureTops.length ? structureTops : elevations, terrainZ);
+    const clearanceZ = groundClearance > 0 ? terrainZ.map((z) => z + groundClearance) : [];
+    const allZ = elevations.concat(structureTops.length ? structureTops : elevations, terrainZ, clearanceZ);
     return {
       minX: 0,
       maxX: distances[distances.length - 1] || 1,

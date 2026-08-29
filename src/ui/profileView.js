@@ -100,7 +100,8 @@
       const terrainProfile = project.alignment.terrainProfile;
       const resolved = stationing.resolveStructures(vertices, project.structures, terrainProfile)
         .sort((a, b) => a.station - b.station);
-      const bounds = stationing.profileBounds(vertices, resolved, terrainProfile);
+      const groundClearance = project.groundClearance || 0;
+      const bounds = stationing.profileBounds(vertices, resolved, terrainProfile, groundClearance);
       const projector = stationing.makeProjector(bounds, WIDTH, HEIGHT, PADDING, current.vExaggeration);
       current.projector = projector;
 
@@ -124,6 +125,20 @@
         class: `profile-line${terrainProfile ? ' profile-line--real' : ''}`,
         d: pathFromPoints(terrainPoints)
       }));
+
+      // Línea de distancia de seguridad al terreno (Parámetros de entrada
+      // § Terreno): misma forma que el terreno, desplazada `groundClearance`
+      // metros hacia arriba (en espacio de datos, antes de proyectar, para
+      // que respete la exageración vertical igual que el resto del perfil).
+      if (groundClearance > 0) {
+        const clearancePoints = terrainProfile
+          ? terrainProfile.map((p) => projector.toScreen(p.station, p.elevation + groundClearance))
+          : vertices.map((v, i) => projector.toScreen(distances[i], v.z + groundClearance));
+        zoomLayer.appendChild(svgEl('path', {
+          class: 'clearance-line',
+          d: pathFromPoints(clearancePoints)
+        }));
+      }
 
       const hypothesis = project.hypotheses.find((h) => h.id === hypothesisId) || project.hypotheses[0];
       const referenceHypothesis = loadTree.getReferenceHypothesis(project);
