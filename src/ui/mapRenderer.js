@@ -2,21 +2,18 @@
  * mapRenderer.js — Mapa base (Leaflet) para la vista en Planta (Fase 2,
  * Apéndice A del prompt maestro). Es una capa de RENDERIZADO detrás del SVG
  * existente, no una fuente de datos: el alineamiento se sigue dibujando con
- * el proyector local de siempre (metros), y este módulo solo se encarga de
- * que las teselas del mapa se vean alineadas y se muevan en sincronía con
- * el zoom/pan del SVG.
+ * el proyector local de siempre (metros); este módulo solo se encarga de
+ * que Leaflet quede centrado y a la escala correcta en todo momento.
  *
- * Truco de sincronización: en vez de decirle a Leaflet que haga pan/zoom
- * cada vez que el usuario mueve la rueda o arrastra (lo que dispararía
- * recargas de teselas en cada frame), el mapa se deja fijo en una vista
- * base — calibrada para que su escala (metros/píxel) coincida con la del
- * proyector — y se le aplica el MISMO transform CSS `translate(...)
- * scale(...)` que ya usa `viewport.js` para el `<g>` del SVG. Con
- * `transform-origin: 0 0` en ambos, esa transformación escala/traslada
- * igual en los dos, así que quedan pegados durante todo el gesto. Solo al
- * terminar un render() (no en cada frame) se recalibra la vista base con
- * `syncBase()`, igual que el proyector del SVG se recalcula en cada
- * render() y no en cada frame de zoom/pan.
+ * Nota de diseño: la primera versión de este módulo "congelaba" la vista de
+ * Leaflet y solo le aplicaba un transform CSS (translate/scale) para
+ * simular el zoom/pan, evitando llamar a sus métodos nativos en cada frame.
+ * Eso resultó ser un error: Leaflet nunca se enteraba de que el usuario
+ * había hecho zoom/pan, así que nunca pedía teselas nuevas — solo se veía
+ * la porción cargada en el primer render, sin importar cuánto te alejaras o
+ * acercaras. Ahora se usa `map.setView()`/`panBy()` (reales, sin animación)
+ * en cada cambio del viewport, acotados a un máximo de una vez por frame
+ * (`requestAnimationFrame`) para no saturar durante un wheel/drag rápido.
  */
 (function (global) {
   const geo = global.LineDesignGeo;
@@ -24,6 +21,7 @@
   function createMapRenderer(container) {
     let map = null;
     let visible = false;
+    let pendingUpdate = null;
 
     function ensureMap() {
       if (map) return;
@@ -52,8 +50,6 @@
       });
       streets.addTo(map);
       L.control.layers({ Calles: streets, Satélite: satellite }, {}, { position: 'topright' }).addTo(map);
-
-      container.style.transformOrigin = '0 0';
     }
 
     function setVisible(nextVisible) {
@@ -72,31 +68,45 @@
       return visible;
     }
 
-    /**
-     * Recalibra y centra la vista base del mapa: zoom tal que su escala
-     * (metros/píxel) coincida con la del proyector SVG en `origin.lat`, y
-     * centrado de forma que el punto local (0,0) — que por definición es
-     * `origin` — caiga exactamente en `projector.toScreen(0, 0)`, el mismo
-     * punto donde el SVG dibuja ese vértice antes de aplicar el zoom/pan
-     * vigente. Se llama una vez por render(), no en cada frame de zoom/pan.
-     */
-    function syncBase(origin, projector, width, height) {
+    function applyUpdate({ origin, projector, width, height, viewportState }) {
       if (!visible || !map) return;
-      const metersPerPixel = 1 / projector.scale;
+      const effectiveScale = projector.scale * viewportState.scale;
+      const metersPerPixel = 1 / effectiveScale;
       const zoom = geo.zoomForScale(metersPerPixel, origin.lat);
       map.setView([origin.lat, origin.lon], zoom, { animate: false });
 
+      // Punto local (0,0) = `origin`, en pantalla, con el zoom/pan vigente
+      // del SVG aplicado (misma fórmula que usa el <g> de zoomLayer).
       const p0 = projector.toScreen(0, 0);
-      map.panBy([p0.x - width / 2, p0.y - height / 2], { animate: false });
+      const screenX = viewportState.scale * p0.x + viewportState.tx;
+      const screenY = viewportState.scale * p0.y + viewportState.ty;
+      map.panBy([screenX - width / 2, screenY - height / 2], { animate: false });
     }
 
-    /** Aplica el mismo transform que el <g> de zoom del SVG (ver viewport.js). */
-    function applyTransform(viewportState) {
-      if (!map) return;
-      container.style.transform = `translate(${viewportState.tx}px, ${viewportState.ty}px) scale(${viewportState.scale})`;
+    /**
+     * Centra/escala Leaflet para que el punto local (0,0) — `origin` — caiga
+     * en `projector.toScreen(0,0)` transformado por el zoom/pan vigente del
+     * SVG (`viewportState`), y su escala coincida con la del proyector. Se
+     * llama tanto en cada render() como en cada cambio de zoom/pan (acotado
+     * a 1 vez por frame) para que Leaflet siempre sepa dónde está y pida
+     * las teselas que le correspondan.
+     */
+    function updateView(origin, projector, width, height, viewportState) {
+      if (!visible || !map) return;
+      const args = { origin, projector, width, height, viewportState };
+      if (pendingUpdate !== null) {
+        pendingUpdate = args;
+        return;
+      }
+      pendingUpdate = args;
+      global.requestAnimationFrame(() => {
+        const next = pendingUpdate;
+        pendingUpdate = null;
+        applyUpdate(next);
+      });
     }
 
-    return { setVisible, isVisible, syncBase, applyTransform };
+    return { setVisible, isVisible, updateView };
   }
 
   global.LineDesignMapRenderer = { createMapRenderer };

@@ -39,9 +39,14 @@
     // proyector/zoomLayer actuales y no sobre los de un render anterior.
     const current = { project: null, selection: null, projector: null, zoomLayer: null };
 
+    function updateMapView() {
+      if (!current.project || !current.projector) return;
+      mapRenderer.updateView(current.project.alignment.origin, current.projector, current.width, current.height, viewport.state);
+    }
+
     function applyTransform() {
       if (current.zoomLayer) current.zoomLayer.setAttribute('transform', viewport.transformAttr());
-      mapRenderer.applyTransform(viewport.state);
+      updateMapView();
     }
 
     const pan = viewport.attach(svg, {
@@ -107,6 +112,8 @@
       const WIDTH = Math.max(Math.round(rect.width), MIN_SIZE);
       const HEIGHT = Math.max(Math.round(rect.height), MIN_SIZE);
       svg.setAttribute('viewBox', `0 0 ${WIDTH} ${HEIGHT}`);
+      current.width = WIDTH;
+      current.height = HEIGHT;
 
       const vertices = project.alignment.vertices;
       current.vertices = vertices;
@@ -114,8 +121,7 @@
       const projector = stationing.makeProjector(bounds, WIDTH, HEIGHT, PADDING);
       current.projector = projector;
 
-      mapRenderer.syncBase(project.alignment.origin, projector, WIDTH, HEIGHT);
-      mapRenderer.applyTransform(viewport.state);
+      updateMapView();
 
       // Fondo NO transformado (fuera de la capa de zoom): así el pan se
       // puede iniciar arrastrando en cualquier parte visible del lienzo.

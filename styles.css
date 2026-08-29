@@ -788,6 +788,16 @@ svg#profile-svg {
   display: none;
 }
 
+/* Fuerza explícita el control de capas (Calles/Satélite) y la atribución
+   por encima del <svg> (z-index 300): no depender del z-index interno por
+   defecto de Leaflet para esto, que además solo funciona si `.plan-map`
+   nunca gana su propio z-index (ver nota arriba) — con un valor propio muy
+   alto queda garantizado sin importar ninguno de los dos supuestos. */
+.plan-map .leaflet-top,
+.plan-map .leaflet-bottom {
+  z-index: 10000;
+}
+
 /* Atribución de Leaflet legible sobre el tema oscuro de la app. */
 .plan-map .leaflet-control-attribution,
 .plan-map .leaflet-control-layers {

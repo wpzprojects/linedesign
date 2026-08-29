@@ -96,9 +96,11 @@
         return;
       }
       let text = `X: ${dataPoint.x.toFixed(1)} m · Y: ${dataPoint.y.toFixed(1)} m`;
-      if (planView.isMapVisible()) {
+      try {
         const latLon = geo.localToLatLon(store.getProject().alignment.origin, dataPoint);
         text += ` · ${latLon.lat.toFixed(5)}, ${latLon.lon.toFixed(5)}`;
+      } catch (error) {
+        console.warn('No se pudo calcular lat/lon:', error);
       }
       statusCoords.textContent = text;
       const station = stationing.nearestStation(store.getProject().alignment.vertices, dataPoint);
