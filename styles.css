@@ -940,6 +940,23 @@ p.conductor-specs {
   touch-action: none;
 }
 
+/* Botón "Planta y Perfil" del toolbar: oculta el panel que no toca junto
+   con el divisor arrastrable (no tiene sentido arrastrar el límite entre
+   Planta y Perfil si solo se ve uno de los dos). El panel que queda pasa
+   a flex:1 1 auto para ocupar el 100% — el de Planta normalmente usa un
+   ancho fijo (--split-plan) para repartirse con Perfil, que ya no aplica
+   con el otro panel escondido. */
+.split-view--plan-only .panel:last-child,
+.split-view--plan-only .split-divider,
+.split-view--profile-only .panel:first-child,
+.split-view--profile-only .split-divider {
+  display: none;
+}
+
+.split-view--plan-only .panel:first-child {
+  flex: 1 1 auto;
+}
+
 .split-divider::after {
   content: '';
   position: absolute;
@@ -1773,6 +1790,15 @@ body:not(.screen-plan-active) .status-bar {
        padding — reducirlo aquí también desalinea esos bordes y provoca
        scroll horizontal. */
     padding: 14px 20px;
+  }
+
+  /* #screen-plan cancela el padding de .workspace-body con un margen
+     negativo fijo (-18px/-28px, pensado para el padding de escritorio).
+     Como aquí arriba ese padding baja a 14px arriba y abajo, el margen
+     sin ajustar cancelaba 4px de más y se comía el padding de 3px del
+     .toolbar — dejaba "+ Vértice" pegado contra la barra de título. */
+  #screen-plan.screen.is-active {
+    margin: -14px -20px -14px 0;
   }
 
   .status-summary, .status-sep {

@@ -43,6 +43,7 @@
   const newStructureType = document.getElementById('new-structure-type');
   const newStructureStation = document.getElementById('new-structure-station');
   const planHypothesisSelect = document.getElementById('plan-hypothesis-select');
+  const planProfileVisibilityBtn = document.getElementById('plan-profile-visibility-btn');
   const groundClearanceInput = document.getElementById('ground-clearance-input');
   const rightOfWayInput = document.getElementById('right-of-way-input');
   const poleSafetyFactorInput = document.getElementById('pole-safety-factor-input');
@@ -70,6 +71,18 @@
   const zoomLevels = { plan: 1, profile: 1 };
   let statusMessageTimer = null;
   let kmzCandidates = [];
+  // Preferencia de UI (no del proyecto): qué panel(es) mostrar en la
+  // pantalla Planta y Perfil — cicla "both" -> "plan" -> "profile" -> "both".
+  let planProfileVisibility = 'both';
+
+  const PLAN_PROFILE_VISIBILITY_CYCLE = { both: 'plan', plan: 'profile', profile: 'both' };
+  const PLAN_PROFILE_VISIBILITY_LABEL = { both: 'Planta y Perfil', plan: 'Solo Planta', profile: 'Solo Perfil' };
+
+  function applyPlanProfileVisibility() {
+    splitView.classList.toggle('split-view--plan-only', planProfileVisibility === 'plan');
+    splitView.classList.toggle('split-view--profile-only', planProfileVisibility === 'profile');
+    planProfileVisibilityBtn.textContent = PLAN_PROFILE_VISIBILITY_LABEL[planProfileVisibility];
+  }
 
   function roundTo4(value) {
     return Math.round(value * 10000) / 10000;
@@ -206,6 +219,14 @@
   } catch (error) {
     console.warn('No se pudo leer el estado del mapa base:', error);
   }
+
+  try {
+    const savedVisibility = localStorage.getItem('linedesign-plan-profile-visibility');
+    if (savedVisibility === 'plan' || savedVisibility === 'profile') planProfileVisibility = savedVisibility;
+  } catch (error) {
+    console.warn('No se pudo leer la visibilidad guardada de Planta/Perfil:', error);
+  }
+  applyPlanProfileVisibility();
 
   function setCircuitVisible(visible) {
     planView.setCircuitVisible(visible);
@@ -1197,6 +1218,20 @@
       } catch (error) {
         console.warn('No se pudo guardar el estado del mapa base:', error);
       }
+      render(store.getProject());
+    });
+
+    planProfileVisibilityBtn.addEventListener('click', () => {
+      planProfileVisibility = PLAN_PROFILE_VISIBILITY_CYCLE[planProfileVisibility];
+      applyPlanProfileVisibility();
+      try {
+        localStorage.setItem('linedesign-plan-profile-visibility', planProfileVisibility);
+      } catch (error) {
+        console.warn('No se pudo guardar la visibilidad de Planta/Perfil:', error);
+      }
+      // El panel que vuelve a ocupar el 100% del ancho necesita recalcular
+      // su viewBox/zoom para ese nuevo tamaño — igual que el toggle del
+      // mapa base, se dispara un render completo tras el cambio.
       render(store.getProject());
     });
 
