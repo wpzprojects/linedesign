@@ -483,7 +483,7 @@
         onChange: (e) => store.setConductor(e.target.value)
       }, project.conductorCatalog.map((c) => el('option', { value: c.id, selected: c.id === project.conductor.id }, c.name))));
 
-      inspectorPanel.appendChild(el('p', { class: 'muted' },
+      inspectorPanel.appendChild(el('p', { class: 'muted conductor-specs' },
         `Diámetro ${project.conductor.diameter} m · Peso ${project.conductor.weightPerLength} N/m · RTS ${project.conductor.ultimateStrength} N`));
     }
   }

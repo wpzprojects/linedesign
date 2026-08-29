@@ -35,7 +35,7 @@
         el('h2', {}, 'Conductor'),
         el('label', {}, 'Catálogo'),
         conductorSelect,
-        el('p', { class: 'muted' }, `Diámetro ${project.conductor.diameter} m · Peso ${project.conductor.weightPerLength} N/m · RTS ${project.conductor.ultimateStrength} N`),
+        el('p', { class: 'muted conductor-specs' }, `Diámetro ${project.conductor.diameter} m · Peso ${project.conductor.weightPerLength} N/m · RTS ${project.conductor.ultimateStrength} N`),
         el('label', {}, 'Hipótesis de referencia (tensión instalada)'),
         refHypSelect,
         el('label', {}, 'Tensión horizontal de referencia (N)'),

@@ -549,6 +549,16 @@ input:focus, select:focus, button:focus-visible {
   font-size: 0.85rem;
 }
 
+/* Ficha de specs del conductor (diámetro/peso/RTS), justo debajo del
+   selector de catálogo: más chica que un párrafo normal y pegada arriba
+   (el <p> por defecto trae su propio margen simétrico, que la dejaba
+   "flotando" a media distancia entre el selector y la siguiente
+   etiqueta). */
+.conductor-specs {
+  margin: 2px 0 10px;
+  font-size: 0.76rem;
+}
+
 .screen {
   display: none;
   flex-direction: column;
