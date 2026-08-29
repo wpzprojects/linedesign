@@ -906,6 +906,14 @@ p.conductor-specs {
   font-size: 0.82rem;
   font-weight: 600;
   white-space: nowrap;
+  /* Un <button> y un <select> con el mismo padding/borde no siempre
+     renderizan igual de alto — el line-height "normal" por defecto del
+     navegador difiere entre ambos tipos de control. Se fija el mismo
+     line-height explícito acá y en .toolbar-field input/select (abajo)
+     para que ambos calculen la misma altura de caja y sus etiquetas
+     queden a la misma altura cuando comparten tarjeta (ver Visualización
+     + Hipótesis mostrada). */
+  line-height: 1.2;
 }
 
 .toolbar-card-btn:hover {
@@ -940,6 +948,7 @@ p.conductor-specs {
   padding: 4px 8px;
   font-size: 0.82rem;
   background: var(--toolbar-bg);
+  line-height: 1.2;
 }
 
 /* ".toolbar input { width: auto }" (arriba) tiene más especificidad que
