@@ -614,6 +614,15 @@ input:focus, select:focus, button:focus-visible {
   border-color: color-mix(in srgb, var(--danger) 40%, transparent);
 }
 
+/* .btn:hover (genérico) pone todo en azul primario — para un botón de
+   peligro eso manda la señal contraria (parece un botón normal al
+   pasar el mouse). Se acentúa el rojo en vez de cambiar a azul. */
+.btn-danger:hover {
+  border-color: var(--danger);
+  color: var(--danger);
+  background: color-mix(in srgb, var(--danger) 12%, transparent);
+}
+
 .row-actions {
   display: flex;
   gap: 8px;
