@@ -41,10 +41,10 @@
             el('thead', {}, el('tr', {}, [
               el('th', {}, 'Estructura'),
               el('th', {}, 'Hipótesis'),
-              el('th', {}, 'Vertical (N)'),
-              el('th', {}, 'Transversal (N)'),
-              el('th', {}, 'Longitudinal (N)'),
-              el('th', {}, 'Momento est. (N·m)')
+              el('th', { class: 'num' }, 'Vertical (N)'),
+              el('th', { class: 'num' }, 'Transversal (N)'),
+              el('th', { class: 'num' }, 'Longitudinal (N)'),
+              el('th', { class: 'num' }, 'Momento est. (N·m)')
             ])),
             el('tbody', {}, tableRows)
           ])

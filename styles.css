@@ -1096,7 +1096,7 @@ circle.sync-marker {
   text-align: left;
 }
 
-.data-table td.num {
+.data-table th.num, .data-table td.num {
   text-align: right;
   font-variant-numeric: tabular-nums;
 }
