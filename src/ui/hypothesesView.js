@@ -84,6 +84,9 @@
       const tensionInput = el('input', {
         type: 'number', step: '10', value: Math.round(toDisplayForce(project, units.newtonsToKgf(resolved.tension))),
         disabled: usingCalculated,
+        title: usingCalculated
+          ? `Calculada desde "Tensiones de tendido" para "${referenceHypothesis.name}" — campo deshabilitado mientras aplique.`
+          : '',
         onChange: (e) => store.updateConductor({ referenceHorizontalTension: fromDisplayForce(project, parseFloat(e.target.value) || 0) })
       });
 
@@ -96,10 +99,6 @@
         refHypSelect,
         el('label', {}, `Tensión horizontal de referencia (${forceUnitLabel(project)})`),
         tensionInput,
-        usingCalculated
-          ? el('p', { class: 'muted conductor-specs' },
-            `Calculada desde "Tensiones de tendido" para "${referenceHypothesis.name}" — campo deshabilitado mientras aplique.`)
-          : null,
         usingManualFallback
           ? el('div', { class: 'stringing-warning' },
             `Se está usando esta tensión de referencia manual: ningún caso climático tiene una fila en "Tensiones de tendido" para "${project.conductor.name}".`)

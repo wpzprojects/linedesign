@@ -560,27 +560,6 @@ body.dark-theme .icon-moon {
   font-size: 1rem;
 }
 
-.project-meta {
-  display: flex;
-  justify-content: space-between;
-  gap: 12px;
-  padding: 6px 0;
-  border-bottom: 1px solid var(--line);
-  color: var(--muted);
-  font-size: 0.85rem;
-}
-
-.project-meta:last-child {
-  border-bottom: none;
-}
-
-/* El <strong> por defecto (negrita del navegador) se ve más "gritado"
-   que el resto de la tarjeta — se atenúa el peso sin encogerlo (sigue
-   en el mismo tamaño de .project-meta), para un valor más sobrio. */
-.project-meta strong {
-  font-weight: 500;
-}
-
 .stack-list {
   margin: 0;
   padding-left: 0;

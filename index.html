@@ -284,8 +284,7 @@
                 <input id="project-name-input" type="text" />
 
                 <label for="kmz-import-btn">Importar KMZ</label>
-                <button id="kmz-import-btn" class="btn toolbar-card-btn" type="button">Elegir archivo KMZ/KML…</button>
-                <p class="muted conductor-specs text-justify">Carga un archivo KMZ/KML para iniciar un nuevo proyecto (reemplaza el actual).</p>
+                <button id="kmz-import-btn" class="btn toolbar-card-btn" type="button" title="Carga un archivo KMZ/KML para iniciar un nuevo proyecto (reemplaza el actual).">Elegir archivo KMZ/KML…</button>
                 <input id="kmz-import-file" type="file" accept=".kmz,.kml" hidden />
 
                 <div id="kmz-import-picker" class="kmz-import-picker" hidden>
@@ -300,6 +299,7 @@
                   </div>
                 </div>
 
+                <label>Exportar / importar proyecto, o reiniciar ejemplo</label>
                 <div class="row-actions row-actions--wrap">
                   <button id="export-btn" class="btn btn-small" type="button" title="Descarga el proyecto completo (alineamiento, estructuras, hipótesis, conductor…) como un archivo .json">Exportar JSON</button>
                   <button id="import-btn" class="btn btn-small" type="button" title="Carga un archivo .json exportado antes, reemplazando el proyecto actual">Importar JSON</button>
@@ -309,11 +309,9 @@
               </div>
               <div class="card">
                 <h2>Unidades</h2>
-                <div class="project-meta">
-                  <span>Coordenadas</span>
-                  <strong>MAGNA-SIRGAS / Origen-Nacional (EPSG:9377)</strong>
-                </div>
                 <div id="unit-system-container"></div>
+                <label>Sistema de coordenadas</label>
+                <p class="muted conductor-specs">MAGNA-SIRGAS / Origen-Nacional (EPSG:9377)</p>
               </div>
 
               <div class="card">
