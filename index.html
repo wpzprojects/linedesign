@@ -75,16 +75,6 @@
           <section id="screen-summary" class="screen">
             <div class="summary-top-row">
               <div class="card">
-                <h2>Proyecto</h2>
-                <div class="row-actions row-actions--wrap">
-                  <button id="export-btn" class="btn btn-small" type="button">Exportar JSON</button>
-                  <button id="import-btn" class="btn btn-small" type="button">Importar JSON</button>
-                  <button id="reset-btn" class="btn btn-small btn-danger" type="button">Reiniciar ejemplo</button>
-                </div>
-                <input id="import-file" type="file" accept="application/json" hidden />
-              </div>
-
-              <div class="card">
                 <h2>Resumen</h2>
                 <ul id="summary-list" class="stack-list"></ul>
               </div>
@@ -209,6 +199,12 @@
                 <h2>Proyecto</h2>
                 <label for="project-name-input">Nombre</label>
                 <input id="project-name-input" type="text" />
+                <div class="row-actions row-actions--wrap">
+                  <button id="export-btn" class="btn btn-small" type="button">Exportar JSON</button>
+                  <button id="import-btn" class="btn btn-small" type="button">Importar JSON</button>
+                  <button id="reset-btn" class="btn btn-small btn-danger" type="button">Reiniciar ejemplo</button>
+                </div>
+                <input id="import-file" type="file" accept="application/json" hidden />
               </div>
               <div class="card">
                 <h2>Unidades</h2>
