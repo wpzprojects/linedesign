@@ -559,6 +559,22 @@ input:focus, select:focus, button:focus-visible {
   font-size: 0.63rem;
 }
 
+/* Aviso persistente (no un popup que se cierra solo) de que la tensión
+   horizontal de referencia es el respaldo manual, no un valor calculado —
+   ver hypothesesView.js#renderConductorCard. Grande y llamativo a
+   propósito: es una condición que afecta el cálculo de todo el proyecto. */
+.stringing-warning {
+  margin-top: 14px;
+  padding: 12px 14px;
+  border: 2px solid var(--danger);
+  border-radius: 8px;
+  background: rgba(220, 38, 38, 0.12);
+  color: var(--danger);
+  font-size: 0.95rem;
+  font-weight: 700;
+  line-height: 1.4;
+}
+
 .screen {
   display: none;
   flex-direction: column;

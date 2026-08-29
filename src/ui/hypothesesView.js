@@ -4,6 +4,7 @@
  */
 (function (global) {
   const { el, clear } = global.LineDesignDomUtil;
+  const catenary = global.LineDesignCatenary;
 
   function createHypothesesView(container, store) {
     function render(project) {
@@ -31,6 +32,17 @@
         onChange: (e) => store.updateConductor({ referenceHorizontalTension: parseFloat(e.target.value) || 0 })
       });
 
+      // Si "Tensiones de tendido" tiene filas cargadas pero NINGUNA hipótesis
+      // del proyecto tiene una que aplique a este conductor (app.js ya
+      // intentó cambiar automáticamente la hipótesis de referencia a una que
+      // sí tuviera — este es el caso en que ni eso funcionó), el valor de
+      // abajo es el manual de respaldo, no uno calculado. Se avisa aquí
+      // mismo, de forma persistente (no un popup que se cierra solo),
+      // justo donde vive ese valor.
+      const referenceHypothesis = project.hypotheses.find((h) => h.id === project.conductor.referenceHypothesisId) || project.hypotheses[0];
+      const usingManualFallback = project.stringingTensions.length > 0
+        && catenary.findStringingRows(project.conductor, referenceHypothesis, project.stringingTensions).length === 0;
+
       return el('div', { class: 'card' }, [
         el('h2', {}, 'Conductor'),
         el('label', {}, 'Catálogo'),
@@ -39,7 +51,11 @@
         el('label', {}, 'Hipótesis de referencia (tensión instalada)'),
         refHypSelect,
         el('label', {}, 'Tensión horizontal de referencia (N)'),
-        tensionInput
+        tensionInput,
+        usingManualFallback
+          ? el('div', { class: 'stringing-warning' },
+            `Se está usando esta tensión de referencia manual: ningún caso climático tiene una fila en "Tensiones de tendido" para "${project.conductor.name}".`)
+          : null
       ]);
     }
 

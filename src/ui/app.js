@@ -61,7 +61,6 @@
   const zoomLevels = { plan: 1, profile: 1 };
   let statusMessageTimer = null;
   let kmzCandidates = [];
-  let lastStringingWarningKey = null;
 
   function roundTo4(value) {
     return Math.round(value * 10000) / 10000;
@@ -95,37 +94,25 @@
   // de referencia manual como respaldo silencioso: se busca otra hipótesis
   // que sí tenga fila para este conductor y se cambia la referencia a esa
   // automáticamente (store.updateConductor dispara notify() -> render(),
-  // así que este mismo chequeo se vuelve a correr y ya coincidirá). Solo
-  // si NINGUNA hipótesis tiene fila para el conductor se cae al valor
-  // manual y se avisa — ahí sí no hay otra opción. Si la tabla está vacía
-  // del todo no hace nada: eso es "no estoy usando este criterio".
+  // así que este mismo chequeo se vuelve a correr y ya coincidirá). Si
+  // NINGUNA hipótesis tiene fila para el conductor, no hay a qué cambiar —
+  // ahí sí se cae al valor manual, pero el aviso persistente (no un popup
+  // que se cierra solo) vive directamente en la tarjeta Conductor, ver
+  // hypothesesView.js#renderConductorCard.
   function checkStringingCriteria(project) {
-    if (!project.stringingTensions.length) {
-      lastStringingWarningKey = null;
-      return;
-    }
+    if (!project.stringingTensions.length) return;
     const referenceHypothesis = loadTree.getReferenceHypothesis(project);
     const currentMatched = catenary.findStringingRows(project.conductor, referenceHypothesis, project.stringingTensions).length > 0;
-    if (currentMatched) {
-      lastStringingWarningKey = null;
-      return;
-    }
+    if (currentMatched) return;
 
     const candidate = project.hypotheses.find((h) =>
       h.id !== referenceHypothesis.id &&
       catenary.findStringingRows(project.conductor, h, project.stringingTensions).length > 0
     );
     if (candidate) {
-      lastStringingWarningKey = null;
       store.updateConductor({ referenceHypothesisId: candidate.id });
       showStatusMessage(`Hipótesis de referencia cambiada automáticamente a "${candidate.name}" — es la que tiene datos en "Tensiones de tendido" para "${project.conductor.name}".`);
-      return;
     }
-
-    const key = project.conductor.id;
-    if (lastStringingWarningKey === key) return;
-    lastStringingWarningKey = key;
-    alert(`Ningún caso climático tiene una fila en "Tensiones de tendido" para el conductor "${project.conductor.name}" — no se puede calcular su tensión instalada automáticamente, se usará la tensión horizontal de referencia manual en su lugar.`);
   }
 
   const planView = window.LineDesignPlanView.createPlanView(planSvg, planMapContainer, {
