@@ -171,8 +171,13 @@
       });
       zoomLayer.appendChild(alignmentPath);
 
+      // structureLayer se crea aquí (redrawStructures y el arrastre de
+      // vértices ya lo necesitan) pero se agrega al DOM más abajo, DESPUÉS
+      // de los marcadores de vértice: en SVG el orden de pintado sigue el
+      // orden del DOM, así que si un poste queda justo sobre un vértice,
+      // el poste debe estar "encima" para recibir el arrastre en vez de
+      // mover el vértice de abajo por accidente.
       const structureLayer = svgEl('g');
-      zoomLayer.appendChild(structureLayer);
 
       function redrawStructures(vertexList) {
         clear(structureLayer);
@@ -285,6 +290,8 @@
         zoomLayer.appendChild(marker);
         attachVertexDrag(circle, vertex.id, markerRecord);
       });
+
+      zoomLayer.appendChild(structureLayer);
 
       const syncMarker = svgEl('circle', { class: 'sync-marker', r: 9, cx: 0, cy: 0 });
       const syncMarkerGroup = svgEl('g', { transform: markerTransform(-9999, -9999) });
