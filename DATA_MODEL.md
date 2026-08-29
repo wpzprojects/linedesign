@@ -25,7 +25,7 @@
   "name": "string",
   "units": "SI-métrico",
   "alignment": {
-    "vertices": [{ "id": "PI-1", "x": 4994467, "y": 2198889, "z": 2600 }]
+    "vertices": [{ "id": "PI-01", "x": 4779670.08, "y": 2054088.5, "z": 601 }]
   },
   "structureCatalog": [
     {
