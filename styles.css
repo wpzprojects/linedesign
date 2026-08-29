@@ -997,16 +997,22 @@ p.conductor-specs {
 .prop-toolbar {
   display: flex;
   gap: 8px;
-  margin: 0 -14px 8px;
+  margin: 0 -14px;
   padding: 6px 14px;
   background: var(--panel-alt);
   border: 1px solid var(--line);
 }
 
+/* background: transparent (versión anterior) hacía que el navegador no
+   pudiera pintar la lista desplegable nativa con el color del tema —
+   caía a blanco por defecto. Con un color sólido igual al de la
+   tarjeta (.prop-toolbar) se ve igual de "embebido" pero la lista
+   desplegable hereda ese mismo fondo oscuro. */
 .prop-object-select {
   flex: 1 1 auto;
   font-weight: 600;
-  background: transparent;
+  background: var(--panel-alt);
+  color: var(--text);
   border: none;
   border-radius: 0;
   padding: 4px 2px;
