@@ -184,7 +184,7 @@ button, input, select, textarea {
    texto del título. */
 .topbar #theme-toggle {
   position: absolute;
-  right: 20px;
+  right: 8px;
   top: 50%;
   transform: translateY(-50%);
 }
