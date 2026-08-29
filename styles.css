@@ -1559,6 +1559,17 @@ circle.sync-marker {
   font-variant-numeric: tabular-nums;
 }
 
+/* Columna del botón "×" (Casos climáticos, Tensiones de tendido): sin
+   esto, el ancho de esta columna lo decide el layout automático de
+   cada tabla por separado según su propio número/ancho de columnas, y
+   las dos tablas terminan con anchos distintos para la misma columna
+   — width: 1% es el truco estándar para "tan angosta como quepa su
+   contenido" en table-layout: auto, consistente entre ambas tablas. */
+.data-table th.col-actions, .data-table td.col-actions {
+  width: 1%;
+  white-space: nowrap;
+}
+
 .data-table td.check-ok {
   color: var(--success);
   font-weight: 600;

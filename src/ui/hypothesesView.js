@@ -118,7 +118,7 @@
               el('th', {}, 'Temp (°C)'),
               el('th', {}, 'Viento (m/s)'),
               el('th', {}, 'Hielo (mm)'),
-              el('th', {}, '')
+              el('th', { class: 'col-actions' }, '')
             ])),
             el('tbody', {}, rows)
           ])
@@ -149,7 +149,7 @@
           type: 'number', value: hypothesis.iceThickness, step: '1', min: '0',
           onChange: (e) => store.updateHypothesis(hypothesis.id, { iceThickness: Math.max(0, parseFloat(e.target.value) || 0) })
         })),
-        el('td', {}, el('button', {
+        el('td', { class: 'col-actions' }, el('button', {
           class: 'btn btn-small btn-danger', type: 'button',
           onClick: () => {
             const result = store.removeHypothesis(hypothesis.id);
@@ -181,7 +181,7 @@
               el('th', {}, `Tensión máx. (${forceUnitLabel(project)})`),
               el('th', {}, 'Catenaria máx. (m)'),
               el('th', {}, 'Cable aplicable'),
-              el('th', {}, '')
+              el('th', { class: 'col-actions' }, '')
             ])),
             el('tbody', {}, rows)
           ])
@@ -209,7 +209,16 @@
         }, c.name))
       ]);
 
-      return el('tr', {}, [
+      // Misma marca visual (.is-reference) que ya usa la fila de la
+      // hipótesis de referencia en Casos climáticos: acá se aplica a la
+      // fila cuyo "Caso climático" coincide con esa hipótesis — la que
+      // realmente está fijando la tensión instalada del conductor (ver
+      // renderConductorCard/catenary.resolveReferenceTension), en vez de
+      // dejar todas las filas con el mismo peso visual.
+      const referenceHypothesis = project.hypotheses.find((h) => h.id === project.conductor.referenceHypothesisId) || project.hypotheses[0];
+      const isReference = !!referenceHypothesis && item.weatherCase === referenceHypothesis.name;
+
+      return el('tr', { class: isReference ? 'is-reference' : '' }, [
         el('td', {}, weatherCaseSelect),
         el('td', {}, el('input', {
           type: 'text', value: item.cableCondition,
@@ -228,7 +237,7 @@
           onChange: (e) => store.updateStringingTension(item.id, { maxCatenary: e.target.value === '' ? null : parseFloat(e.target.value) })
         })),
         el('td', {}, applicableCableSelect),
-        el('td', {}, el('button', {
+        el('td', { class: 'col-actions' }, el('button', {
           class: 'btn btn-small btn-danger', type: 'button',
           onClick: () => store.removeStringingTension(item.id)
         }, '×'))
