@@ -1334,7 +1334,21 @@
     let resizeTimer = null;
     window.addEventListener('resize', () => {
       window.clearTimeout(resizeTimer);
-      resizeTimer = window.setTimeout(() => render(store.getProject()), 150);
+      resizeTimer = window.setTimeout(() => {
+        // En móvil, abrir el teclado virtual (al enfocar un input) también
+        // dispara "resize" (el viewport visible se achica) — un render()
+        // completo acá reconstruye el campo desde cero (clear() + rebuild
+        // en renderInspector), y al destruirse el <input> enfocado el
+        // teclado se cierra solo. Si hay un campo con foco, se asume que
+        // el resize es el teclado, no un cambio real de tamaño de
+        // ventana, y se salta el render (el redimensionado real de los
+        // lienzos de Planta/Perfil se retoma en el próximo resize sin un
+        // campo enfocado, o al soltar/cambiar de campo).
+        const active = document.activeElement;
+        const isEditingField = active && ['INPUT', 'SELECT', 'TEXTAREA'].includes(active.tagName);
+        if (isEditingField) return;
+        render(store.getProject());
+      }, 150);
     });
   }
 
