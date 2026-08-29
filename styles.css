@@ -1444,12 +1444,18 @@ body:not(.screen-plan-active) .status-bar {
     flex-direction: column;
     align-items: stretch;
     gap: 0;
-    padding-left: 0;
-    padding-right: 0;
+    padding: 0;
   }
 
   .toolbar-sep {
     display: none;
+  }
+
+  /* Separación entre la barra de herramientas y el resto (Planta/Perfil)
+     — 10px en escritorio — a 0 en móvil, para que la última tarjeta
+     quede pegada contra la ventana de Planta. */
+  #screen-plan.screen.is-active {
+    gap: 0;
   }
 
   .toolbar-card {
