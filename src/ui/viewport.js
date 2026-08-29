@@ -101,11 +101,53 @@
         panState = null;
       }
 
+      /**
+       * Arranca (o retoma) el pan de un solo puntero. `moved: true` se usa
+       * al retomar tras un pinch — el gesto ya se movió, así que soltar sin
+       * arrastrar más no debe disparar onBackgroundClick como si fuera un
+       * tap simple.
+       */
+      function beginPan(pointerId, clientX, clientY, { moved = false } = {}) {
+        panState = { pointerId, startClientX: clientX, startClientY: clientY, startTx: state.tx, startTy: state.ty, moved };
+        svg.setPointerCapture(pointerId);
+
+        function onMove(moveEvt) {
+          if (moveEvt.pointerId !== pointerId || activeTouches.size >= 2) return;
+          const dx = moveEvt.clientX - panState.startClientX;
+          const dy = moveEvt.clientY - panState.startClientY;
+          if (Math.abs(dx) > 3 || Math.abs(dy) > 3) panState.moved = true;
+          if (!panState.moved) return;
+          // dx/dy están en px de pantalla; se convierten a unidades del
+          // viewBox usando la misma relación que toSvgPoint.
+          const rect = svg.getBoundingClientRect();
+          const viewBox = svg.viewBox.baseVal;
+          const scaleX = viewBox.width / rect.width;
+          const scaleY = viewBox.height / rect.height;
+          state.tx = panState.startTx + dx * scaleX;
+          state.ty = panState.startTy + dy * scaleY;
+          callbacks.onChange();
+        }
+
+        function onUp(upEvt) {
+          if (upEvt.pointerId !== pointerId) return;
+          activeTouches.delete(upEvt.pointerId);
+          const wasPan = panState && !panState.moved;
+          endPan();
+          if (wasPan && callbacks.onBackgroundClick) callbacks.onBackgroundClick();
+        }
+
+        panState.onMove = onMove;
+        panState.onUp = onUp;
+        svg.addEventListener('pointermove', onMove);
+        svg.addEventListener('pointerup', onUp);
+        svg.addEventListener('pointercancel', onUp);
+      }
+
       function startPinch() {
         function currentPair() {
-          return [...activeTouches.values()];
+          return [...activeTouches.entries()];
         }
-        const [p1, p2] = currentPair();
+        const [[, p1], [, p2]] = currentPair();
         const startDist = Math.hypot(p2.x - p1.x, p2.y - p1.y) || 1;
         const startScale = state.scale;
         const startTx = state.tx;
@@ -118,7 +160,7 @@
           if (!activeTouches.has(moveEvt.pointerId)) return;
           activeTouches.set(moveEvt.pointerId, { x: moveEvt.clientX, y: moveEvt.clientY });
           if (activeTouches.size < 2) return;
-          const [a, b] = currentPair();
+          const [[, a], [, b]] = currentPair();
           const dist = Math.hypot(b.x - a.x, b.y - a.y) || 1;
           const nextScale = clampScale(startScale * (dist / startDist));
           state.tx = startMid.x - ((startMid.x - startTx) / startScale) * nextScale;
@@ -133,6 +175,12 @@
           svg.removeEventListener('pointermove', onMove);
           svg.removeEventListener('pointerup', onUp);
           svg.removeEventListener('pointercancel', onUp);
+          // Queda un solo dedo sobre el lienzo: retoma el pan con él en vez
+          // de exigirle al usuario soltar y volver a tocar.
+          if (activeTouches.size === 1) {
+            const [[survivorId, pos]] = currentPair();
+            beginPan(survivorId, pos.x, pos.y, { moved: true });
+          }
         }
 
         svg.addEventListener('pointermove', onMove);
@@ -153,38 +201,7 @@
           }
         }
 
-        panState = { startClientX: evt.clientX, startClientY: evt.clientY, startTx: state.tx, startTy: state.ty, moved: false };
-        if (evt.pointerType !== 'touch') svg.setPointerCapture(evt.pointerId);
-
-        function onMove(moveEvt) {
-          if (activeTouches.size >= 2) return; // el pinch tomó el control
-          const dx = moveEvt.clientX - panState.startClientX;
-          const dy = moveEvt.clientY - panState.startClientY;
-          if (Math.abs(dx) > 3 || Math.abs(dy) > 3) panState.moved = true;
-          if (!panState.moved) return;
-          // dx/dy están en px de pantalla; se convierten a unidades del
-          // viewBox usando la misma relación que toSvgPoint.
-          const rect = svg.getBoundingClientRect();
-          const viewBox = svg.viewBox.baseVal;
-          const scaleX = viewBox.width / rect.width;
-          const scaleY = viewBox.height / rect.height;
-          state.tx = panState.startTx + dx * scaleX;
-          state.ty = panState.startTy + dy * scaleY;
-          callbacks.onChange();
-        }
-
-        function onUp(upEvt) {
-          activeTouches.delete(upEvt.pointerId);
-          const wasPan = panState && !panState.moved;
-          endPan();
-          if (wasPan && callbacks.onBackgroundClick) callbacks.onBackgroundClick();
-        }
-
-        panState.onMove = onMove;
-        panState.onUp = onUp;
-        svg.addEventListener('pointermove', onMove);
-        svg.addEventListener('pointerup', onUp);
-        svg.addEventListener('pointercancel', onUp);
+        beginPan(evt.pointerId, evt.clientX, evt.clientY);
       }
 
       return { startPan };
