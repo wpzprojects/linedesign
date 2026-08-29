@@ -93,6 +93,27 @@ check('resolveStructures deriva x,y,z desde la station vigente', () => {
   assert.strictEqual(resolved[0].z, 15);
 });
 
+check('elevationAtStation interpola entre las dos muestras reales más cercanas', () => {
+  const terrainProfile = [
+    { station: 0, elevation: 100 },
+    { station: 100, elevation: 200 },
+    { station: 200, elevation: 150 }
+  ];
+  assert.strictEqual(stationing.elevationAtStation(terrainProfile, 50), 150);
+  assert.strictEqual(stationing.elevationAtStation(terrainProfile, 150), 175);
+  assert.strictEqual(stationing.elevationAtStation(terrainProfile, -50), 100, 'se recorta al extremo inferior');
+  assert.strictEqual(stationing.elevationAtStation(terrainProfile, 500), 150, 'se recorta al extremo superior');
+});
+
+check('resolveStructures usa el terreno real (no interpolación entre vértices) cuando está presente', () => {
+  const structures = [{ id: 'EST-01', typeId: 'T', station: 50, height: 18 }];
+  // Sin terrainProfile: z=15 (interpolación lineal entre PI-1 z=10 y PI-2 z=20, ver `vertices` arriba).
+  // Con terrainProfile: debe usar el valor real (muy distinto), no el interpolado.
+  const terrainProfile = [{ station: 0, elevation: 10 }, { station: 100, elevation: 10 }];
+  const resolved = stationing.resolveStructures(vertices, structures, terrainProfile);
+  assert.strictEqual(resolved[0].z, 10, `debería tomar el terreno real (10), no la interpolación entre vértices (15); z=${resolved[0].z}`);
+});
+
 // --- catenary ---
 const conductor = {
   name: 'ACSR 4/0',

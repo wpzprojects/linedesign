@@ -174,16 +174,46 @@
   }
 
   /**
+   * Elevación interpolada linealmente en `station` sobre un perfil de
+   * terreno real denso (Fase 2, ver elevationSource.js): `terrainProfile`
+   * es un array de `{ station, elevation }` ordenado por station
+   * ascendente (como lo produce `sampleStations`/el botón "Ajustar al
+   * terreno real"). Fuera del rango cubierto, se recorta al extremo más
+   * cercano en vez de extrapolar.
+   */
+  function elevationAtStation(terrainProfile, station) {
+    if (!terrainProfile || !terrainProfile.length) return null;
+    if (station <= terrainProfile[0].station) return terrainProfile[0].elevation;
+    const last = terrainProfile[terrainProfile.length - 1];
+    if (station >= last.station) return last.elevation;
+
+    let hi = terrainProfile.findIndex((p) => p.station >= station);
+    if (hi <= 0) hi = 1;
+    const a = terrainProfile[hi - 1];
+    const b = terrainProfile[hi];
+    const segLen = b.station - a.station;
+    const t = segLen > 0 ? (station - a.station) / segLen : 0;
+    return a.elevation + (b.elevation - a.elevation) * t;
+  }
+
+  /**
    * Devuelve las estructuras con su posición (x, y, z) derivada de la station
    * sobre el alineamiento vigente. La posición NO se almacena en el proyecto:
    * se deriva siempre a partir de `station`, de modo que mover un vértice del
    * alineamiento reubica automáticamente las estructuras (criterio de
    * aceptación §10.2 del prompt maestro).
+   *
+   * `terrainProfile` (opcional, Fase 2): si está presente, la elevación (z)
+   * se toma de ahí (interpolación entre las dos muestras reales más
+   * cercanas) en vez de interpolar linealmente entre los dos vértices
+   * vecinos — así la base de cada estructura queda sobre el terreno real
+   * dibujado en Perfil, no "flotando" sobre una aproximación más gruesa.
    */
-  function resolveStructures(vertices, structures) {
+  function resolveStructures(vertices, structures, terrainProfile) {
     return structures.map((structure) => {
       const pos = pointAtStation(vertices, structure.station);
-      return { ...structure, x: pos.x, y: pos.y, z: pos.z };
+      const realZ = terrainProfile ? elevationAtStation(terrainProfile, structure.station) : null;
+      return { ...structure, x: pos.x, y: pos.y, z: realZ !== null ? realZ : pos.z };
     });
   }
 
@@ -245,6 +275,7 @@
     profileBounds,
     makeProjector,
     resolveStructures,
+    elevationAtStation,
     nearestStation,
     computeSpans,
     niceStep,

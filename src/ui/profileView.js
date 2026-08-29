@@ -79,9 +79,9 @@
 
       const vertices = project.alignment.vertices;
       const distances = stationing.cumulativeDistances(vertices);
-      const resolved = stationing.resolveStructures(vertices, project.structures)
-        .sort((a, b) => a.station - b.station);
       const terrainProfile = project.alignment.terrainProfile;
+      const resolved = stationing.resolveStructures(vertices, project.structures, terrainProfile)
+        .sort((a, b) => a.station - b.station);
       const bounds = stationing.profileBounds(vertices, resolved, terrainProfile);
       const projector = stationing.makeProjector(bounds, WIDTH, HEIGHT, PADDING, current.vExaggeration);
       current.projector = projector;

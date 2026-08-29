@@ -49,7 +49,7 @@
   function computeSpanTensions(project, hypothesisId) {
     const hypothesis = project.hypotheses.find((h) => h.id === hypothesisId);
     const referenceHypothesis = getReferenceHypothesis(project);
-    const resolved = stationing.resolveStructures(project.alignment.vertices, project.structures);
+    const resolved = stationing.resolveStructures(project.alignment.vertices, project.structures, project.alignment.terrainProfile);
     const { sorted, spans } = stationing.computeSpans(resolved);
 
     const results = spans.map((span) => {

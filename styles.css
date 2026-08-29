@@ -858,11 +858,13 @@ svg#plan-svg {
 
 /* Terreno real (consultado a un servicio de elevación, Fase 2) en vez de
    la interpolación lineal simulada entre vértices: mismo trazo, color
-   distinto para que se note que ya no es una aproximación — y sobre todo
-   para no confundirse con .conductor-line (la catenaria), que ya usa
-   var(--warning). */
+   deliberadamente alejado de la paleta cálida (var(--warning)/var(--accent))
+   que ya usan .conductor-line y .profile-line — un verde oliva "de
+   terreno" en vez de otro tono naranja/ámbar, para que a simple vista
+   quede claro cuál línea es cuál (se llegaron a confundir siendo ambas
+   tonos cálidos similares). */
 .profile-line--real {
-  stroke: #b5834a;
+  stroke: #7a8f5c;
 }
 
 .conductor-line {
