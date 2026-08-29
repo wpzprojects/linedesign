@@ -135,43 +135,37 @@
           <section id="screen-plan" class="screen is-active">
             <div class="toolbar">
               <div class="toolbar-card">
-                <div class="toolbar-card-inner">
-                  <button id="add-vertex-btn" class="btn toolbar-card-btn" type="button">+ Vértice</button>
-                  <div class="toolbar-field">
-                    <label for="new-vertex-x" class="toolbar-field-label">X (m)</label>
-                    <input id="new-vertex-x" type="number" step="any" placeholder="0.0" class="toolbar-mini-input" title="Este (opcional): si se deja vacío, el vértice se agrega extrapolando el alineamiento" />
-                  </div>
-                  <div class="toolbar-field">
-                    <label for="new-vertex-y" class="toolbar-field-label">Y (m)</label>
-                    <input id="new-vertex-y" type="number" step="any" placeholder="0.0" class="toolbar-mini-input" title="Norte (opcional): si se deja vacío, el vértice se agrega extrapolando el alineamiento" />
-                  </div>
+                <button id="add-vertex-btn" class="btn toolbar-card-btn" type="button">+ Vértice</button>
+                <div class="toolbar-field">
+                  <label for="new-vertex-x" class="toolbar-field-label">X (m)</label>
+                  <input id="new-vertex-x" type="number" step="any" placeholder="0.0" class="toolbar-mini-input" title="Este (opcional): si se deja vacío, el vértice se agrega extrapolando el alineamiento" />
+                </div>
+                <div class="toolbar-field">
+                  <label for="new-vertex-y" class="toolbar-field-label">Y (m)</label>
+                  <input id="new-vertex-y" type="number" step="any" placeholder="0.0" class="toolbar-mini-input" title="Norte (opcional): si se deja vacío, el vértice se agrega extrapolando el alineamiento" />
                 </div>
               </div>
 
               <span class="toolbar-sep"></span>
 
               <div class="toolbar-card">
-                <div class="toolbar-card-inner">
-                  <button id="add-structure-btn" class="btn toolbar-card-btn" type="button">+ Estructura</button>
-                  <div class="toolbar-field">
-                    <label for="new-structure-type" class="toolbar-field-label">Tipo</label>
-                    <select id="new-structure-type"></select>
-                  </div>
-                  <div class="toolbar-field">
-                    <label for="new-structure-station" class="toolbar-field-label">Station (m)</label>
-                    <input id="new-structure-station" type="number" step="1" placeholder="0.0" class="toolbar-station-input" />
-                  </div>
+                <button id="add-structure-btn" class="btn toolbar-card-btn" type="button">+ Estructura</button>
+                <div class="toolbar-field">
+                  <label for="new-structure-type" class="toolbar-field-label">Tipo</label>
+                  <select id="new-structure-type"></select>
+                </div>
+                <div class="toolbar-field">
+                  <label for="new-structure-station" class="toolbar-field-label">Station (m)</label>
+                  <input id="new-structure-station" type="number" step="1" placeholder="0.0" class="toolbar-station-input" />
                 </div>
               </div>
 
               <span class="toolbar-sep"></span>
 
               <div class="toolbar-card">
-                <div class="toolbar-card-inner">
-                  <div class="toolbar-field">
-                    <label for="plan-hypothesis-select" class="toolbar-field-label">Hipótesis mostrada</label>
-                    <select id="plan-hypothesis-select"></select>
-                  </div>
+                <div class="toolbar-field">
+                  <label for="plan-hypothesis-select" class="toolbar-field-label">Hipótesis mostrada</label>
+                  <select id="plan-hypothesis-select"></select>
                 </div>
               </div>
             </div>

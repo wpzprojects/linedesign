@@ -762,31 +762,19 @@ p.conductor-specs {
   text-transform: none;
 }
 
-/* Grupos de la barra de herramientas como "tarjetas". Dos capas:
-   .toolbar-card es el "gutter" (6px, mismo ancho que .toolbar-sep y el
-   padding de .toolbar — transparente, deja ver el fondo de la barra),
-   .toolbar-card-inner es la tarjeta visible propiamente dicha, centrada
-   adentro — así el borde de cada tarjeta queda rodeado del mismo aire
-   por sus cuatro lados, en vez de solo entre una tarjeta y la otra. */
+/* Grupos de la barra de herramientas como "tarjetas": el botón de acción
+   (si lo hay) a la izquierda, justificado contra el borde inferior de sus
+   campos derivados (no contra todo el alto de la tarjeta, que incluye la
+   micro-etiqueta), cada campo con su micro-etiqueta encima (no dependen
+   del placeholder). La tarjeta usa var(--panel) (el gris claro que antes
+   tenían los campos) para destacar sobre var(--toolbar-bg) — el mismo
+   gris de la barra y de .status-bar, que ahora también va DENTRO de los
+   campos (ver .toolbar-field input/select más abajo), así la tarjeta
+   queda como un marco más claro alrededor de casilleros más oscuros. */
 .toolbar-card {
-  display: flex;
-  padding: 6px;
-}
-
-/* El botón de acción (si lo hay) a la izquierda, justificado contra el
-   borde inferior de sus campos derivados (no contra todo el alto de la
-   tarjeta, que incluye la micro-etiqueta), cada campo con su
-   micro-etiqueta encima (no dependen del placeholder). Fondo
-   var(--panel) (el gris claro que antes tenían los campos) para
-   destacar sobre var(--toolbar-bg) — el mismo gris de la barra y de
-   .status-bar, que ahora también va DENTRO de los campos (ver
-   .toolbar-field input/select más abajo), así la tarjeta queda como un
-   marco más claro alrededor de casilleros más oscuros. */
-.toolbar-card-inner {
   display: flex;
   align-items: flex-end;
   gap: 10px;
-  flex: 1 1 auto;
   background: var(--panel);
   border: 1px solid var(--line);
   border-radius: 0;
@@ -1683,6 +1671,7 @@ body:not(.screen-plan-active) .status-bar {
 
   .toolbar-card {
     width: 100%;
+    border-radius: 0;
   }
 
   /* Planta y Perfil, apiladas en vez de lado a lado: en un ancho de
