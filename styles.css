@@ -1026,10 +1026,6 @@ p.conductor-specs {
   border-bottom: 1px solid var(--line);
 }
 
-.prop-section .prop-row:nth-child(even) {
-  background: var(--panel-alt);
-}
-
 .prop-row-label {
   flex: 0 0 46%;
   color: var(--muted);
