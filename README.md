@@ -51,7 +51,7 @@ El alineamiento (`vertex.x`/`vertex.y`) usa coordenadas **reales**, no un sistem
 
 ### Perfil de terreno real (Fase 2)
 
-El botón de montaña en la cabecera de Perfil consulta [Open-Elevation](https://open-elevation.com/) (`src/data/elevationSource.js`, servicio público sin API key) para un muestreo del alineamiento cada 25 m — no más seguido: Open-Elevation sirve datos SRTM (~30 m de resolución real), así que muestrear cada metro solo repetía el valor de la misma celda una y otra vez, dibujando "escalones" en vez de una curva de terreno — y guarda el resultado como `alignment.terrainProfile`. Con ese perfil presente, `profileView.js` dibuja el terreno real (línea de otro color) en vez de la interpolación lineal simulada entre vértices, y cada vértice actualiza su elevación (`vertex.z`) al valor real de su propia station — ver `DATA_MODEL.md` para el detalle y la limitación (las estructuras siguen derivando su elevación por interpolación lineal *entre* vértices, no del perfil denso).
+El botón de montaña en la cabecera de Perfil consulta [OpenTopoData](https://www.opentopodata.org/) (dataset SRTM 30m, `src/data/elevationSource.js`, servicio público sin API key — en lotes de máx. 100 puntos, respetando su límite de 1 consulta/segundo) para un muestreo del alineamiento cada 25 m (la resolución real del dataset) y guarda el resultado como `alignment.terrainProfile`. (Se probó primero con Open-Elevation; se descartó por devolver el mismo valor de elevación para tramos enteros entre vértices — datos degradados del servidor público de demo, no un bug de esta app, ver `DATA_MODEL.md`.) Con ese perfil presente, `profileView.js` dibuja el terreno real (línea de otro color) en vez de la interpolación lineal simulada entre vértices, y cada vértice actualiza su elevación (`vertex.z`) al valor real de su propia station — ver `DATA_MODEL.md` para el detalle y la limitación (las estructuras siguen derivando su elevación por interpolación lineal *entre* vértices, no del perfil denso).
 
 ### Fundamento de diseño
 
@@ -79,5 +79,5 @@ La distribución no es una preferencia estética: se investigó la interfaz real
 ## Fase 2 — en curso
 
 - ✅ Mapa base real en Planta (Leaflet: calles/OpenStreetMap + satélite/Esri), con el alineamiento en coordenadas reales (MAGNA-SIRGAS / Origen-Nacional, EPSG:9377).
-- ✅ Perfil de elevación real (Open-Elevation) — botón en Perfil, ver "Perfil de terreno real" arriba.
+- ✅ Perfil de elevación real (OpenTopoData) — botón en Perfil, ver "Perfil de terreno real" arriba.
 - ⬜ Importar KMZ real y sustituir `dataSource.js` por una fuente real, sin tocar `engine`/`ui`.
