@@ -693,7 +693,7 @@ input:focus, select:focus, button:focus-visible {
 
 .cad-area {
   display: flex;
-  gap: 10px;
+  gap: 0;
   flex: 1 1 auto;
   min-height: 280px;
 }
@@ -701,15 +701,22 @@ input:focus, select:focus, button:focus-visible {
 .split-view {
   display: grid;
   grid-template-columns: 1fr 1fr;
-  gap: 10px;
+  gap: 0;
   flex: 1 1 auto;
   min-height: 0;
   min-width: 0;
-  /* A diferencia de .inspector, Planta/Perfil no quedan pegados del todo
-     a sus bordes — un margen de 10px uniforme (arriba ya lo da el gap de
-     #screen-plan; abajo y a la izquierda se ajustan aquí; a la derecha,
-     contra Propiedades, lo da el gap de .cad-area). */
-  margin: 0 0 10px -10px;
+  /* Igual que .inspector: pegado del todo a sus bordes (arriba cancela el
+     gap de 10px que #screen-plan deja contra la barra de herramientas; a
+     la izquierda cancela el padding de .workspace-body). Abajo y a la
+     derecha ya quedan a ras porque .cad-area ocupa el alto/ancho completo
+     de #screen-plan, que a su vez ya sangra sobre esos bordes. Planta,
+     Perfil y Propiedades comparten borde entre sí (sin gap) — el segundo
+     panel de cada par cancela su borde de contacto para no duplicarlo. */
+  margin: -10px 0 0 -20px;
+}
+
+.split-view .panel + .panel {
+  border-left: none;
 }
 
 .inspector {
@@ -717,6 +724,7 @@ input:focus, select:focus, button:focus-visible {
   width: var(--inspector-width);
   background: var(--panel);
   border: 1px solid var(--line);
+  border-left: none;
   border-radius: 0;
   padding: 14px;
   overflow-y: auto;
@@ -784,7 +792,7 @@ input:focus, select:focus, button:focus-visible {
 .panel {
   background: var(--panel);
   border: 1px solid var(--line);
-  border-radius: 12px;
+  border-radius: 0;
   padding: 14px 14px 8px;
   display: flex;
   flex-direction: column;
