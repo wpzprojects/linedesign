@@ -80,17 +80,45 @@
               </div>
             </div>
 
-            <div class="card explorer-card">
-              <h2>Explorador</h2>
-              <div class="explorer-columns">
-                <div class="explorer-section">
-                  <h3>Alineamiento <span id="explorer-vertices-count" class="count"></span></h3>
-                  <ul id="explorer-vertices" class="explorer-list"></ul>
-                </div>
-                <div class="explorer-section">
-                  <h3>Estructuras <span id="explorer-structures-count" class="count"></span></h3>
-                  <ul id="explorer-structures" class="explorer-list"></ul>
-                </div>
+            <div class="card">
+              <h2>Tabla de estructuras <span id="structures-table-count" class="count"></span></h2>
+              <p class="muted">Flecha y distancia mínima al piso del vano adelante, calculadas bajo la hipótesis de referencia del conductor.</p>
+              <div class="table-wrap">
+                <table class="data-table">
+                  <thead>
+                    <tr>
+                      <th>ID</th>
+                      <th>Tipo</th>
+                      <th>Estación (m)</th>
+                      <th>Altura (m)</th>
+                      <th>Cota terreno (m)</th>
+                      <th>Cota punta (m)</th>
+                      <th>Resistencia (kgF)</th>
+                      <th>Vano adelante (m)</th>
+                      <th>Flecha vano adelante (m)</th>
+                      <th>Distancia mínima al piso (m)</th>
+                    </tr>
+                  </thead>
+                  <tbody id="structures-table-body"></tbody>
+                </table>
+              </div>
+            </div>
+
+            <div class="card">
+              <h2>Alineamiento <span id="alignment-table-count" class="count"></span></h2>
+              <div class="table-wrap">
+                <table class="data-table">
+                  <thead>
+                    <tr>
+                      <th>ID</th>
+                      <th>Estación (m)</th>
+                      <th>Este (m)</th>
+                      <th>Norte (m)</th>
+                      <th>Elevación (m)</th>
+                    </tr>
+                  </thead>
+                  <tbody id="alignment-table-body"></tbody>
+                </table>
               </div>
             </div>
           </section>

@@ -7,6 +7,8 @@
 (function () {
   const store = window.LineDesignStore;
   const stationing = window.LineDesignStationing;
+  const catenary = window.LineDesignCatenary;
+  const loadTree = window.LineDesignLoadTree;
   const geo = window.LineDesignGeo;
   const elevationSource = window.LineDesignElevationSource;
   const kmzImport = window.LineDesignKmzImport;
@@ -25,10 +27,10 @@
   const inspectorPanel = document.getElementById('inspector-body');
   const inspectorAside = document.getElementById('inspector-panel');
   const inspectorToggle = document.getElementById('inspector-toggle');
-  const explorerVertices = document.getElementById('explorer-vertices');
-  const explorerStructures = document.getElementById('explorer-structures');
-  const explorerVerticesCount = document.getElementById('explorer-vertices-count');
-  const explorerStructuresCount = document.getElementById('explorer-structures-count');
+  const structuresTableBody = document.getElementById('structures-table-body');
+  const structuresTableCount = document.getElementById('structures-table-count');
+  const alignmentTableBody = document.getElementById('alignment-table-body');
+  const alignmentTableCount = document.getElementById('alignment-table-count');
   const newStructureType = document.getElementById('new-structure-type');
   const newStructureStation = document.getElementById('new-structure-station');
   const planHypothesisSelect = document.getElementById('plan-hypothesis-select');
@@ -238,32 +240,95 @@
     if (planBtn && !planBtn.classList.contains('is-active')) planBtn.click();
   }
 
-  function renderExplorer(project) {
-    explorerVerticesCount.textContent = `(${project.alignment.vertices.length})`;
-    explorerStructuresCount.textContent = `(${project.structures.length})`;
+  function fmtNum(value, decimals) {
+    return value === null || value === undefined || !Number.isFinite(value) ? '—' : value.toFixed(decimals);
+  }
 
-    clear(explorerVertices);
-    project.alignment.vertices.forEach((vertex) => {
-      const isSelected = selection && selection.type === 'vertex' && selection.id === vertex.id;
-      explorerVertices.appendChild(el('li', {
-        class: `explorer-item${isSelected ? ' is-active' : ''}`,
-        onClick: () => { selection = { type: 'vertex', id: vertex.id }; goToPlanScreen(); render(store.getProject()); }
+  function rowClickTo(type, id) {
+    return () => { selection = { type, id }; goToPlanScreen(); render(store.getProject()); };
+  }
+
+  /**
+   * Tabla de estructuras (Resumen): una fila por estructura con su vano,
+   * flecha y distancia al terreno del VANO ADELANTE (hacia la siguiente
+   * estructura) — la última estructura no tiene vano adelante, esas
+   * columnas quedan en "—". Reusa loadTree.computeSpanTensions (misma
+   * tensión/hipótesis de referencia que ya usa el árbol de cargas) en vez
+   * de recalcular la tensión de vano por separado.
+   */
+  function renderStructuresTable(project) {
+    structuresTableCount.textContent = `(${project.structures.length})`;
+    clear(structuresTableBody);
+
+    const referenceHypothesis = loadTree.getReferenceHypothesis(project);
+    const { sorted, spans } = loadTree.computeSpanTensions(project, referenceHypothesis.id);
+    const terrainProfile = project.alignment.terrainProfile;
+    const vertices = project.alignment.vertices;
+
+    sorted.forEach((structure, index) => {
+      const type = project.structureCatalog.find((t) => t.typeId === structure.typeId);
+      const span = spans[index]; // vano hacia sorted[index + 1], undefined en la última estructura
+      let vanoAdelante = null;
+      let flecha = null;
+      let minClearance = null;
+
+      if (span) {
+        const to = sorted[index + 1];
+        const fromTop = structure.z + structure.height;
+        const toTop = to.z + to.height;
+        const curve = catenary.catenaryCurve({
+          span: span.length,
+          heightDiff: toTop - fromTop,
+          H: span.horizontalTension,
+          unitWeight: span.verticalUnitWeight
+        });
+        vanoAdelante = span.length;
+        flecha = curve.sag;
+        minClearance = curve.points.reduce((min, p) => {
+          const station = structure.station + p.x;
+          const terrainZ = terrainProfile
+            ? stationing.elevationAtStation(terrainProfile, station)
+            : stationing.pointAtStation(vertices, station).z;
+          return Math.min(min, (fromTop + p.y) - terrainZ);
+        }, Infinity);
+      }
+
+      const isSelected = selection && selection.type === 'structure' && selection.id === structure.id;
+      structuresTableBody.appendChild(el('tr', {
+        class: `is-clickable${isSelected ? ' is-active' : ''}`,
+        onClick: rowClickTo('structure', structure.id)
       }, [
-        el('span', { class: 'explorer-item-id' }, vertex.id),
-        el('span', { class: 'explorer-item-meta' }, `z=${vertex.z.toFixed(1)}`)
+        el('td', {}, structure.id),
+        el('td', {}, type ? type.name : structure.typeId),
+        el('td', {}, fmtNum(structure.station, 1)),
+        el('td', {}, fmtNum(structure.height, 1)),
+        el('td', {}, fmtNum(structure.z, 1)),
+        el('td', {}, fmtNum(structure.z + structure.height, 1)),
+        el('td', {}, structure.resistance ? fmtNum(structure.resistance, 0) : '—'),
+        el('td', {}, fmtNum(vanoAdelante, 1)),
+        el('td', {}, fmtNum(flecha, 2)),
+        el('td', {}, fmtNum(minClearance, 1))
       ]));
     });
+  }
 
-    clear(explorerStructures);
-    const sorted = [...project.structures].sort((a, b) => a.station - b.station);
-    sorted.forEach((structure) => {
-      const isSelected = selection && selection.type === 'structure' && selection.id === structure.id;
-      explorerStructures.appendChild(el('li', {
-        class: `explorer-item${isSelected ? ' is-active' : ''}`,
-        onClick: () => { selection = { type: 'structure', id: structure.id }; goToPlanScreen(); render(store.getProject()); }
+  function renderAlignmentTable(project) {
+    const vertices = project.alignment.vertices;
+    alignmentTableCount.textContent = `(${vertices.length})`;
+    clear(alignmentTableBody);
+
+    const distances = stationing.cumulativeDistances(vertices);
+    vertices.forEach((vertex, index) => {
+      const isSelected = selection && selection.type === 'vertex' && selection.id === vertex.id;
+      alignmentTableBody.appendChild(el('tr', {
+        class: `is-clickable${isSelected ? ' is-active' : ''}`,
+        onClick: rowClickTo('vertex', vertex.id)
       }, [
-        el('span', { class: 'explorer-item-id' }, structure.id),
-        el('span', { class: 'explorer-item-meta' }, `${structure.station.toFixed(0)} m`)
+        el('td', {}, vertex.id),
+        el('td', {}, fmtNum(distances[index], 1)),
+        el('td', {}, fmtNum(vertex.x, 2)),
+        el('td', {}, fmtNum(vertex.y, 2)),
+        el('td', {}, fmtNum(vertex.z, 1))
       ]));
     });
   }
@@ -405,7 +470,8 @@
     renderSummary(project);
     syncStructureTypeOptions(project);
     syncPlanHypothesisOptions(project);
-    renderExplorer(project);
+    renderStructuresTable(project);
+    renderAlignmentTable(project);
     renderInspector(project);
 
     planView.render(project, selection);

@@ -391,72 +391,27 @@ body.dark-theme .icon-moon {
   margin-bottom: 16px;
 }
 
-/* ---------- Explorador (árbol de vértices/estructuras) ---------- */
+/* ---------- Tablas clicables (Tabla de estructuras / Alineamiento en
+   Resumen): fila = clic para seleccionar y saltar a Planta y Perfil,
+   mismo comportamiento que el antiguo Explorador. ---------- */
 
-.explorer-section {
-  margin-bottom: 10px;
-}
-
-.explorer-section:last-child {
-  margin-bottom: 0;
-}
-
-.explorer-section h3 {
-  margin: 0 0 4px;
-  font-size: 0.74rem;
-  text-transform: uppercase;
-  letter-spacing: 0.03em;
-  color: var(--muted);
-  display: flex;
-  align-items: center;
-  gap: 4px;
-}
-
-.explorer-section .count {
-  font-weight: 400;
-  opacity: 0.75;
-}
-
-.explorer-list {
-  list-style: none;
-  margin: 0;
-  padding: 0;
-  max-height: 340px;
-  overflow-y: auto;
-  border-radius: 8px;
-}
-
-.explorer-item {
-  display: flex;
-  justify-content: space-between;
-  gap: 8px;
-  padding: 5px 8px;
-  border-radius: 6px;
+.data-table tbody tr.is-clickable {
   cursor: pointer;
-  font-size: 0.82rem;
 }
 
-.explorer-item:hover {
-  background: var(--panel);
+.data-table tbody tr.is-clickable:hover {
+  background: var(--panel-alt);
 }
 
-.explorer-item.is-active {
+.data-table tbody tr.is-active {
   background: var(--primary-soft);
   color: var(--primary);
 }
 
-.explorer-item-id {
-  font-weight: 600;
-}
-
-.explorer-item-meta {
-  color: var(--muted);
-  font-variant-numeric: tabular-nums;
-}
-
-.explorer-item.is-active .explorer-item-meta {
-  color: inherit;
+.card .count {
+  font-weight: 400;
   opacity: 0.75;
+  font-size: 0.8rem;
 }
 
 .form-card h2 {
@@ -598,11 +553,9 @@ input:focus, select:focus, button:focus-visible {
   gap: 16px;
 }
 
-/* Resumen: Proyecto y Resumen como tarjetas angostas en fila arriba,
-   Explorador ocupando el ancho completo debajo con sus dos listas
-   (alineamiento/estructuras) lado a lado en vez de apiladas — antes esta
-   pantalla vivía en un panel lateral de 280px y quedaba comprimida en
-   una sola columna aunque ahora tiene toda la pantalla disponible. */
+/* Resumen: tarjeta Resumen angosta arriba, Tabla de estructuras y
+   Alineamiento debajo, cada una a lo ancho completo (son tablas, no listas
+   cortas, necesitan el espacio horizontal). */
 .summary-top-row {
   display: flex;
   flex-wrap: wrap;
@@ -610,17 +563,6 @@ input:focus, select:focus, button:focus-visible {
 }
 
 .summary-top-row .card {
-  flex: 1 1 280px;
-  margin-bottom: 0;
-}
-
-.explorer-columns {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 24px;
-}
-
-.explorer-columns .explorer-section {
   flex: 1 1 280px;
   margin-bottom: 0;
 }
