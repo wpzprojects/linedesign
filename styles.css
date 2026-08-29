@@ -1574,7 +1574,7 @@ circle.sync-marker {
 }
 
 .catalog-form-diagram {
-  flex: 0 0 160px;
+  flex: 0 0 320px;
   align-self: stretch;
   display: flex;
   align-items: center;
@@ -1587,7 +1587,7 @@ circle.sync-marker {
 
 .catalog-diagram {
   width: 100%;
-  max-width: 160px;
+  max-width: 320px;
   height: auto;
 }
 
@@ -1788,8 +1788,11 @@ body:not(.screen-plan-active) .status-bar {
   .toolbar {
     flex-direction: column;
     align-items: stretch;
-    gap: 0;
-    padding: 0;
+    /* Mismo 3px de aire que ya usa la barra en escritorio (ver .toolbar
+       arriba) — antes quedaban totalmente pegadas entre sí y contra los
+       bordes de la barra. */
+    gap: 3px;
+    padding: 3px;
   }
 
   .toolbar-sep {
