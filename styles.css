@@ -824,7 +824,7 @@ p.conductor-specs {
    con .toolbar-field para empatar/superar esa especificidad. */
 .toolbar-field input.toolbar-mini-input,
 .toolbar-field input.toolbar-station-input {
-  width: 80px;
+  width: 100px;
 }
 
 /* ---------- Área CAD: lienzos + panel de propiedades ---------- */
