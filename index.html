@@ -220,6 +220,30 @@
                 </div>
               </div>
             </div>
+
+            <div class="card">
+              <h2>Importar alineamiento</h2>
+              <p class="muted">
+                Carga un archivo KMZ o KML (p.ej. exportado de Google Earth) para reemplazar el alineamiento actual.
+                Los trazados dibujados a mano suelen traer muchos más puntos de los necesarios — se simplifican
+                automáticamente, y puedes seguir editándolos a mano después en Planta. Reemplaza las estructuras y el
+                perfil de terreno del proyecto actual (usa "Ajustar al terreno real" en Perfil después de importar).
+              </p>
+              <button id="kmz-import-btn" class="btn btn-small" type="button">Elegir archivo KMZ/KML…</button>
+              <input id="kmz-import-file" type="file" accept=".kmz,.kml" hidden />
+
+              <div id="kmz-import-picker" class="kmz-import-picker" hidden>
+                <label>Elige el trazado a importar</label>
+                <div id="kmz-import-candidates" class="kmz-import-candidates"></div>
+                <label class="kmz-import-invert">
+                  <input id="kmz-import-invert" type="checkbox" /> Invertir el orden del trazado
+                </label>
+                <div class="row-actions">
+                  <button id="kmz-import-confirm" class="btn btn-small btn-primary" type="button">Importar</button>
+                  <button id="kmz-import-cancel" class="btn btn-small" type="button">Cancelar</button>
+                </div>
+              </div>
+            </div>
             <div id="hypotheses-container"></div>
           </section>
 
@@ -240,6 +264,7 @@
     </div>
 
     <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
     <script src="./src/ui/domUtil.js"></script>
     <script src="./src/ui/svgUtil.js"></script>
     <script src="./src/ui/viewport.js"></script>
@@ -249,6 +274,7 @@
     <script src="./src/engine/geo.js"></script>
     <script src="./src/data/dataSource.js"></script>
     <script src="./src/data/elevationSource.js"></script>
+    <script src="./src/data/kmzImport.js"></script>
     <script src="./src/data/projectStore.js"></script>
     <script src="./src/ui/theme.js"></script>
     <script src="./src/ui/mapRenderer.js"></script>

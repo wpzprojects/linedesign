@@ -113,6 +113,28 @@
     notify();
   }
 
+  /**
+   * Reemplaza el alineamiento completo a partir de un trazado importado
+   * (Fase 2, ver kmzImport.js): `points` es `[{ x, y, z }]` ya en
+   * coordenadas locales (EPSG:9377) y ya simplificado — este método solo
+   * les asigna id (PI-1, PI-2, ...) y reemplaza `alignment.vertices`.
+   * Las estructuras y el perfil de terreno del proyecto anterior quedan
+   * sin sentido sobre la geometría nueva (stations, elevaciones reales
+   * puntuales), así que se limpian — el usuario vuelve a agregar
+   * estructuras sobre el trazado importado.
+   */
+  function importAlignment(points) {
+    if (!points || points.length < 2) return { ok: false, reason: 'El trazado importado necesita al menos 2 vértices.' };
+    nextIdCounters.vertex = 0;
+    nextIdCounters.structure = 0;
+    project.alignment.vertices = points.map((p) => ({ id: nextId('vertex', 'PI-'), x: p.x, y: p.y, z: p.z }));
+    delete project.alignment.terrainProfile;
+    project.structures = [];
+    persist();
+    notify();
+    return { ok: true };
+  }
+
   function addVertex() {
     const vertices = project.alignment.vertices;
     const last = vertices[vertices.length - 1];
@@ -306,6 +328,7 @@
     moveVertex,
     setVertexElevation,
     applyTerrainProfile,
+    importAlignment,
     addVertex,
     removeVertex,
     addCatalogType,

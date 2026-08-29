@@ -139,6 +139,25 @@ check('smoothTerrainProfile no toca un perfil ya perfectamente plano', () => {
   smooth.forEach((p) => assert.ok(Math.abs(p.elevation - 1000) < 1e-9));
 });
 
+check('simplifyPolyline reduce puntos colineales a los 2 extremos', () => {
+  const line = [];
+  for (let x = 0; x <= 100; x += 10) line.push({ x, y: 0 });
+  const simplified = stationing.simplifyPolyline(line, 1);
+  assert.deepStrictEqual(simplified, [{ x: 0, y: 0 }, { x: 100, y: 0 }]);
+});
+
+check('simplifyPolyline conserva un vértice en un quiebre real', () => {
+  const bend = [{ x: 0, y: 0 }, { x: 10, y: 0 }, { x: 20, y: 0 }, { x: 30, y: 10 }, { x: 40, y: 20 }, { x: 50, y: 30 }];
+  const simplified = stationing.simplifyPolyline(bend, 0.5);
+  assert.deepStrictEqual(simplified, [{ x: 0, y: 0 }, { x: 20, y: 0 }, { x: 50, y: 30 }]);
+});
+
+check('simplifyPolyline con tolerancia muy alta reduce siempre a los 2 extremos', () => {
+  const bend = [{ x: 0, y: 0 }, { x: 10, y: 0 }, { x: 20, y: 0 }, { x: 30, y: 10 }, { x: 40, y: 20 }, { x: 50, y: 30 }];
+  const simplified = stationing.simplifyPolyline(bend, 1000);
+  assert.deepStrictEqual(simplified, [{ x: 0, y: 0 }, { x: 50, y: 30 }]);
+});
+
 // --- catenary ---
 const conductor = {
   name: 'ACSR 4/0',

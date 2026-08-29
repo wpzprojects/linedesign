@@ -226,6 +226,45 @@
     });
   }
 
+  function perpendicularDistance(point, lineStart, lineEnd) {
+    const dx = lineEnd.x - lineStart.x;
+    const dy = lineEnd.y - lineStart.y;
+    const lenSq = dx * dx + dy * dy;
+    if (lenSq === 0) return Math.hypot(point.x - lineStart.x, point.y - lineStart.y);
+    const t = ((point.x - lineStart.x) * dx + (point.y - lineStart.y) * dy) / lenSq;
+    const projX = lineStart.x + t * dx;
+    const projY = lineStart.y + t * dy;
+    return Math.hypot(point.x - projX, point.y - projY);
+  }
+
+  /**
+   * Simplificación de Douglas-Peucker: reduce una polilínea de `[{x, y}]`
+   * a los vértices que realmente definen su forma, dentro de una
+   * tolerancia (m) — usada para importar KMZ/KML (Fase 2, ver
+   * kmzImport.js), cuyos trazados suelen venir sobre-muestreados
+   * (cientos de puntos siguiendo un trazo dibujado a mano) frente a un
+   * alineamiento de diseño real, que se define por unos pocos PIs.
+   */
+  function simplifyPolyline(points, tolerance) {
+    if (points.length < 3) return points.slice();
+    let maxDist = 0;
+    let splitIndex = 0;
+    const lastIndex = points.length - 1;
+    for (let i = 1; i < lastIndex; i += 1) {
+      const dist = perpendicularDistance(points[i], points[0], points[lastIndex]);
+      if (dist > maxDist) {
+        maxDist = dist;
+        splitIndex = i;
+      }
+    }
+    if (maxDist > tolerance) {
+      const left = simplifyPolyline(points.slice(0, splitIndex + 1), tolerance);
+      const right = simplifyPolyline(points.slice(splitIndex), tolerance);
+      return left.slice(0, -1).concat(right);
+    }
+    return [points[0], points[lastIndex]];
+  }
+
   /**
    * Devuelve las estructuras con su posición (x, y, z) derivada de la station
    * sobre el alineamiento vigente. La posición NO se almacena en el proyecto:
@@ -307,6 +346,7 @@
     resolveStructures,
     elevationAtStation,
     smoothTerrainProfile,
+    simplifyPolyline,
     nearestStation,
     computeSpans,
     niceStep,

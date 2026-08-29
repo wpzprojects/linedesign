@@ -34,7 +34,7 @@ Shell de aplicación de escritorio (no una página que hace scroll), con la estr
 
 - **Barra de actividad** (extremo izquierdo, ~56px, nunca se esconde): íconos para cambiar de pantalla (Criterios / Planta y Perfil / Catálogo / Árbol de cargas / Resumen), más el engranaje de Configuración y el toggle de tema al fondo.
 - **Configuración**: sin contenido por ahora — pensada para ajustes de la app (no del proyecto) más adelante.
-- **Criterios**: nombre del proyecto, sistema de unidades y las hipótesis de carga (conductor, hipótesis de referencia, tabla de hipótesis) — todo lo que condiciona el cálculo, agrupado en un solo lugar; pensada para ir sumando más ajustes globales.
+- **Criterios**: nombre del proyecto, sistema de unidades, importación de alineamiento desde KMZ/KML (ver "Importar KMZ/KML" abajo) y las hipótesis de carga (conductor, hipótesis de referencia, tabla de hipótesis) — todo lo que condiciona el cálculo, agrupado en un solo lugar; pensada para ir sumando más ajustes globales.
 - **Resumen**: Explorador (árbol de vértices y estructuras — clic para seleccionar y saltar a Planta y Perfil), tarjeta de Proyecto (exportar/importar/reiniciar) y Resumen del proyecto.
 - **Planta y Perfil**: lado a lado, cada una llenando el alto disponible — el `viewBox` del SVG se recalcula según el tamaño real del panel. **Zoom con rueda del mouse y pan arrastrando el fondo** (independiente por lienzo, con botones +/−/ajustar en cada cabecera). El proyector centra el contenido dentro del panel (no lo ancla a una esquina) y dibuja una regla con marcas numeradas en ambos ejes — en Planta, coordenadas reales (Este/Norte, EPSG:9377), no un sistema local arbitrario. **Las dos vistas están sincronizadas**: al pasar el cursor sobre una, aparece un marcador en la posición correspondiente de la otra — igual que en PLS-CADD. Arrastra vértices o estructuras para moverlos; un clic (sin arrastrar) los selecciona. El botón de mapa en la cabecera de Planta muestra/oculta un **mapa base real** (Leaflet: calles/OpenStreetMap o satélite/Esri, con control para alternar) detrás del alineamiento, ubicado a partir de las propias coordenadas del alineamiento — ver "Mapa base" abajo. El botón de montaña en la cabecera de Perfil consulta la **elevación real del terreno** a lo largo del alineamiento y ajusta el perfil a ella — ver "Perfil de terreno real" abajo.
 - **Panel de propiedades** (derecha): edición del vértice o estructura seleccionada — reemplaza cualquier formulario flotante por un inspector fijo, como en Figma/AutoCAD/QGIS.
@@ -54,6 +54,16 @@ El alineamiento (`vertex.x`/`vertex.y`) usa coordenadas **reales**, no un sistem
 
 El botón de montaña en la cabecera de Perfil consulta un servicio de elevación (`src/data/elevationSource.js`) para un muestreo del alineamiento cada 25 m, lo suaviza (`stationing.smoothTerrainProfile`, atenúa saltos puntuales entre puntos consecutivos) y guarda el resultado como `alignment.terrainProfile`. Prueba dos servicios públicos sin API key, en orden — [OpenTopoData](https://www.opentopodata.org/) primero (mejor dato, pero su API pública no pareció aceptar CORS de forma consistente en las pruebas) y [Open-Elevation](https://open-elevation.com/) si falla la conexión — ninguno de los dos es perfecto (gratuitos, de terceros), así que probar ambos en vez de apostarlo todo a uno es más robusto — ver `DATA_MODEL.md` para el detalle. Con ese perfil presente, `profileView.js` dibuja el terreno real (línea de otro color) en vez de la interpolación lineal simulada entre vértices, cada vértice actualiza su elevación (`vertex.z`) al valor real de su propia station, y la base de cada estructura toma su elevación del perfil real (no de interpolar entre los dos vértices vecinos) — así el poste queda apoyado sobre el terreno dibujado, no "flotando" sobre una aproximación más gruesa — ver `DATA_MODEL.md` para el detalle.
 
+### Importar KMZ/KML (Fase 2)
+
+En Criterios, "Importar alineamiento" carga un KMZ o KML (p.ej. exportado de Google Earth) y reemplaza el alineamiento del proyecto:
+
+1. `src/data/kmzImport.js` lee el archivo (`JSZip`, CDN, si es `.kmz`; texto directo si es `.kml`) y extrae todos los `LineString` que encuentre en lat/lon, ignorando la altitud del KML a propósito (no debe usarse como perfil de terreno — para eso está "Ajustar al terreno real" en Perfil, que consulta un servicio de elevación real).
+2. Si hay más de un candidato, el usuario elige cuál importar (con la cantidad de puntos de cada uno) — no se asume el primero.
+3. Las coordenadas del candidato elegido se convierten a Este/Norte (EPSG:9377, `geo.latLonToEpsg9377`) y se simplifican con Douglas-Peucker (`stationing.simplifyPolyline`, tolerancia de 5 m) — los trazados dibujados a mano en Google Earth suelen traer muchos más puntos de los que hacen falta para un alineamiento de diseño (unos pocos PIs en los quiebres).
+4. `store.importAlignment` reemplaza `alignment.vertices` (con `z = 0`, ya que la elevación real se obtiene aparte) y limpia `structures`/`terrainProfile` del proyecto anterior, que ya no tendrían sentido sobre la geometría nueva.
+5. La app salta automáticamente a "Planta y Perfil" para que el usuario vea el resultado y siga editando a mano si hace falta (mover vértices, agregar estructuras, "Ajustar al terreno real").
+
 ### Fundamento de diseño
 
 La distribución no es una preferencia estética: se investigó la interfaz real de PLS-CADD (menú Terreno/Estructuras/Líneas, vistas Planta/Perfil/3D sincronizadas por un marcador de cursor compartido) y el patrón que comparten AutoCAD, QGIS, Figma y VS Code — navegación fija + pantallas por función + lienzo con zoom/pan + inspector de propiedades + barra de estado con lectura de coordenadas — para construir un "cascarón" de Fase 1 que ya tiene la forma de la herramienta final, no una demo que habrá que rehacer en Fase 2.
@@ -67,8 +77,8 @@ La distribución no es una preferencia estética: se investigó la interfaz real
 
 ## Estructura del proyecto
 
-- `src/data/` — `dataSource.js` (interfaz de datos simulados, reemplazable en Fase 2), `elevationSource.js` (consulta de elevación real, Fase 2) y `projectStore.js` (estado del proyecto, mutaciones, persistencia).
-- `src/engine/` — `stationing.js` (geometría del alineamiento/perfil), `catenary.js` (sag-tension), `loadTree.js` (árbol de cargas), `geo.js` (conversión EPSG:9377 ↔ lat/lon, Fase 2). Sin dependencias de DOM: se pueden probar de forma aislada.
+- `src/data/` — `dataSource.js` (interfaz de datos simulados, reemplazable en Fase 2), `elevationSource.js` (consulta de elevación real, Fase 2), `kmzImport.js` (lectura de KMZ/KML, Fase 2) y `projectStore.js` (estado del proyecto, mutaciones, persistencia).
+- `src/engine/` — `stationing.js` (geometría del alineamiento/perfil, incl. `simplifyPolyline` para KMZ importado), `catenary.js` (sag-tension), `loadTree.js` (árbol de cargas), `geo.js` (conversión EPSG:9377 ↔ lat/lon, Fase 2). Sin dependencias de DOM: se pueden probar de forma aislada.
 - `src/ui/` — una vista por pantalla (`planView`, `profileView`, `catalogView`, `hypothesesView`, `loadTreeView`), más `app.js` (orquestador), `theme.js`, `viewport.js` (controlador de zoom/pan reutilizable), `mapRenderer.js` (mapa base de Planta, Fase 2), `domUtil.js`/`svgUtil.js` (helpers, incl. construcción de la regla numerada).
 - `assets/` — íconos PWA.
 - `tests/engine.test.js` — pruebas del motor de cálculo sin framework (`node tests/engine.test.js`; requiere Node.js, no incluido en este entorno de desarrollo — ver nota abajo).
@@ -81,4 +91,4 @@ La distribución no es una preferencia estética: se investigó la interfaz real
 
 - ✅ Mapa base real en Planta (Leaflet: calles/OpenStreetMap + satélite/Esri), con el alineamiento en coordenadas reales (MAGNA-SIRGAS / Origen-Nacional, EPSG:9377).
 - ✅ Perfil de elevación real (OpenTopoData) — botón en Perfil, ver "Perfil de terreno real" arriba.
-- ⬜ Importar KMZ real y sustituir `dataSource.js` por una fuente real, sin tocar `engine`/`ui`.
+- ✅ Importar alineamiento desde KMZ/KML — botón en Criterios, ver "Importar KMZ/KML" arriba.

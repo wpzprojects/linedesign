@@ -78,6 +78,19 @@ Ninguno de los dos es perfecto — son servicios gratuitos de terceros ("pueden 
 
 **Se evaluó** sumar la Google Elevation API como alternativa con key propia del usuario (configurable desde la pantalla "Configuración") para cuando el terreno saliera "en escalones" en zonas muy accidentadas. Se descartó: exige una cuenta de facturación de Google Cloud activa incluso para el nivel gratuito, y el suavizado del dato gratuito ya resuelve el problema que la motivaba — no vale la pena esa fricción para el usuario. La pantalla "Configuración" queda otra vez sin contenido, lista para otro ajuste de la app a futuro.
 
+### Importar alineamiento desde KMZ/KML (Fase 2, prompt maestro Apéndice B)
+
+Botón "Importar alineamiento" en la pantalla "Criterios". Flujo completo:
+
+1. `src/data/kmzImport.js#parseKmzOrKml(file)` lee el archivo — si es `.kmz` (un ZIP), lo descomprime con [JSZip](https://stuk.github.io/jszip/) (CDN) y toma el primer `.kml` que encuentre adentro; si es `.kml` suelto, lo lee directo como texto. Límite de tamaño: 20 MB.
+2. `extractCandidates(kmlText)` parsea el XML con `DOMParser` nativo (sin librería) y junta un candidato por cada `Placemark` que tenga un `LineString` con ≥2 puntos: `{ name, points: [{lat, lon}] }` (la altitud del KML, si trae, se ignora a propósito — no debe usarse como perfil de terreno; para eso está "Ajustar al terreno real" en Perfil, con datos de un servicio de elevación real, no la altitud de un archivo dibujado a mano).
+3. Si hay más de un candidato, `app.js` muestra una lista (nombre + cantidad de puntos) para que el usuario elija cuál importar — no se asume el primero (Apéndice B.1). También ofrece un checkbox para invertir el orden del trazado, por si el KML viene desde el extremo "equivocado".
+4. Las coordenadas del candidato elegido se convierten a Este/Norte (EPSG:9377) con `geo.latLonToEpsg9377`, y se simplifican con `stationing.simplifyPolyline(points, 5)` (Douglas-Peucker, tolerancia 5 m) — los trazados de Google Earth suelen venir sobre-muestreados (cientos de puntos siguiendo el trazo a mano) frente a un alineamiento de diseño real (unos pocos PIs en los quiebres de ángulo). La tolerancia queda fija por ahora; el usuario sigue pudiendo editar vértices a mano en Planta después de importar (agregar/mover/eliminar), la importación es un punto de partida, no un resultado final.
+5. `store.importAlignment(points)` (`points`: `[{x, y, z}]`, ya en local) reemplaza `alignment.vertices` (con `z = 0` — la elevación real se obtiene aparte, ver arriba) y limpia `structures`/`terrainProfile`, que ya no tendrían sentido sobre la geometría nueva (stations y elevaciones puntuales de otro trazado). Reinicia los contadores de id de vértice/estructura, así que los nuevos vértices vuelven a numerarse desde PI-1.
+6. `app.js` navega automáticamente a "Planta y Perfil" para que el usuario vea el resultado.
+
+Validaciones: archivo corrupto o sin ningún `.kml`/`LineString` reconocible, coordenadas fuera de rango (`lat` fuera de `[-90, 90]`, `lon` fuera de `[-180, 180]`) — todo con mensajes de error claros vía `alert()`, sin fallar en silencio (Apéndice B.5).
+
 `store.applyTerrainProfile(terrainProfile, vertexElevations)` guarda este array **y**, en la misma mutación, actualiza `vertex.z` de cada vértice a su elevación real (la station de cada vértice ya está incluida en el muestreo, así que reusa el mismo lote de resultados sin otra consulta) — así la posición derivada de las estructuras (`stationing.resolveStructures`, que interpola `vertex.z` linealmente) también se ajusta al terreno real en los PIs, aunque siga siendo una interpolación lineal *entre* vértices (no usa el perfil denso para eso — simplificación de Fase 2, ver limitación arriba sobre catenaria/perfil 2D).
 
 ### `attachmentPoints`

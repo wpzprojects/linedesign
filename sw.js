@@ -10,7 +10,7 @@
  * vez de quedar atascados en la caché vieja. Esta es una tarea recurrente en
  * cada fase del proyecto (ver README.md).
  */
-const CACHE_NAME = 'linedesign-html-v44';
+const CACHE_NAME = 'linedesign-html-v45';
 const APP_SHELL = [
   './',
   './index.html',
@@ -19,12 +19,12 @@ const APP_SHELL = [
   './assets/icon-192.png',
   './assets/icon-512.png',
   './assets/logo-mark.png',
-  // Leaflet (CDN, mapa base de Planta — Fase 2): URLs versionadas y
-  // estables, se cachean igual que el resto del app-shell. Las TESELAS del
-  // mapa (OpenStreetMap/Esri) NO se cachean: son ilimitadas/dinámicas, ver
-  // README.md § Consideraciones PWA.
+  // Leaflet + JSZip (CDN): URLs versionadas y estables, se cachean igual
+  // que el resto del app-shell. Las TESELAS del mapa (OpenStreetMap/Esri)
+  // NO se cachean: son ilimitadas/dinámicas, ver README.md § Consideraciones PWA.
   'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css',
   'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.js',
+  'https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js',
   './src/ui/domUtil.js',
   './src/ui/svgUtil.js',
   './src/ui/viewport.js',
@@ -34,6 +34,7 @@ const APP_SHELL = [
   './src/engine/geo.js',
   './src/data/dataSource.js',
   './src/data/elevationSource.js',
+  './src/data/kmzImport.js',
   './src/data/projectStore.js',
   './src/ui/theme.js',
   './src/ui/mapRenderer.js',

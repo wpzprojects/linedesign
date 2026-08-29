@@ -9,6 +9,7 @@
   const stationing = window.LineDesignStationing;
   const geo = window.LineDesignGeo;
   const elevationSource = window.LineDesignElevationSource;
+  const kmzImport = window.LineDesignKmzImport;
   const { el, clear } = window.LineDesignDomUtil;
   const { downloadFile } = window.LineDesignSvgUtil;
 
@@ -31,6 +32,13 @@
   const planHypothesisSelect = document.getElementById('plan-hypothesis-select');
   const profileVExagSelect = document.getElementById('profile-vexag-select');
   const terrainFetchBtn = document.getElementById('terrain-fetch-btn');
+  const kmzImportBtn = document.getElementById('kmz-import-btn');
+  const kmzImportFile = document.getElementById('kmz-import-file');
+  const kmzImportPicker = document.getElementById('kmz-import-picker');
+  const kmzImportCandidates = document.getElementById('kmz-import-candidates');
+  const kmzImportInvert = document.getElementById('kmz-import-invert');
+  const kmzImportConfirm = document.getElementById('kmz-import-confirm');
+  const kmzImportCancel = document.getElementById('kmz-import-cancel');
   const screenTitle = document.getElementById('screen-title');
   const statusCoords = document.getElementById('status-coords');
   const statusSummary = document.getElementById('status-summary');
@@ -41,6 +49,7 @@
   let planHypothesisId = null;
   const zoomLevels = { plan: 1, profile: 1 };
   let statusMessageTimer = null;
+  let kmzCandidates = [];
 
   function roundTo4(value) {
     return Math.round(value * 10000) / 10000;
@@ -421,6 +430,69 @@
         terrainFetchBtn.disabled = false;
         terrainFetchBtn.classList.remove('is-loading');
       }
+    });
+
+    function renderKmzCandidates() {
+      clear(kmzImportCandidates);
+      kmzCandidates.forEach((candidate, i) => {
+        kmzImportCandidates.appendChild(el('label', { class: 'kmz-candidate-option' }, [
+          el('input', { type: 'radio', name: 'kmz-candidate', value: String(i), checked: i === 0 }),
+          `${candidate.name} (${candidate.points.length} puntos)`
+        ]));
+      });
+    }
+
+    function resetKmzImportPicker() {
+      kmzImportPicker.hidden = true;
+      kmzImportInvert.checked = false;
+      kmzCandidates = [];
+      clear(kmzImportCandidates);
+    }
+
+    kmzImportBtn.addEventListener('click', () => kmzImportFile.click());
+
+    kmzImportFile.addEventListener('change', async (e) => {
+      const file = e.target.files[0];
+      if (!file) return;
+      try {
+        kmzCandidates = await kmzImport.parseKmzOrKml(file);
+        renderKmzCandidates();
+        kmzImportPicker.hidden = false;
+      } catch (error) {
+        alert(`No se pudo leer el archivo: ${error.message}`);
+      } finally {
+        kmzImportFile.value = '';
+      }
+    });
+
+    kmzImportCancel.addEventListener('click', resetKmzImportPicker);
+
+    kmzImportConfirm.addEventListener('click', () => {
+      const selected = kmzImportCandidates.querySelector('input[name="kmz-candidate"]:checked');
+      if (!selected) return;
+      const candidate = kmzCandidates[parseInt(selected.value, 10)];
+      const orderedPoints = kmzImportInvert.checked ? [...candidate.points].reverse() : candidate.points;
+
+      // lat/lon (KML) -> Este/Norte (EPSG:9377, el sistema nativo del
+      // proyecto) y luego simplificado: los trazados de Google Earth
+      // suelen venir sobre-muestreados (cientos de puntos siguiendo el
+      // trazo dibujado a mano) — 5 m de tolerancia es denso mientras
+      // sigue reduciendo bien ese sobre-muestreo; el usuario puede seguir
+      // ajustando vértices a mano en Planta después.
+      const localPoints = orderedPoints.map((p) => geo.latLonToEpsg9377(p.lat, p.lon));
+      const simplified = stationing.simplifyPolyline(localPoints, 5);
+      const vertexPoints = simplified.map((p) => ({ x: p.x, y: p.y, z: 0 }));
+
+      const result = store.importAlignment(vertexPoints);
+      if (!result.ok) {
+        alert(result.reason);
+        return;
+      }
+
+      showStatusMessage(`Alineamiento importado: ${orderedPoints.length} puntos → ${vertexPoints.length} vértices.`);
+      resetKmzImportPicker();
+      selection = null;
+      goToPlanScreen();
     });
 
     projectNameInput.addEventListener('change', (e) => store.setProjectName(e.target.value.trim() || 'Proyecto sin nombre'));

@@ -338,6 +338,54 @@ body.dark-theme .icon-moon {
   color: var(--primary);
 }
 
+/* Selector de trazado al importar un KMZ/KML con más de un candidato. */
+.kmz-import-picker {
+  margin-top: 12px;
+  padding-top: 12px;
+  border-top: 1px solid var(--line);
+}
+
+.kmz-import-candidates {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  margin: 6px 0 10px;
+  max-height: 200px;
+  overflow-y: auto;
+}
+
+.kmz-candidate-option {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 0.85rem;
+  font-weight: 400;
+  text-transform: none;
+  letter-spacing: normal;
+  color: var(--text);
+  cursor: pointer;
+}
+
+.kmz-candidate-option input {
+  width: auto;
+}
+
+.kmz-import-invert {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-weight: 400;
+  text-transform: none;
+  letter-spacing: normal;
+  color: var(--text);
+  margin-top: 6px;
+  cursor: pointer;
+}
+
+.kmz-import-invert input {
+  width: auto;
+}
+
 .form-card, .catalog-card {
   background: var(--panel-alt);
   border: 1px solid var(--line);
