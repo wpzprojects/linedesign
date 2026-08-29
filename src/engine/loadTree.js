@@ -45,19 +45,36 @@
     return avgOffsetZ;
   }
 
-  /** Tensión y cargas por unidad de longitud de cada vano, para una hipótesis dada. */
+  /**
+   * Tensión y cargas por unidad de longitud de cada vano, para una
+   * hipótesis dada. La tensión horizontal NO se resuelve vano por vano
+   * con su propia longitud: los vanos entre dos estructuras de anclaje
+   * (Retención/Ángulo — Suspensión y Paso no anclan, ver
+   * stationing.isAnchorStructure) forman una sección de tensionamiento
+   * que comparte una sola tensión, calculada con el vano regulador de esa
+   * sección (stationing.tensionSectionRulingSpans). El vano REAL de cada
+   * uno (span.length) sigue siendo el suyo propio — se usa tal cual para
+   * dibujar la curva/flecha de cada vano, solo la tensión es compartida.
+   */
   function computeSpanTensions(project, hypothesisId) {
     const hypothesis = project.hypotheses.find((h) => h.id === hypothesisId);
     const referenceHypothesis = getReferenceHypothesis(project);
     const resolved = stationing.resolveStructures(project.alignment.vertices, project.structures, project.alignment.terrainProfile);
     const { sorted, spans } = stationing.computeSpans(resolved);
 
-    const results = spans.map((span) => {
+    const spanLengths = spans.map((s) => s.length);
+    const rulingSpans = stationing.tensionSectionRulingSpans(
+      sorted,
+      spanLengths,
+      (s) => stationing.isAnchorStructure(s, project.structureCatalog)
+    );
+
+    const results = spans.map((span, i) => {
       const tension = catenary.computeSpanTension(
         project.conductor,
         referenceHypothesis,
         hypothesis,
-        span.length,
+        rulingSpans[i],
         project.stringingTensions
       );
       return { ...span, ...tension };

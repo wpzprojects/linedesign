@@ -366,7 +366,7 @@
                 <li>Clic sobre la curva de un vano lo selecciona (se resalta en azul) — en Propiedades puedes cambiar el conductor del proyecto desde ahí.</li>
                 <li>Los círculos rojos que aparecen en Planta o Perfil al mover el cursor sobre el otro lienzo son marcadores de sincronización: muestran la posición correspondiente en la otra vista.</li>
               </ul>
-              <p class="muted">Simplificación: cada vano se resuelve de forma independiente (no hay "vano regulador" compartido por una sección de anclajes, como sí modela PLS-CADD real). No se modela creep/relajación de largo plazo.</p>
+              <p class="muted">Los vanos entre dos estructuras de anclaje (Retención/Ángulo en el catálogo — Suspensión/Paso no anclan) comparten una sola tensión, calculada con el vano regulador de esa sección (√(Σ Lᵢ³ / Σ Lᵢ)), igual que en un software de diseño real. Simplificación: no se modela creep/relajación de largo plazo.</p>
 
               <h3>Divisor Planta/Perfil</h3>
               <p>La franja angosta entre los dos lienzos se puede arrastrar (cursor de redimensionar) para cambiar el ancho relativo entre ambos; se recuerda entre sesiones.</p>

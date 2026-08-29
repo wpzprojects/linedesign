@@ -23,9 +23,11 @@
  *      conductor por viento no se representa en una vista de perfil 2D en Fase 1.
  *
  * Simplificaciones explícitas de Fase 1 (documentadas también en DATA_MODEL.md):
- *   - Cada vano se resuelve de forma independiente a partir de una tensión de
- *     referencia fija (no se modela un "vano regulador" compartido por una
- *     sección de anclajes, como sí hace PLS-CADD).
+ *   - Esta función resuelve UN vano con la longitud que se le pase — quien
+ *     la llama (loadTree.js#computeSpanTensions) es responsable de pasar el
+ *     vano regulador de la sección de tensionamiento en vez de la longitud
+ *     real del vano individual, cuando corresponda (ver
+ *     stationing.tensionSectionRulingSpans).
  *   - No se modela creep/relajación de largo plazo ni deformación permanente.
  *   - Coeficiente de arrastre (drag) del conductor para viento: Cd = 1.0.
  */

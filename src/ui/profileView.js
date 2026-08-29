@@ -153,13 +153,26 @@
       const hypothesis = project.hypotheses.find((h) => h.id === hypothesisId) || project.hypotheses[0];
       const referenceHypothesis = loadTree.getReferenceHypothesis(project);
 
+      // Los vanos entre dos estructuras de anclaje (Retención/Ángulo) forman
+      // una sección de tensionamiento que comparte una sola tensión — se
+      // resuelve con el vano regulador de la sección, no con la longitud
+      // real de cada vano individual (esa se sigue usando tal cual para
+      // dibujar la curva/flecha de cada uno). Mismo criterio que
+      // loadTree.js#computeSpanTensions, ver stationing.tensionSectionRulingSpans.
+      const spanLengthsRaw = resolved.slice(0, -1).map((s, i) => resolved[i + 1].station - s.station);
+      const rulingSpans = stationing.tensionSectionRulingSpans(
+        resolved,
+        spanLengthsRaw,
+        (s) => stationing.isAnchorStructure(s, project.structureCatalog)
+      );
+
       for (let i = 0; i < resolved.length - 1; i += 1) {
         const from = resolved[i];
         const to = resolved[i + 1];
         const spanLength = to.station - from.station;
         if (spanLength <= 0) continue;
 
-        const tension = catenary.computeSpanTension(project.conductor, referenceHypothesis, hypothesis, spanLength, project.stringingTensions);
+        const tension = catenary.computeSpanTension(project.conductor, referenceHypothesis, hypothesis, rulingSpans[i], project.stringingTensions);
         const fromTop = from.z + from.height;
         const toTop = to.z + to.height;
         const curve = catenary.catenaryCurve({

@@ -140,7 +140,7 @@
       {
         typeId: 'TIPO-C',
         name: 'Poste retención',
-        type: 'Poste',
+        type: 'Retención',
         heightOptions: [12, 14, 16, 20, 24, 30],
         attachmentPoints: [
           { name: 'Fase A', offsetX: -1.4, offsetZ: 14 },

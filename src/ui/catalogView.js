@@ -5,7 +5,11 @@
 (function (global) {
   const { el, clear } = global.LineDesignDomUtil;
 
-  const STRUCTURE_TYPES = ['Suspensión', 'Ángulo', 'Retención', 'Poste'];
+  // Retención y Ángulo anclan la línea (delimitan una sección de
+  // tensionamiento); Suspensión y Paso no — el conductor las atraviesa sin
+  // anclarse. Ver stationing.isAnchorStructure, que lee este mismo campo
+  // `type` para el cálculo de tendido (vano regulador por sección).
+  const STRUCTURE_TYPES = ['Suspensión', 'Ángulo', 'Retención', 'Paso'];
 
   function createCatalogView(container, store) {
     let editingId = null;

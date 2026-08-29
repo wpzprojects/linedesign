@@ -347,6 +347,69 @@
   }
 
   /**
+   * ¿Es esta estructura un "anclaje" (delimita una sección de
+   * tensionamiento) o un simple paso/suspensión donde el conductor
+   * atraviesa sin anclarse (la cadena de aisladores se balancea para
+   * igualar la tensión con el vano vecino)? Retención y Ángulo anclan;
+   * Suspensión y Paso no. Una estructura con un tipo huérfano (no está en
+   * el catálogo) se trata como anclaje, por seguridad — mejor una sección
+   * de más que asumir que el cable pasa de largo sin anclarse.
+   */
+  function isAnchorStructure(structure, structureCatalog) {
+    const type = (structureCatalog || []).find((t) => t.typeId === structure.typeId);
+    const category = type ? type.type : null;
+    return category !== 'Suspensión' && category !== 'Paso';
+  }
+
+  /**
+   * Vano regulador (ruling/equivalent span) de una serie de longitudes de
+   * vano: L = √(Σ Li³ / Σ Li). Estándar de la industria para representar
+   * varios vanos que comparten una tensión horizontal común (los que caen
+   * dentro de una misma sección de tensionamiento, ver
+   * `tensionSectionRulingSpans`) con un único vano equivalente en la
+   * ecuación de cambio de estado.
+   */
+  function rulingSpan(spanLengths) {
+    const sumL = spanLengths.reduce((a, b) => a + b, 0);
+    if (sumL <= 0) return 0;
+    const sumL3 = spanLengths.reduce((a, b) => a + b * b * b, 0);
+    return Math.sqrt(sumL3 / sumL);
+  }
+
+  /**
+   * Agrupa los vanos de un alineamiento en secciones de tensionamiento
+   * delimitadas por estructuras de anclaje (`isAnchorStructure`) — la
+   * primera y la última estructura del alineamiento cierran sección
+   * SIEMPRE, tengan o no un tipo de anclaje real asignado (la línea tiene
+   * que amarrarse en sus dos extremos), sin necesidad de un caso especial:
+   * toda sección arranca en el índice 0 o donde terminó la anterior, y la
+   * última se cierra al llegar al final del arreglo pase lo que pase.
+   *
+   * Devuelve, por cada vano (mismo orden/índice que `spanLengths`), el
+   * vano regulador de SU sección — todos los vanos de una misma sección
+   * quedan con el mismo valor, listo para pasarlo a
+   * `catenary.computeSpanTension` en vez de la longitud real de cada vano
+   * individual (que sigue usándose tal cual para dibujar la curva/flecha
+   * de cada vano con `catenary.catenaryCurve`).
+   */
+  function tensionSectionRulingSpans(sortedStructures, spanLengths, isAnchor) {
+    const sectionBounds = [];
+    let sectionStart = 0;
+    for (let i = 1; i < sortedStructures.length; i += 1) {
+      if (i === sortedStructures.length - 1 || isAnchor(sortedStructures[i])) {
+        sectionBounds.push([sectionStart, i - 1]);
+        sectionStart = i;
+      }
+    }
+    const rulingSpanBySpan = new Array(spanLengths.length).fill(0);
+    sectionBounds.forEach(([from, to]) => {
+      const rs = rulingSpan(spanLengths.slice(from, to + 1));
+      for (let i = from; i <= to; i += 1) rulingSpanBySpan[i] = rs;
+    });
+    return rulingSpanBySpan;
+  }
+
+  /**
    * Desplaza el alineamiento `distance` metros perpendicular a su propio
    * trazado (positivo/negativo = un lado u otro) — usado para dibujar el
    * borde de la franja de servidumbre en Planta. En cada vértice interior
@@ -398,6 +461,9 @@
     simplifyPolyline,
     nearestStation,
     computeSpans,
+    isAnchorStructure,
+    rulingSpan,
+    tensionSectionRulingSpans,
     niceStep,
     sampleStations,
     offsetPolyline
