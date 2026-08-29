@@ -291,6 +291,34 @@
         ultimateStrength: 46710,
         referenceHypothesisId: 'H1',
         referenceHorizontalTension: 9340
+      },
+      // ACAR (Aluminum Conductor Alloy Reinforced, núcleo de aleación 6201
+      // en vez de acero) — no usa nombres de ave como ACSR/AAAC, se
+      // designa directamente por su tamaño en MCM. Mismo criterio
+      // simplificado de Fase 1 para elasticModulus/thermalExpansionCoef.
+      {
+        id: 'ACAR-350',
+        name: 'ACAR 350 MCM',
+        diameter: 0.01724,
+        weightPerLength: 4.79,
+        crossSectionArea: 0.00017735,
+        elasticModulus: 6.9e10,
+        thermalExpansionCoef: 1.9e-5,
+        ultimateStrength: 37430,
+        referenceHypothesisId: 'H1',
+        referenceHorizontalTension: 7490
+      },
+      {
+        id: 'ACAR-500',
+        name: 'ACAR 500 MCM',
+        diameter: 0.0206,
+        weightPerLength: 6.84,
+        crossSectionArea: 0.00025335,
+        elasticModulus: 6.9e10,
+        thermalExpansionCoef: 1.9e-5,
+        ultimateStrength: 52410,
+        referenceHypothesisId: 'H1',
+        referenceHorizontalTension: 10480
       }
     ];
   }
