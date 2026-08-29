@@ -1,6 +1,6 @@
 :root {
   --app-bg: #eef0f2;
-  --chrome: #e6e7ea;
+  --status-bg: #f6f6f7;
   --panel: #ffffff;
   --panel-alt: #f2f2f4;
   --panel-raised: #ffffff;
@@ -26,8 +26,8 @@
 @media (prefers-color-scheme: dark) {
   :root:not([data-theme="light"]) {
     --app-bg: #101012;
-    --chrome: #17171a;
-      --panel: #212125;
+    --status-bg: #242429;
+    --panel: #212125;
     --panel-alt: #151517;
     --panel-raised: #29292f;
     --text: #eeeeef;
@@ -45,7 +45,7 @@
 /* Toggle manual de tema (independiente de prefers-color-scheme) */
 body.dark-theme {
   --app-bg: #101012;
-  --chrome: #17171a;
+  --status-bg: #242429;
   --panel: #212125;
   --panel-alt: #151517;
   --panel-raised: #29292f;
@@ -62,7 +62,7 @@ body.dark-theme {
 
 body:not(.dark-theme) {
   --app-bg: #eef0f2;
-  --chrome: #e6e7ea;
+  --status-bg: #f6f6f7;
   --panel: #ffffff;
   --panel-alt: #f2f2f4;
   --panel-raised: #ffffff;
@@ -118,7 +118,7 @@ button, input, select, textarea {
   flex-direction: column;
   align-items: center;
   gap: 6px;
-  background: var(--chrome);
+  background: var(--panel);
   border-right: 1px solid var(--line);
   padding: 12px 0;
 }
@@ -166,7 +166,7 @@ button, input, select, textarea {
   gap: 12px;
   padding: 10px 20px;
   border-bottom: 1px solid var(--line);
-  background: var(--chrome);
+  background: var(--panel);
 }
 
 .screen-title {
@@ -726,7 +726,7 @@ input:focus, select:focus, button:focus-visible {
 .inspector {
   flex: 0 0 var(--inspector-width);
   width: var(--inspector-width);
-  background: var(--chrome);
+  background: var(--panel);
   border: 1px solid var(--line);
   border-left: none;
   border-radius: 0;
@@ -1103,7 +1103,7 @@ circle.sync-marker {
   gap: 10px;
   padding: 5px 16px;
   border-top: 1px solid var(--line);
-  background: var(--panel-raised);
+  background: var(--status-bg);
   font-size: 0.76rem;
   color: var(--muted);
 }
