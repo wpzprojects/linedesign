@@ -1452,10 +1452,10 @@ body:not(.screen-plan-active) .status-bar {
   }
 
   /* Separación entre la barra de herramientas y el resto (Planta/Perfil)
-     — 10px en escritorio — a 0 en móvil, para que la última tarjeta
-     quede pegada contra la ventana de Planta. */
+     — 10px en escritorio — se achica en móvil (0 quedaba demasiado
+     pegado, la tarjeta Hipótesis se veía incrustada contra Planta). */
   #screen-plan.screen.is-active {
-    gap: 0;
+    gap: 8px;
   }
 
   .toolbar-card {
