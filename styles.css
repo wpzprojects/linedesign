@@ -912,12 +912,14 @@ svg#plan-svg {
   fill: none;
   stroke-linecap: round;
   stroke-linejoin: round;
+  vector-effect: non-scaling-stroke;
 }
 
 .profile-line {
   stroke: var(--accent);
   stroke-width: 3;
   fill: none;
+  vector-effect: non-scaling-stroke;
 }
 
 /* Terreno real (consultado a un servicio de elevación, Fase 2) en vez de
@@ -935,6 +937,7 @@ svg#plan-svg {
   stroke: var(--warning);
   stroke-width: 2.5;
   fill: none;
+  vector-effect: non-scaling-stroke;
 }
 
 .sag-label {
@@ -948,6 +951,7 @@ svg#plan-svg {
   stroke: var(--panel);
   stroke-width: 2;
   cursor: grab;
+  vector-effect: non-scaling-stroke;
 }
 
 .structure-point.is-selected {
@@ -960,6 +964,7 @@ svg#plan-svg {
   stroke: var(--accent);
   stroke-width: 4;
   cursor: grab;
+  vector-effect: non-scaling-stroke;
 }
 
 .structure-pole.is-selected {
@@ -971,6 +976,7 @@ svg#plan-svg {
   stroke: var(--primary);
   stroke-width: 3;
   cursor: grab;
+  vector-effect: non-scaling-stroke;
 }
 
 .vertex-point.is-selected {
@@ -994,6 +1000,7 @@ svg#plan-svg {
 .ruler-line {
   stroke: var(--line);
   stroke-width: 1;
+  vector-effect: non-scaling-stroke;
 }
 
 .ruler-label {
@@ -1010,6 +1017,7 @@ svg#plan-svg {
   opacity: 0;
   pointer-events: none;
   transition: opacity 0.1s ease;
+  vector-effect: non-scaling-stroke;
 }
 
 .sync-marker.is-visible {
@@ -1021,6 +1029,7 @@ circle.sync-marker {
   stroke: var(--panel);
   stroke-width: 1.5;
   stroke-dasharray: none;
+  vector-effect: non-scaling-stroke;
 }
 
 .annotation-label {
