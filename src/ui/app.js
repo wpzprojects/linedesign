@@ -697,7 +697,7 @@
         propRowStatic('Vano regulador (m)', section ? section.rulingSpan.toFixed(1) : '—'),
         propRowStatic('Diámetro (m)', String(conductor.diameter)),
         propRowStatic(`Peso (${isSI ? 'N/m' : 'kg/km'})`, weightDisplay.toFixed(1)),
-        propRowStatic(`RTS (${isSI ? 'N' : 'kgF'})`, strengthDisplay.toFixed(1))
+        propRowStatic(`Carga de rotura (${isSI ? 'N' : 'kgF'})`, strengthDisplay.toFixed(1))
       ]));
     }
   }
