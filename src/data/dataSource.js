@@ -211,6 +211,86 @@
         ultimateStrength: 62700,
         referenceHypothesisId: 'H1',
         referenceHorizontalTension: 12500
+      },
+      // El nombre estándar de la tabla de códigos ACSR para 1/0 AWG es
+      // "Raven" (no "Penguin" — ese es el nombre real del 4/0 AWG, ya
+      // presente arriba). Datos físicos de tablas estándar de fabricante
+      // (Southwire/vendors ASTM B-232), igual que el resto del catálogo.
+      {
+        id: 'ACSR-1-0',
+        name: 'ACSR 1/0 AWG "Raven"',
+        diameter: 0.0101,
+        weightPerLength: 2.12,
+        crossSectionArea: 0.0000535,
+        elasticModulus: 6.9e10,
+        thermalExpansionCoef: 1.9e-5,
+        ultimateStrength: 19480,
+        referenceHypothesisId: 'H1',
+        referenceHorizontalTension: 3900
+      },
+      {
+        id: 'ACSR-266',
+        name: 'ACSR 266.8 MCM "Partridge"',
+        diameter: 0.01631,
+        weightPerLength: 5.36,
+        crossSectionArea: 0.0001352,
+        elasticModulus: 6.9e10,
+        thermalExpansionCoef: 1.9e-5,
+        ultimateStrength: 49510,
+        referenceHypothesisId: 'H1',
+        referenceHorizontalTension: 9900
+      },
+      {
+        id: 'ACSR-795',
+        name: 'ACSR 795 MCM "Drake"',
+        diameter: 0.02814,
+        weightPerLength: 15.97,
+        crossSectionArea: 0.0004028,
+        elasticModulus: 6.9e10,
+        thermalExpansionCoef: 1.9e-5,
+        ultimateStrength: 140120,
+        referenceHypothesisId: 'H1',
+        referenceHorizontalTension: 28000
+      },
+      // AAAC (All Aluminum Alloy Conductor, aleación 6201-T81) — mismo
+      // criterio simplificado de Fase 1 que el resto del catálogo: se
+      // reutilizan elasticModulus/thermalExpansionCoef del aluminio puro
+      // (el motor no distingue aún propiedades reales por aleación).
+      {
+        id: 'AAAC-123',
+        name: 'AAAC 123.3 MCM "Azusa"',
+        diameter: 0.0101,
+        weightPerLength: 1.68,
+        crossSectionArea: 0.0000625,
+        elasticModulus: 6.9e10,
+        thermalExpansionCoef: 1.9e-5,
+        ultimateStrength: 19840,
+        referenceHypothesisId: 'H1',
+        referenceHorizontalTension: 3970
+      },
+      {
+        id: 'AAAC-246',
+        name: 'AAAC 246.9 MCM "Alliance"',
+        diameter: 0.0143,
+        weightPerLength: 3.38,
+        crossSectionArea: 0.0001251,
+        elasticModulus: 6.9e10,
+        thermalExpansionCoef: 1.9e-5,
+        ultimateStrength: 38080,
+        referenceHypothesisId: 'H1',
+        referenceHorizontalTension: 7620
+      },
+      {
+        id: 'AAAC-312',
+        name: 'AAAC 312.8 MCM "Butte"',
+        diameter: 0.01631,
+        weightPerLength: 4.29,
+        crossSectionArea: 0.0001585,
+        elasticModulus: 6.9e10,
+        thermalExpansionCoef: 1.9e-5,
+        ultimateStrength: 46710,
+        referenceHypothesisId: 'H1',
+        referenceHorizontalTension: 9340
       }
     ];
   }
