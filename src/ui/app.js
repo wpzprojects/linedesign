@@ -435,6 +435,61 @@
     });
   }
 
+  /** Secciones de tensionamiento vigentes (compartido entre el combo de
+   * Propiedades y el detalle de un vano seleccionado — ver comentario en
+   * la rama selection.type === 'section' más abajo). */
+  function computeSections(project) {
+    const resolvedStructures = stationing.resolveStructures(project.alignment.vertices, project.structures, project.alignment.terrainProfile);
+    const { sorted, spans } = stationing.computeSpans(resolvedStructures);
+    const spanLengths = spans.map((s) => s.length);
+    return stationing.computeTensionSections(
+      sorted, spanLengths, (s) => stationing.isAnchorStructure(s, project.structureCatalog)
+    );
+  }
+
+  function propCategory(text) {
+    return el('div', { class: 'prop-category' }, text);
+  }
+
+  /** Fila etiqueta:valor de la grilla de Propiedades. `disabled` solo
+   * atenúa/marca en cursiva (el control ya trae su propio `disabled`
+   * nativo pasado por quien lo crea) — no aplica pointer-events:none. */
+  function propRow(labelText, control, { disabled = false } = {}) {
+    return el('div', { class: `prop-row${disabled ? ' is-disabled' : ''}` }, [
+      el('span', { class: 'prop-row-label' }, labelText),
+      control
+    ]);
+  }
+
+  /** Combo del encabezado de Propiedades: mismo panel para vértice,
+   * estructura o vano — deja saltar de uno a otro sin volver al lienzo. */
+  function buildInspectorObjectSelect(project) {
+    const sections = computeSections(project);
+    return el('select', {
+      class: 'prop-object-select',
+      onChange: (e) => {
+        const [type, a, b] = e.target.value.split('|');
+        if (type === 'vertex') selection = { type: 'vertex', id: a };
+        else if (type === 'structure') selection = { type: 'structure', id: a };
+        else selection = { type: 'section', fromId: a, toId: b };
+        render(store.getProject());
+      }
+    }, [
+      el('optgroup', { label: 'Vértices' }, project.alignment.vertices.map((v) => el('option', {
+        value: `vertex|${v.id}`,
+        selected: !!(selection && selection.type === 'vertex' && selection.id === v.id)
+      }, `Vértice ${v.id}`))),
+      el('optgroup', { label: 'Estructuras' }, project.structures.map((s) => el('option', {
+        value: `structure|${s.id}`,
+        selected: !!(selection && selection.type === 'structure' && selection.id === s.id)
+      }, `Estructura ${s.id}`))),
+      el('optgroup', { label: 'Vanos' }, sections.map((sec) => el('option', {
+        value: `section|${sec.fromId}|${sec.toId}`,
+        selected: !!(selection && selection.type === 'section' && selection.fromId === sec.fromId && selection.toId === sec.toId)
+      }, `Vano ${sec.fromId} → ${sec.toId}`)))
+    ]);
+  }
+
   function renderInspector(project) {
     if (selection && selection.type === 'vertex' && !project.alignment.vertices.some((v) => v.id === selection.id)) selection = null;
     if (selection && selection.type === 'structure' && !project.structures.some((s) => s.id === selection.id)) selection = null;
@@ -451,75 +506,98 @@
       return;
     }
 
+    inspectorPanel.appendChild(el('div', { class: 'prop-toolbar' }, buildInspectorObjectSelect(project)));
+
     if (selection.type === 'vertex') {
       const vertex = project.alignment.vertices.find((v) => v.id === selection.id);
-      inspectorPanel.appendChild(el('div', { class: 'inspector-title' }, `Vértice ${vertex.id}`));
-      inspectorPanel.appendChild(el('label', {}, 'Este (m) — EPSG:9377'));
-      inspectorPanel.appendChild(el('input', {
-        type: 'number', step: '0.5', value: roundTo4(vertex.x),
-        onChange: (e) => store.moveVertex(vertex.id, parseFloat(e.target.value) || 0, vertex.y)
-      }));
-      inspectorPanel.appendChild(el('label', {}, 'Norte (m) — EPSG:9377'));
-      inspectorPanel.appendChild(el('input', {
-        type: 'number', step: '0.5', value: roundTo4(vertex.y),
-        onChange: (e) => store.moveVertex(vertex.id, vertex.x, parseFloat(e.target.value) || 0)
-      }));
-      inspectorPanel.appendChild(el('label', {}, 'Elevación z (m)'));
-      inspectorPanel.appendChild(el('input', {
-        type: 'number', step: '0.5', value: vertex.z,
-        onChange: (e) => store.setVertexElevation(vertex.id, parseFloat(e.target.value) || 0)
-      }));
-      inspectorPanel.appendChild(el('button', {
-        class: 'btn btn-small btn-danger inspector-delete', type: 'button',
-        onClick: () => {
-          const result = store.removeVertex(vertex.id);
-          if (result && !result.ok) { alert(result.reason); return; }
-          showStatusMessage(`Vértice ${vertex.id} eliminado.`);
-          selection = null;
-          render(store.getProject());
-        }
-      }, 'Eliminar vértice'));
+
+      inspectorPanel.appendChild(el('div', { class: 'prop-section' }, [
+        propCategory('General'),
+        propRow('Este (m) — EPSG:9377', el('input', {
+          class: 'prop-control', type: 'number', step: '0.5', value: roundTo4(vertex.x),
+          onChange: (e) => store.moveVertex(vertex.id, parseFloat(e.target.value) || 0, vertex.y)
+        })),
+        propRow('Norte (m) — EPSG:9377', el('input', {
+          class: 'prop-control', type: 'number', step: '0.5', value: roundTo4(vertex.y),
+          onChange: (e) => store.moveVertex(vertex.id, vertex.x, parseFloat(e.target.value) || 0)
+        })),
+        propRow('Elevación z (m)', el('input', {
+          class: 'prop-control', type: 'number', step: '0.5', value: vertex.z,
+          onChange: (e) => store.setVertexElevation(vertex.id, parseFloat(e.target.value) || 0)
+        }))
+      ]));
+
+      inspectorPanel.appendChild(el('div', { class: 'prop-actions' }, [
+        el('button', {
+          class: 'btn btn-small btn-danger', type: 'button',
+          onClick: () => {
+            const result = store.removeVertex(vertex.id);
+            if (result && !result.ok) { alert(result.reason); return; }
+            showStatusMessage(`Vértice ${vertex.id} eliminado.`);
+            selection = null;
+            render(store.getProject());
+          }
+        }, 'Eliminar vértice')
+      ]));
     } else if (selection.type === 'structure') {
       const structure = project.structures.find((s) => s.id === selection.id);
       const type = project.structureCatalog.find((t) => t.typeId === structure.typeId);
-
-      inspectorPanel.appendChild(el('div', { class: 'inspector-title' }, `Estructura ${structure.id}`));
-
-      inspectorPanel.appendChild(el('label', {}, 'Tipo'));
-      inspectorPanel.appendChild(el('select', {
-        onChange: (e) => {
-          const newType = project.structureCatalog.find((t) => t.typeId === e.target.value);
-          const resistance = newType.resistanceOptions && newType.resistanceOptions.length ? newType.resistanceOptions[0] : undefined;
-          store.updateStructure(structure.id, { typeId: newType.typeId, height: newType.heightOptions[0], resistance });
-        }
-      }, project.structureCatalog.map((t) => el('option', { value: t.typeId, selected: t.typeId === structure.typeId }, t.name))));
-
-      inspectorPanel.appendChild(el('label', {}, 'Altura (m)'));
-      inspectorPanel.appendChild(el('select', {
-        onChange: (e) => store.updateStructure(structure.id, { height: parseFloat(e.target.value) })
-      }, (type ? type.heightOptions : [structure.height]).map((h) => el('option', { value: h, selected: h === structure.height }, `${h} m`))));
-
-      if (type && type.resistanceOptions && type.resistanceOptions.length) {
-        inspectorPanel.appendChild(el('label', {}, 'Resistencia (kgF)'));
-        inspectorPanel.appendChild(el('select', {
-          onChange: (e) => store.updateStructure(structure.id, { resistance: parseFloat(e.target.value) })
-        }, type.resistanceOptions.map((r) => el('option', { value: r, selected: r === structure.resistance }, `${r} kgF`))));
-      }
 
       // Contravientos: solo tiene sentido en estructuras que anclan la
       // línea (Retención/Ángulo) — ver stationing.isAnchorStructure. En
       // Retención se instalan dos, uno opuesto a cada vano adyacente; en
       // Ángulo uno solo, opuesto a la resultante de tensión — ver
       // loadTree.js#checkPoleCapacity para cómo entra esto en "Cumple
-      // poste"/"Cumple contraviento".
+      // poste"/"Cumple contraviento". Los campos de contraviento se
+      // muestran SIEMPRE (atenuados/en cursiva si no aplican, vía
+      // propRow({disabled})) en vez de aparecer/desaparecer del todo —
+      // así el usuario ve que existen aunque no pueda editarlos ahora.
       const isAnchorType = type && (type.type === 'Retención' || type.type === 'Ángulo');
-      inspectorPanel.appendChild(el('label', {}, 'Contravientos'));
-      inspectorPanel.appendChild(el('label', { class: 'checkbox-label' }, [
-        el('input', {
-          type: 'checkbox', checked: !!structure.hasGuy, disabled: !isAnchorType,
+      const hasGuy = isAnchorType && !!structure.hasGuy;
+      const previewGuyHeight = structure.guyAnchorHeight != null ? structure.guyAnchorHeight : Math.max(structure.height - 3, 1);
+      const previewGuyDistance = structure.guyAnchorDistance != null ? structure.guyAnchorDistance : previewGuyHeight;
+      const guyResistanceOptions = (type && type.guyResistanceOptions && type.guyResistanceOptions.length)
+        ? type.guyResistanceOptions
+        : [structure.guyResistance != null ? structure.guyResistance : 0];
+
+      inspectorPanel.appendChild(el('div', { class: 'prop-section' }, [
+        propCategory('General'),
+        propRow('Tipo', el('select', {
+          class: 'prop-control',
           onChange: (e) => {
-            const patch = { hasGuy: e.target.checked };
-            if (e.target.checked && structure.guyAnchorHeight == null) {
+            const newType = project.structureCatalog.find((t) => t.typeId === e.target.value);
+            const resistance = newType.resistanceOptions && newType.resistanceOptions.length ? newType.resistanceOptions[0] : undefined;
+            store.updateStructure(structure.id, { typeId: newType.typeId, height: newType.heightOptions[0], resistance });
+          }
+        }, project.structureCatalog.map((t) => el('option', { value: t.typeId, selected: t.typeId === structure.typeId }, t.name)))),
+        propRow('Station (m)', el('input', {
+          class: 'prop-control', type: 'number', step: '1', value: structure.station.toFixed(1),
+          onChange: (e) => store.moveStructure(structure.id, parseFloat(e.target.value) || 0)
+        }))
+      ]));
+
+      const geometryRows = [
+        propRow('Altura (m)', el('select', {
+          class: 'prop-control',
+          onChange: (e) => store.updateStructure(structure.id, { height: parseFloat(e.target.value) })
+        }, (type ? type.heightOptions : [structure.height]).map((h) => el('option', { value: h, selected: h === structure.height }, `${h} m`))))
+      ];
+      if (type && type.resistanceOptions && type.resistanceOptions.length) {
+        geometryRows.push(propRow('Resistencia (kgF)', el('select', {
+          class: 'prop-control',
+          onChange: (e) => store.updateStructure(structure.id, { resistance: parseFloat(e.target.value) })
+        }, type.resistanceOptions.map((r) => el('option', { value: r, selected: r === structure.resistance }, `${r} kgF`)))));
+      }
+      inspectorPanel.appendChild(el('div', { class: 'prop-section' }, [propCategory('Geometría'), ...geometryRows]));
+
+      inspectorPanel.appendChild(el('div', { class: 'prop-section' }, [
+        propCategory('Accesorios'),
+        propRow('Instalar contravientos', el('select', {
+          class: 'prop-control', disabled: !isAnchorType,
+          onChange: (e) => {
+            const checked = e.target.value === 'si';
+            const patch = { hasGuy: checked };
+            if (checked && structure.guyAnchorHeight == null) {
               patch.guyAnchorHeight = Math.max(structure.height - 3, 1);
               patch.guyAnchorDistance = patch.guyAnchorHeight;
               if (type && type.guyResistanceOptions && type.guyResistanceOptions.length) {
@@ -528,96 +606,87 @@
             }
             store.updateStructure(structure.id, patch);
           }
-        }),
-        isAnchorType ? ' Instalar contravientos' : ' No aplica (solo Retención/Ángulo)'
+        }, [
+          el('option', { value: 'no', selected: !structure.hasGuy }, 'No'),
+          el('option', { value: 'si', selected: !!structure.hasGuy }, 'Sí')
+        ]), { disabled: !isAnchorType }),
+        propRow('Resistencia contraviento (kgF)', el('select', {
+          class: 'prop-control', disabled: !hasGuy,
+          onChange: (e) => store.updateStructure(structure.id, { guyResistance: parseFloat(e.target.value) })
+        }, guyResistanceOptions.map((r) => el('option', {
+          value: r, selected: r === (structure.guyResistance != null ? structure.guyResistance : guyResistanceOptions[0])
+        }, `${r} kgF`))), { disabled: !hasGuy }),
+        propRow('Altura de anclaje (m)', el('input', {
+          class: 'prop-control', type: 'number', step: '0.5', min: '0.5', disabled: !hasGuy,
+          value: hasGuy ? structure.guyAnchorHeight : previewGuyHeight,
+          onChange: (e) => store.updateStructure(structure.id, { guyAnchorHeight: parseFloat(e.target.value) || 0 })
+        }), { disabled: !hasGuy }),
+        propRow('Distancia horiz. de anclaje (m)', el('input', {
+          class: 'prop-control', type: 'number', step: '0.5', min: '0.5', disabled: !hasGuy,
+          value: hasGuy ? structure.guyAnchorDistance : previewGuyDistance,
+          onChange: (e) => store.updateStructure(structure.id, { guyAnchorDistance: parseFloat(e.target.value) || 0 })
+        }), { disabled: !hasGuy })
       ]));
 
-      if (isAnchorType && structure.hasGuy) {
-        if (type.guyResistanceOptions && type.guyResistanceOptions.length) {
-          inspectorPanel.appendChild(el('label', {}, 'Resistencia de contraviento (kgF)'));
-          inspectorPanel.appendChild(el('select', {
-            onChange: (e) => store.updateStructure(structure.id, { guyResistance: parseFloat(e.target.value) })
-          }, type.guyResistanceOptions.map((r) => el('option', { value: r, selected: r === structure.guyResistance }, `${r} kgF`))));
-        }
-        inspectorPanel.appendChild(el('label', {}, 'Altura de anclaje en el poste (m)'));
-        inspectorPanel.appendChild(el('input', {
-          type: 'number', step: '0.5', min: '0.5', value: structure.guyAnchorHeight,
-          onChange: (e) => store.updateStructure(structure.id, { guyAnchorHeight: parseFloat(e.target.value) || 0 })
-        }));
-        inspectorPanel.appendChild(el('label', {}, 'Distancia horizontal del anclaje en tierra (m)'));
-        inspectorPanel.appendChild(el('input', {
-          type: 'number', step: '0.5', min: '0.5', value: structure.guyAnchorDistance,
-          onChange: (e) => store.updateStructure(structure.id, { guyAnchorDistance: parseFloat(e.target.value) || 0 })
-        }));
-      }
-
-      inspectorPanel.appendChild(el('label', {}, 'Station (m)'));
-      inspectorPanel.appendChild(el('input', {
-        type: 'number', step: '1', value: structure.station.toFixed(1),
-        onChange: (e) => store.moveStructure(structure.id, parseFloat(e.target.value) || 0)
-      }));
-
-      inspectorPanel.appendChild(el('button', {
-        class: 'btn btn-small inspector-action', type: 'button',
-        onClick: () => {
-          const vertices = project.alignment.vertices;
-          const distances = stationing.cumulativeDistances(vertices);
-          let nearestIndex = 0;
-          let nearestDiff = Infinity;
-          distances.forEach((d, i) => {
-            const diff = Math.abs(d - structure.station);
-            if (diff < nearestDiff) { nearestDiff = diff; nearestIndex = i; }
-          });
-          store.moveStructure(structure.id, distances[nearestIndex]);
-          showStatusMessage(`Estructura ${structure.id} ajustada al vértice ${vertices[nearestIndex].id}.`);
-        }
-      }, 'Ajustar al vértice más cercano'));
-
-      inspectorPanel.appendChild(el('button', {
-        class: 'btn btn-small btn-danger inspector-delete', type: 'button',
-        onClick: () => {
-          store.removeStructure(structure.id);
-          showStatusMessage(`Estructura ${structure.id} eliminada.`);
-          selection = null;
-          render(store.getProject());
-        }
-      }, 'Eliminar estructura'));
+      inspectorPanel.appendChild(el('div', { class: 'prop-actions' }, [
+        el('button', {
+          class: 'btn btn-small', type: 'button',
+          onClick: () => {
+            const vertices = project.alignment.vertices;
+            const distances = stationing.cumulativeDistances(vertices);
+            let nearestIndex = 0;
+            let nearestDiff = Infinity;
+            distances.forEach((d, i) => {
+              const diff = Math.abs(d - structure.station);
+              if (diff < nearestDiff) { nearestDiff = diff; nearestIndex = i; }
+            });
+            store.moveStructure(structure.id, distances[nearestIndex]);
+            showStatusMessage(`Estructura ${structure.id} ajustada al vértice ${vertices[nearestIndex].id}.`);
+          }
+        }, 'Ajustar al vértice'),
+        el('button', {
+          class: 'btn btn-small btn-danger', type: 'button',
+          onClick: () => {
+            store.removeStructure(structure.id);
+            showStatusMessage(`Estructura ${structure.id} eliminada.`);
+            selection = null;
+            render(store.getProject());
+          }
+        }, 'Eliminar')
+      ]));
     } else {
       // selection.type === 'section': un clic en cualquier vano selecciona
       // la sección de tensionamiento COMPLETA (todos los vanos entre dos
       // estructuras de anclaje, ver profileView.js) — el conductor se
       // asigna a la sección entera, no vano por vano.
       const { fromId, toId } = selection;
-      const resolvedStructures = stationing.resolveStructures(project.alignment.vertices, project.structures, project.alignment.terrainProfile);
-      const { sorted, spans } = stationing.computeSpans(resolvedStructures);
-      const spanLengths = spans.map((s) => s.length);
-      const sections = stationing.computeTensionSections(
-        sorted, spanLengths, (s) => stationing.isAnchorStructure(s, project.structureCatalog)
-      );
+      const sections = computeSections(project);
       const section = sections.find((sec) => sec.fromId === fromId && sec.toId === toId);
       const vanoCount = section ? section.spanToIndex - section.spanFromIndex + 1 : 0;
       const conductor = loadTree.resolveSectionConductor(project, fromId, toId);
       const override = project.sectionConductors.find((s) => s.fromId === fromId && s.toId === toId);
 
-      inspectorPanel.appendChild(el('div', { class: 'inspector-title' }, `Sección ${fromId} → ${toId}`));
-      inspectorPanel.appendChild(el('p', { class: 'muted conductor-specs' },
-        `${vanoCount} vano${vanoCount === 1 ? '' : 's'} · Vano regulador ${section ? section.rulingSpan.toFixed(1) : '—'} m`));
-
-      inspectorPanel.appendChild(el('label', {}, 'Conductor de la sección'));
-      inspectorPanel.appendChild(el('select', {
-        onChange: (e) => {
-          if (e.target.value === '') store.clearSectionConductor(fromId, toId);
-          else store.setSectionConductor(fromId, toId, e.target.value);
-        }
-      }, [
-        el('option', { value: '', selected: !override }, `Usar el del proyecto (${project.conductor.name})`),
-        ...project.conductorCatalog.map((c) => el('option', { value: c.id, selected: c.id === conductor.id && !!override }, c.name))
+      inspectorPanel.appendChild(el('div', { class: 'prop-section' }, [
+        propCategory('General'),
+        propRow('Conductor de la sección', el('select', {
+          class: 'prop-control',
+          onChange: (e) => {
+            if (e.target.value === '') store.clearSectionConductor(fromId, toId);
+            else store.setSectionConductor(fromId, toId, e.target.value);
+          }
+        }, [
+          el('option', { value: '', selected: !override }, `Usar el del proyecto (${project.conductor.name})`),
+          ...project.conductorCatalog.map((c) => el('option', { value: c.id, selected: c.id === conductor.id && !!override }, c.name))
+        ]))
       ]));
+
+      inspectorPanel.appendChild(el('p', { class: 'muted conductor-specs prop-specs' },
+        `${vanoCount} vano${vanoCount === 1 ? '' : 's'} · Vano regulador ${section ? section.rulingSpan.toFixed(1) : '—'} m`));
 
       const isSI = project.displayUnitSystem === 'si';
       const weightDisplay = isSI ? units.kgPerKmToNewtonsPerMeter(conductor.weightPerLength) : conductor.weightPerLength;
       const strengthDisplay = isSI ? units.kgfToNewtons(conductor.ultimateStrength) : conductor.ultimateStrength;
-      inspectorPanel.appendChild(el('p', { class: 'muted conductor-specs' },
+      inspectorPanel.appendChild(el('p', { class: 'muted conductor-specs prop-specs' },
         `Diámetro ${conductor.diameter} m · Peso ${weightDisplay.toFixed(1)} ${isSI ? 'N/m' : 'kg/km'} · RTS ${strengthDisplay.toFixed(1)} ${isSI ? 'N' : 'kgF'}`));
     }
   }

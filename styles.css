@@ -981,6 +981,121 @@ p.conductor-specs {
   width: auto;
 }
 
+/* ---------- Propiedades: grilla densa estilo AutoCAD ---------- */
+/* Filas etiqueta:valor sin caja de input visible hasta hover/foco (solo
+   una línea divisoria fina + sombreado alterno para seguir la fila con
+   la vista), agrupadas bajo barras de categoría angostas, con un combo
+   arriba en vez de un título fijo — el mismo panel sirve para vértice,
+   estructura o vano sin cambiar de estructura, solo lo que el combo y
+   las categorías muestran. Paleta = la del resto de la app (var(--...)),
+   no los colores del mockup de referencia. */
+
+.prop-toolbar {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 4px;
+}
+
+.prop-object-select {
+  flex: 1 1 auto;
+  font-weight: 600;
+  background: var(--panel-alt);
+}
+
+.prop-section + .prop-section {
+  margin-top: 2px;
+}
+
+.prop-category {
+  background: var(--panel-alt);
+  color: var(--muted);
+  font-size: 0.66rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  padding: 4px 14px;
+  margin: 0 -14px;
+}
+
+.prop-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 4px 14px;
+  margin: 0 -14px;
+  border-bottom: 1px solid var(--line);
+}
+
+.prop-section .prop-row:nth-child(even) {
+  background: var(--panel-alt);
+}
+
+.prop-row-label {
+  flex: 0 0 44%;
+  color: var(--muted);
+  font-size: 0.78rem;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* El control real (input/select) sigue siendo funcional — solo se le
+   quita el aspecto de caja hasta que el usuario interactúa con él. */
+.prop-control {
+  flex: 1 1 auto;
+  min-width: 0;
+  width: auto;
+  background: transparent;
+  border: 1px solid transparent;
+  border-radius: 5px;
+  padding: 3px 6px;
+  font-size: 0.82rem;
+  color: var(--text);
+  transition: background 0.12s ease, border-color 0.12s ease;
+}
+
+.prop-control:hover,
+.prop-control:focus {
+  background: var(--panel);
+  border-color: var(--line);
+}
+
+.prop-control:focus {
+  border-color: var(--primary);
+}
+
+/* Campo no aplicable en el estado actual (p. ej. resistencia de
+   contraviento sin contravientos instalados): se muestra igual, no se
+   oculta, pero atenuado/en cursiva — como AutoCAD grisea propiedades no
+   aplicables en vez de hacerlas desaparecer. */
+.prop-row.is-disabled .prop-row-label,
+.prop-row.is-disabled .prop-control {
+  color: var(--muted);
+  font-style: italic;
+  opacity: 0.7;
+}
+
+.prop-row.is-disabled .prop-control:hover {
+  background: transparent;
+  border-color: transparent;
+}
+
+.prop-specs {
+  padding: 6px 14px 2px;
+  margin: 0 -14px;
+}
+
+.prop-actions {
+  display: flex;
+  gap: 8px;
+  margin: 14px -14px 0;
+  padding: 0 14px;
+}
+
+.prop-actions .btn {
+  flex: 1 1 0;
+}
+
 .panel {
   background: var(--panel);
   border: 1px solid var(--line);
