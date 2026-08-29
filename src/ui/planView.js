@@ -37,7 +37,7 @@
     // Referencias mutables al render vigente, para que los listeners
     // registrados una sola vez (wheel, hover) siempre operen sobre el
     // proyector/zoomLayer actuales y no sobre los de un render anterior.
-    const current = { project: null, selection: null, projector: null, zoomLayer: null, markers: [] };
+    const current = { project: null, selection: null, projector: null, zoomLayer: null, markers: [], showCircuit: true };
 
     // Marcadores (círculos de vértice/estructura, sus etiquetas y el
     // sync-marker): viven dentro de zoomLayer para que su posición
@@ -134,6 +134,20 @@
       if (current.syncMarker) current.syncMarker.classList.remove('is-visible');
     }
 
+    // Alterna solo la visibilidad de lo ya dibujado (sin re-render), igual
+    // que sagLabelsToggle en Perfil; el estado queda en current.showCircuit
+    // para que el próximo render() (p. ej. al arrastrar) lo respete.
+    function setCircuitVisible(visible) {
+      current.showCircuit = visible;
+      svg.querySelectorAll('.circuit-line, .vano-label').forEach((el) => {
+        el.style.display = visible ? '' : 'none';
+      });
+    }
+
+    function getCircuitVisible() {
+      return current.showCircuit;
+    }
+
     function render(project, selection) {
       current.project = project;
       current.selection = selection;
@@ -215,9 +229,11 @@
       // abajo — en vez de re-renderizar todo, igual que ya hacía
       // alignmentPath con los vértices.
       const circuitPath = svgEl('path', { class: 'circuit-line' });
+      if (!current.showCircuit) circuitPath.style.display = 'none';
       zoomLayer.appendChild(circuitPath);
       const vanoLabelMarkers = Array.from({ length: Math.max(project.structures.length - 1, 0) }, () => {
         const labelEl = svgEl('text', { class: 'vano-label', x: 0, y: 14, 'text-anchor': 'middle' });
+        if (!current.showCircuit) labelEl.style.display = 'none';
         zoomLayer.appendChild(labelEl);
         const record = { el: labelEl, x: 0, y: 0, angle: 0, type: 'vano-label' };
         current.markers.push(record);
@@ -392,7 +408,10 @@
       callbacks.onZoomChange(viewport.state.scale);
     }
 
-    return { render, zoomBy, resetZoom, showSyncMarker, hideSyncMarker, setMapVisible, isMapVisible };
+    return {
+      render, zoomBy, resetZoom, showSyncMarker, hideSyncMarker, setMapVisible, isMapVisible,
+      setCircuitVisible, getCircuitVisible
+    };
   }
 
   global.LineDesignPlanView = { createPlanView };

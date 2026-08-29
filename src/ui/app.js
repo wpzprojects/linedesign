@@ -19,6 +19,7 @@
   const planSvg = document.getElementById('plan-svg');
   const planMapContainer = document.getElementById('plan-map');
   const planMapToggle = document.getElementById('plan-map-toggle');
+  const circuitToggle = document.getElementById('circuit-toggle');
   const splitView = document.querySelector('.split-view');
   const splitDivider = document.getElementById('split-divider');
   const profileSvg = document.getElementById('profile-svg');
@@ -204,6 +205,19 @@
     setPlanMapVisible(localStorage.getItem('linedesign-plan-map') === 'true');
   } catch (error) {
     console.warn('No se pudo leer el estado del mapa base:', error);
+  }
+
+  function setCircuitVisible(visible) {
+    planView.setCircuitVisible(visible);
+    circuitToggle.setAttribute('aria-pressed', String(visible));
+    circuitToggle.classList.toggle('is-active', visible);
+    circuitToggle.title = visible ? 'Ocultar circuito entre estructuras' : 'Mostrar circuito entre estructuras';
+  }
+
+  try {
+    setCircuitVisible(localStorage.getItem('linedesign-circuit-visible') !== 'false');
+  } catch (error) {
+    console.warn('No se pudo leer el estado del circuito:', error);
   }
 
   function setSagLabelsVisible(visible) {
@@ -1017,6 +1031,16 @@
         console.warn('No se pudo guardar el estado del mapa base:', error);
       }
       render(store.getProject());
+    });
+
+    circuitToggle.addEventListener('click', () => {
+      const next = circuitToggle.getAttribute('aria-pressed') !== 'true';
+      setCircuitVisible(next);
+      try {
+        localStorage.setItem('linedesign-circuit-visible', String(next));
+      } catch (error) {
+        console.warn('No se pudo guardar el estado del circuito:', error);
+      }
     });
 
     sagLabelsToggle.addEventListener('click', () => {
