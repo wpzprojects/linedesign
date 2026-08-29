@@ -40,7 +40,34 @@
       throw new Error('Respuesta inesperada del servicio de elevación.');
     }
 
-    return data.results.map((r) => r.elevation);
+    // No se asume que el orden de `data.results` coincida con el de
+    // `points` — cada resultado trae de vuelta la coordenada que
+    // corresponde a su elevación, así que se empareja por coordenada más
+    // cercana en vez de por posición en el array. Confiar en el orden
+    // producía un desfase station↔elevación (el perfil se dibujaba con las
+    // stations bien ordenadas pero las elevaciones "revueltas", como un
+    // terreno en escalones que no correspondía al real).
+    const results = data.results;
+    const hasCoords = results.every((r) => Number.isFinite(r.latitude) && Number.isFinite(r.longitude));
+    if (!hasCoords) {
+      // La respuesta no trae coordenadas para emparejar — se confía en el
+      // orden como última alternativa (mejor eso que fallar del todo).
+      return results.map((r) => r.elevation);
+    }
+
+    return points.map((p) => {
+      let best = null;
+      let bestDist = Infinity;
+      for (let i = 0; i < results.length; i += 1) {
+        const r = results[i];
+        const dist = Math.abs(r.latitude - p.lat) + Math.abs(r.longitude - p.lon);
+        if (dist < bestDist) {
+          bestDist = dist;
+          best = r;
+        }
+      }
+      return best.elevation;
+    });
   }
 
   const elevationSource = { fetchElevations };
