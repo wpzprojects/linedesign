@@ -215,7 +215,7 @@
   }
 
   try {
-    setCircuitVisible(localStorage.getItem('linedesign-circuit-visible') !== 'false');
+    setCircuitVisible(localStorage.getItem('linedesign-circuit-visible') === 'true');
   } catch (error) {
     console.warn('No se pudo leer el estado del circuito:', error);
   }
@@ -228,7 +228,7 @@
   }
 
   try {
-    setSagLabelsVisible(localStorage.getItem('linedesign-sag-labels') !== 'false');
+    setSagLabelsVisible(localStorage.getItem('linedesign-sag-labels') === 'true');
   } catch (error) {
     console.warn('No se pudo leer el estado de los valores de flecha:', error);
   }
