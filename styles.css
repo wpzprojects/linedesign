@@ -776,26 +776,29 @@ svg#profile-svg {
 
 .plan-map {
   /* Sin z-index propio a propósito: si lo tuviera, crearía su propio
-     contexto de apilamiento y "atraparía" a sus hijos (el control de
-     capas Calles/Satélite de Leaflet) por debajo del <svg> hermano sin
-     posibilidad de escapar. Al no tenerlo, cada hijo de Leaflet compite
-     por z-index directamente con el <svg> en el contexto del padre común
-     (.plan-canvas-wrap): las teselas (z-index ~200 en Leaflet) quedan
-     debajo del <svg>, pero el control (~800-1000 en Leaflet) queda arriba
-     y sigue siendo clickeable — ver z-index de svg#plan-svg abajo. */
+     contexto de apilamiento y "atraparía" a sus hijos por debajo del <svg>
+     hermano sin posibilidad de escapar (ver el control de capas abajo, que
+     sí necesita quedar por encima). */
   position: absolute;
   inset: 0;
   display: none;
 }
 
-/* Fuerza explícita el control de capas (Calles/Satélite) y la atribución
-   por encima del <svg> (z-index 300): no depender del z-index interno por
-   defecto de Leaflet para esto, que además solo funciona si `.plan-map`
-   nunca gana su propio z-index (ver nota arriba) — con un valor propio muy
-   alto queda garantizado sin importar ninguno de los dos supuestos. */
+/* El panel que Leaflet usa para las teselas (.leaflet-map-pane, que engloba
+   tile-pane/overlay-pane/etc.) queda forzado por debajo del <svg> (z-index
+   300 más abajo) — no hay que confiar en los z-index internos por defecto
+   de Leaflet para esto: en la práctica terminaban ganándole al <svg> y
+   tapando el alineamiento/postes. */
+.plan-map .leaflet-map-pane {
+  z-index: 100 !important;
+}
+
+/* El control de capas (Calles/Satélite) y la atribución sí deben quedar
+   por encima del <svg> para seguir siendo clickeables — mismo razonamiento
+   que arriba, forzado de forma explícita. */
 .plan-map .leaflet-top,
 .plan-map .leaflet-bottom {
-  z-index: 10000;
+  z-index: 10000 !important;
 }
 
 /* Atribución de Leaflet legible sobre el tema oscuro de la app. */
