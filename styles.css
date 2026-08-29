@@ -556,7 +556,7 @@ input:focus, select:focus, button:focus-visible {
    etiqueta). */
 .conductor-specs {
   margin: 2px 0 10px;
-  font-size: 0.76rem;
+  font-size: 0.63rem;
 }
 
 .screen {
