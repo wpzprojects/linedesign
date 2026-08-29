@@ -942,6 +942,12 @@ p.conductor-specs {
 .toolbar-field-label {
   display: flex;
   align-items: flex-end;
+  /* El selector genérico "label" (arriba) le da margin: 10px 0 4px a
+     CUALQUIER <label> — incluida "Hipótesis mostrada", que usa <label>,
+     a diferencia de "Visualización", que usa <span> y no hereda ese
+     margen. Sin anularlo acá, el <label> queda más abajo que el <span>
+     aunque compartan esta misma clase. */
+  margin: 0;
   height: 6px;
   color: var(--muted);
   font-size: 0.62rem;
