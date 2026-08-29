@@ -718,10 +718,12 @@ p.conductor-specs {
   background: var(--toolbar-bg);
   border: 1px solid var(--line);
   border-radius: 0;
-  /* Sin padding: las tarjetas llegan a los bordes de la barra (arriba,
-     abajo e izquierda) — el espacio que antes dejaba ese padding ahora
-     lo ocupa el propio gutter de .toolbar-sep entre grupos. */
-  padding: 0;
+  /* Mismo ancho que el gutter de .toolbar-sep (6px): el aire alrededor
+     de toda la barra (contra la barra de título arriba, Planta/Perfil
+     abajo, la barra de actividad a la izquierda) queda a la misma
+     proporción que el que separa las tarjetas entre sí, en vez de
+     quedar pegadas a un lado y con aire del otro. */
+  padding: 6px 0 6px 6px;
   /* Bleed adicional por el lado izquierdo (el derecho ya lo hereda del
      margen negativo de #screen-plan): pegada de lado a lado, sin correr
      el lienzo de Planta que está debajo. */
