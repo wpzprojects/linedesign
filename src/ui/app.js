@@ -271,12 +271,17 @@
   function renderInspector(project) {
     if (selection && selection.type === 'vertex' && !project.alignment.vertices.some((v) => v.id === selection.id)) selection = null;
     if (selection && selection.type === 'structure' && !project.structures.some((s) => s.id === selection.id)) selection = null;
+    if (selection && selection.type === 'span') {
+      const [fromId, toId] = selection.id.split('->');
+      const stillExists = project.structures.some((s) => s.id === fromId) && project.structures.some((s) => s.id === toId);
+      if (!stillExists) selection = null;
+    }
 
     clear(inspectorPanel);
 
     if (!selection) {
       inspectorPanel.appendChild(el('p', { class: 'muted inspector-hint' },
-        'Selecciona un vértice o una estructura en el lienzo (o en el Explorador) para ver y editar sus propiedades aquí.'));
+        'Selecciona un vértice, una estructura o un vano en el lienzo para ver y editar sus propiedades.'));
       return;
     }
 
@@ -308,7 +313,7 @@
           render(store.getProject());
         }
       }, 'Eliminar vértice'));
-    } else {
+    } else if (selection.type === 'structure') {
       const structure = project.structures.find((s) => s.id === selection.id);
       const type = project.structureCatalog.find((t) => t.typeId === structure.typeId);
 
@@ -366,6 +371,21 @@
           render(store.getProject());
         }
       }, 'Eliminar estructura'));
+    } else {
+      // selection.type === 'span': por ahora la única propiedad editable
+      // de un vano es el conductor del proyecto (uno solo, global — no hay
+      // todavía un conductor distinto por vano, ver comentario en
+      // profileView.js).
+      const [fromId, toId] = selection.id.split('->');
+      inspectorPanel.appendChild(el('div', { class: 'inspector-title' }, `Vano ${fromId} → ${toId}`));
+
+      inspectorPanel.appendChild(el('label', {}, 'Conductor'));
+      inspectorPanel.appendChild(el('select', {
+        onChange: (e) => store.setConductor(e.target.value)
+      }, project.conductorCatalog.map((c) => el('option', { value: c.id, selected: c.id === project.conductor.id }, c.name))));
+
+      inspectorPanel.appendChild(el('p', { class: 'muted' },
+        `Diámetro ${project.conductor.diameter} m · Peso ${project.conductor.weightPerLength} N/m · RTS ${project.conductor.ultimateStrength} N`));
     }
   }
 

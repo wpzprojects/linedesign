@@ -160,7 +160,30 @@
         });
 
         const screenPoints = curve.points.map((p) => projector.toScreen(from.station + p.x, fromTop + p.y));
-        zoomLayer.appendChild(svgEl('path', { class: 'conductor-line', d: pathFromPoints(screenPoints) }));
+
+        // El vano (tramo de conductor entre dos estructuras consecutivas)
+        // es seleccionable, igual que un vértice o una estructura — por
+        // ahora la única propiedad editable desde ahí es el conductor del
+        // proyecto (un solo conductor global, no uno por vano todavía; ver
+        // renderInspector en app.js).
+        const spanId = `${from.id}->${to.id}`;
+        const isSpanSelected = selection && selection.type === 'span' && selection.id === spanId;
+        const pathD = pathFromPoints(screenPoints);
+
+        // Área de clic invisible (más ancha que el trazo visible, que es
+        // delgado y difícil de acertar): mismo trazado, sin color, encima
+        // de la línea real. Ambas comparten el mismo listener.
+        const conductorHit = svgEl('path', { class: 'conductor-hit', d: pathD });
+        const conductorLine = svgEl('path', {
+          class: `conductor-line${isSpanSelected ? ' is-selected' : ''}`,
+          d: pathD
+        });
+        conductorHit.addEventListener('pointerdown', (evt) => {
+          evt.stopPropagation();
+          callbacks.onSelect({ type: 'span', id: spanId });
+        });
+        zoomLayer.appendChild(conductorLine);
+        zoomLayer.appendChild(conductorHit);
 
         const midScreen = projector.toScreen(from.station + spanLength / 2, Math.min(fromTop, toTop));
         const sagMarker = svgEl('g', { class: 'sag-marker' });

@@ -978,6 +978,21 @@ svg#plan-svg {
   vector-effect: non-scaling-stroke;
 }
 
+.conductor-line.is-selected {
+  stroke: var(--primary);
+  stroke-width: 3.5;
+}
+
+/* Trazado invisible por encima de .conductor-line, mucho más ancho, solo
+   para hacer más fácil hacer clic sobre un vano (el trazo real es delgado). */
+.conductor-hit {
+  stroke: transparent;
+  stroke-width: 14;
+  fill: none;
+  cursor: pointer;
+  vector-effect: non-scaling-stroke;
+}
+
 .sag-label {
   fill: var(--muted);
   font-size: 10px;
