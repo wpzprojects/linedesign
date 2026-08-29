@@ -716,7 +716,10 @@ p.conductor-specs {
   background: var(--toolbar-bg);
   border: 1px solid var(--line);
   border-radius: 0;
-  padding: 3px 14px 6px;
+  /* Simétrico (no como antes, top < bottom): con align-items: center,
+     un padding parejo es lo que deja la tarjeta centrada dentro de la
+     barra en vez de pegada hacia abajo. */
+  padding: 5px 14px;
   /* Bleed adicional por el lado izquierdo (el derecho ya lo hereda del
      margen negativo de #screen-plan): pegada de lado a lado, sin correr
      el lienzo de Planta que está debajo. */
@@ -757,7 +760,11 @@ p.conductor-specs {
   background: var(--panel);
   border: 1px solid var(--line);
   border-radius: 8px;
-  padding: 2px 10px 4px;
+  /* Sin padding arriba: el borde de la tarjeta queda pegado directo a la
+     mini-etiqueta (el único "aire" que queda es el propio interlineado
+     de la fuente, no controlable desde aquí). Abajo sí conserva algo de
+     aire bajo el casillero. */
+  padding: 0 10px 4px;
 }
 
 /* Mismo acento que el botón activo de la barra de actividad
