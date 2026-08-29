@@ -945,9 +945,11 @@ p.conductor-specs {
   /* El selector genérico "label" (arriba) le da margin: 10px 0 4px a
      CUALQUIER <label> — incluida "Hipótesis mostrada", que usa <label>,
      a diferencia de "Visualización", que usa <span> y no hereda ese
-     margen. Sin anularlo acá, el <label> queda más abajo que el <span>
-     aunque compartan esta misma clase. */
-  margin: 0;
+     margen (los <span> no matchean el selector "label"). En vez de
+     anular ese margen (eso desarma el espaciado ya afinado de TODAS las
+     tarjetas del toolbar, no solo esta), se fija el mismo valor acá
+     explícitamente para que aplique sin importar la etiqueta HTML usada. */
+  margin: 10px 0 4px;
   height: 6px;
   color: var(--muted);
   font-size: 0.62rem;
