@@ -152,6 +152,10 @@
                   <div class="panel-head">
                     <h2>Perfil</h2>
                     <div class="panel-tools">
+                      <button id="terrain-fetch-btn" class="icon-btn icon-btn--tiny" type="button" title="Ajustar al terreno real (consulta la elevación real a lo largo del alineamiento)">
+                        <svg class="icon" viewBox="0 0 24 24"><path d="M3 20 L9 9 L13 15 L16 10 L21 20 Z" /></svg>
+                      </button>
+                      <span class="toolbar-sep"></span>
                       <label for="profile-vexag-select" class="toolbar-label toolbar-label--stacked">Escala<br>vertical</label>
                       <select id="profile-vexag-select" title="Escala vertical: aumenta la escala del eje de elevación respecto al de distancia">
                         <option value="1">1×</option>
@@ -244,6 +248,7 @@
     <script src="./src/engine/loadTree.js"></script>
     <script src="./src/engine/geo.js"></script>
     <script src="./src/data/dataSource.js"></script>
+    <script src="./src/data/elevationSource.js"></script>
     <script src="./src/data/projectStore.js"></script>
     <script src="./src/ui/theme.js"></script>
     <script src="./src/ui/mapRenderer.js"></script>

@@ -10,7 +10,7 @@
  * vez de quedar atascados en la caché vieja. Esta es una tarea recurrente en
  * cada fase del proyecto (ver README.md).
  */
-const CACHE_NAME = 'linedesign-html-v31';
+const CACHE_NAME = 'linedesign-html-v32';
 const APP_SHELL = [
   './',
   './index.html',
@@ -33,6 +33,7 @@ const APP_SHELL = [
   './src/engine/loadTree.js',
   './src/engine/geo.js',
   './src/data/dataSource.js',
+  './src/data/elevationSource.js',
   './src/data/projectStore.js',
   './src/ui/theme.js',
   './src/ui/mapRenderer.js',

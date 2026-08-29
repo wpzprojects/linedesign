@@ -81,7 +81,8 @@
       const distances = stationing.cumulativeDistances(vertices);
       const resolved = stationing.resolveStructures(vertices, project.structures)
         .sort((a, b) => a.station - b.station);
-      const bounds = stationing.profileBounds(vertices, resolved);
+      const terrainProfile = project.alignment.terrainProfile;
+      const bounds = stationing.profileBounds(vertices, resolved, terrainProfile);
       const projector = stationing.makeProjector(bounds, WIDTH, HEIGHT, PADDING, current.vExaggeration);
       current.projector = projector;
 
@@ -95,8 +96,16 @@
 
       zoomLayer.appendChild(buildRulerGrid({ svgEl, niceStep: stationing.niceStep, projector, bounds, padding: PADDING }));
 
-      const terrainPoints = vertices.map((v, i) => projector.toScreen(distances[i], v.z));
-      zoomLayer.appendChild(svgEl('path', { class: 'profile-line', d: pathFromPoints(terrainPoints) }));
+      // Con terreno real consultado (Fase 2, botón "Ajustar al terreno
+      // real"), se dibuja el perfil denso en vez de la interpolación lineal
+      // entre vértices — más fiel al terreno, incl. picos/valles entre PIs.
+      const terrainPoints = terrainProfile
+        ? terrainProfile.map((p) => projector.toScreen(p.station, p.elevation))
+        : vertices.map((v, i) => projector.toScreen(distances[i], v.z));
+      zoomLayer.appendChild(svgEl('path', {
+        class: `profile-line${terrainProfile ? ' profile-line--real' : ''}`,
+        d: pathFromPoints(terrainPoints)
+      }));
 
       const hypothesis = project.hypotheses.find((h) => h.id === hypothesisId) || project.hypotheses[0];
       const referenceHypothesis = loadTree.getReferenceHypothesis(project);

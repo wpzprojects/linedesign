@@ -95,6 +95,24 @@
     notify();
   }
 
+  /**
+   * Aplica un perfil de terreno real consultado a un servicio de elevación
+   * (Fase 2, ver elevationSource.js): guarda el perfil denso completo (para
+   * dibujar la línea de terreno real en Perfil) y actualiza la elevación de
+   * cada vértice a su valor real correspondiente (mismo lote de consultas),
+   * de modo que la posición derivada de las estructuras también se ajuste.
+   * `terrainProfile`: [{ station, elevation }]. `vertexElevations`: [{ id, z }].
+   */
+  function applyTerrainProfile(terrainProfile, vertexElevations) {
+    project.alignment.terrainProfile = terrainProfile;
+    vertexElevations.forEach(({ id, z }) => {
+      const vertex = project.alignment.vertices.find((v) => v.id === id);
+      if (vertex) vertex.z = z;
+    });
+    persist();
+    notify();
+  }
+
   function addVertex() {
     const vertices = project.alignment.vertices;
     const last = vertices[vertices.length - 1];
@@ -287,6 +305,7 @@
     subscribe,
     moveVertex,
     setVertexElevation,
+    applyTerrainProfile,
     addVertex,
     removeVertex,
     addCatalogType,

@@ -72,17 +72,40 @@
     };
   }
 
-  function profileBounds(vertices, structures) {
+  /**
+   * `terrainProfile` (opcional): perfil real denso (Fase 2, ver
+   * elevationSource.js), array de `{ station, elevation }`. Cuando está
+   * presente se incluye en el rango de elevaciones — puede tener picos/
+   * valles entre vértices que la sola interpolación lineal no captura.
+   */
+  function profileBounds(vertices, structures, terrainProfile) {
     const distances = cumulativeDistances(vertices);
     const elevations = vertices.map((v) => v.z);
     const structureTops = structures.map((s) => s.z + s.height);
-    const allZ = elevations.concat(structureTops.length ? structureTops : elevations);
+    const terrainZ = (terrainProfile || []).map((p) => p.elevation);
+    const allZ = elevations.concat(structureTops.length ? structureTops : elevations, terrainZ);
     return {
       minX: 0,
       maxX: distances[distances.length - 1] || 1,
       minY: Math.min(...allZ),
       maxY: Math.max(...allZ)
     };
+  }
+
+  /**
+   * Lista de stations (m) para muestrear el alineamiento a un paso
+   * aproximadamente uniforme (`step`), incluyendo siempre 0, la longitud
+   * total y la station exacta de cada vértice (para poder actualizar su
+   * elevación con el mismo lote de consultas — ver Fase 2, botón "Ajustar
+   * al terreno real" en Perfil).
+   */
+  function sampleStations(vertices, step) {
+    const distances = cumulativeDistances(vertices);
+    const total = distances[distances.length - 1] || 0;
+    const stationSet = new Set([0, Math.round(total * 100) / 100]);
+    for (let s = 0; s < total; s += step) stationSet.add(Math.round(s * 100) / 100);
+    distances.forEach((d) => stationSet.add(Math.round(d * 100) / 100));
+    return Array.from(stationSet).sort((a, b) => a - b);
   }
 
   /**
@@ -224,7 +247,8 @@
     resolveStructures,
     nearestStation,
     computeSpans,
-    niceStep
+    niceStep,
+    sampleStations
   };
 
   if (typeof module !== 'undefined' && module.exports) {

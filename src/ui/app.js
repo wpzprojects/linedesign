@@ -8,6 +8,7 @@
   const store = window.LineDesignStore;
   const stationing = window.LineDesignStationing;
   const geo = window.LineDesignGeo;
+  const elevationSource = window.LineDesignElevationSource;
   const { el, clear } = window.LineDesignDomUtil;
   const { downloadFile } = window.LineDesignSvgUtil;
 
@@ -29,6 +30,7 @@
   const newStructureStation = document.getElementById('new-structure-station');
   const planHypothesisSelect = document.getElementById('plan-hypothesis-select');
   const profileVExagSelect = document.getElementById('profile-vexag-select');
+  const terrainFetchBtn = document.getElementById('terrain-fetch-btn');
   const screenTitle = document.getElementById('screen-title');
   const statusCoords = document.getElementById('status-coords');
   const statusSummary = document.getElementById('status-summary');
@@ -359,6 +361,54 @@
         console.warn('No se pudo guardar la exageración vertical:', error);
       }
       render(store.getProject());
+    });
+
+    terrainFetchBtn.addEventListener('click', async () => {
+      const project = store.getProject();
+      const vertices = project.alignment.vertices;
+      const totalLength = stationing.totalLength(vertices);
+      if (totalLength <= 0) {
+        alert('El alineamiento necesita más de un vértice para consultar el terreno.');
+        return;
+      }
+
+      // Paso de muestreo adaptable: al menos cada 20 m, pero sin superar
+      // ~150 puntos en total (una sola consulta en lote al servicio de
+      // elevación, ver elevationSource.js) para trazados largos.
+      const step = Math.max(20, totalLength / 150);
+      const stations = stationing.sampleStations(vertices, step);
+      const points = stations.map((s) => {
+        const pos = stationing.pointAtStation(vertices, s);
+        return geo.epsg9377ToLatLon(pos.x, pos.y);
+      });
+
+      terrainFetchBtn.disabled = true;
+      terrainFetchBtn.classList.add('is-loading');
+      showStatusMessage(`Consultando elevación real (${points.length} puntos)...`);
+
+      try {
+        const elevations = await elevationSource.fetchElevations(points);
+        const terrainProfile = stations.map((s, i) => ({ station: s, elevation: elevations[i] }));
+
+        // Cada vértice ya tiene su station exacta incluida en `stations`
+        // (ver stationing.sampleStations), así que se reusa el mismo lote
+        // de resultados para actualizar su elevación — sin otra consulta.
+        const distances = stationing.cumulativeDistances(vertices);
+        const vertexElevations = vertices.map((v, i) => {
+          const targetStation = Math.round(distances[i] * 100) / 100;
+          const idx = stations.findIndex((s) => Math.abs(s - targetStation) < 0.01);
+          return { id: v.id, z: idx >= 0 ? elevations[idx] : v.z };
+        });
+
+        store.applyTerrainProfile(terrainProfile, vertexElevations);
+        showStatusMessage('Perfil ajustado al terreno real.');
+      } catch (error) {
+        console.warn('No se pudo consultar el terreno real:', error);
+        alert(`No se pudo consultar el terreno real: ${error.message}`);
+      } finally {
+        terrainFetchBtn.disabled = false;
+        terrainFetchBtn.classList.remove('is-loading');
+      }
     });
 
     projectNameInput.addEventListener('change', (e) => store.setProjectName(e.target.value.trim() || 'Proyecto sin nombre'));

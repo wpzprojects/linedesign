@@ -63,6 +63,12 @@
 
 `src/engine/geo.js` implementa la conversión Este/Norte (EPSG:9377) ↔ lat/lon (WGS84/MAGNA-SIRGAS, EPSG:4326) — Transversa de Mercator sobre elipsoide GRS80, meridiano central 73° O, latitud de origen 4° N, factor de escala 0.9992 — que usa `src/ui/mapRenderer.js` para ubicar el mapa base de Planta (Leaflet solo entiende lat/lon) y `app.js` para mostrar lat/lon bajo el cursor en la barra de estado. El motor de cálculo (`stationing`, `catenary`, `loadTree`) nunca necesita lat/lon — trabaja siempre en Este/Norte, como cualquier distancia relativa.
 
+### `alignment.terrainProfile` (Fase 2 — perfil de terreno real)
+
+Opcional; ausente hasta que el usuario presiona el botón "Ajustar al terreno real" en la cabecera de Perfil. Array de `{ station, elevation }` — un muestreo denso (paso adaptable, al menos cada 20 m, acotado a ~150 puntos por trazado) de la elevación real a lo largo del alineamiento, consultada a un servicio de elevación (`src/data/elevationSource.js`, Open-Elevation) vía `geo.epsg9377ToLatLon` para convertir cada punto muestreado a lat/lon. Cuando está presente, `profileView.js` dibuja este perfil denso en vez de la interpolación lineal entre vértices (más fiel al terreno real, incl. picos/valles entre PIs que la sola `vertex.z` no captura) — ver `.profile-line--real` en `styles.css`.
+
+`store.applyTerrainProfile(terrainProfile, vertexElevations)` guarda este array **y**, en la misma mutación, actualiza `vertex.z` de cada vértice a su elevación real (la station de cada vértice ya está incluida en el muestreo, así que reusa el mismo lote de resultados sin otra consulta) — así la posición derivada de las estructuras (`stationing.resolveStructures`, que interpola `vertex.z` linealmente) también se ajusta al terreno real en los PIs, aunque siga siendo una interpolación lineal *entre* vértices (no usa el perfil denso para eso — simplificación de Fase 2, ver limitación arriba sobre catenaria/perfil 2D).
+
 ### `attachmentPoints`
 
 Pertenecen al **tipo de estructura** (catálogo), no a cada instancia — todas las estructuras de un mismo tipo comparten geometría de fijación. `offsetX` es el desplazamiento lateral (m) respecto al eje de la estructura; `offsetZ` es la elevación del punto de enganche sobre el terreno (m). Se usan para: (a) la elevación de enganche de la catenaria en el perfil (se usa `structure.height`, ver limitación abajo) y (b) el número de fases para el árbol de cargas (`loadTree.js` multiplica las fuerzas por vano por `attachmentPoints.length`).

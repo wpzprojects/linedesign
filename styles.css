@@ -248,6 +248,16 @@ button, input, select, textarea {
   color: var(--primary);
 }
 
+.icon-btn.is-loading .icon {
+  animation: icon-spin 0.9s linear infinite;
+}
+
+@keyframes icon-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
 .icon-btn--tiny {
   width: 26px;
   height: 26px;
@@ -840,6 +850,13 @@ svg#plan-svg {
   stroke: var(--accent);
   stroke-width: 3;
   fill: none;
+}
+
+/* Terreno real (consultado a un servicio de elevación, Fase 2) en vez de
+   la interpolación lineal simulada entre vértices: mismo trazo, color
+   distinto para que se note que ya no es una aproximación. */
+.profile-line--real {
+  stroke: var(--warning);
 }
 
 .conductor-line {

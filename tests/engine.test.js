@@ -65,6 +65,15 @@ check('nearestStation ubica el punto más cercano sobre la polilínea', () => {
   assert.ok(Math.abs(s - 120) < 1e-6);
 });
 
+check('sampleStations incluye 0, la longitud total y las stations de cada vértice', () => {
+  const stations = stationing.sampleStations(vertices, 40);
+  assert.strictEqual(stations[0], 0);
+  assert.strictEqual(stations[stations.length - 1], 200);
+  assert.ok(stations.includes(100), 'debe incluir la station del vértice intermedio (100)');
+  // Está ordenada y sin duplicados.
+  for (let i = 1; i < stations.length; i += 1) assert.ok(stations[i] > stations[i - 1]);
+});
+
 check('computeSpans genera N-1 vanos ordenados por station', () => {
   const structures = [
     { id: 'B', station: 100 },

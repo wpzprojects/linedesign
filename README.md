@@ -35,7 +35,7 @@ Shell de aplicación de escritorio (no una página que hace scroll), con la estr
 - **Barra de actividad** (extremo izquierdo, ~56px, nunca se esconde): íconos para cambiar de pantalla (Criterios / Planta y Perfil / Catálogo / Árbol de cargas / Resumen), más el toggle de tema al fondo.
 - **Criterios**: nombre del proyecto, sistema de unidades y las hipótesis de carga (conductor, hipótesis de referencia, tabla de hipótesis) — todo lo que condiciona el cálculo, agrupado en un solo lugar; pensada para ir sumando más ajustes globales.
 - **Resumen**: Explorador (árbol de vértices y estructuras — clic para seleccionar y saltar a Planta y Perfil), tarjeta de Proyecto (exportar/importar/reiniciar) y Resumen del proyecto.
-- **Planta y Perfil**: lado a lado, cada una llenando el alto disponible — el `viewBox` del SVG se recalcula según el tamaño real del panel. **Zoom con rueda del mouse y pan arrastrando el fondo** (independiente por lienzo, con botones +/−/ajustar en cada cabecera). El proyector centra el contenido dentro del panel (no lo ancla a una esquina) y dibuja una regla con marcas numeradas en ambos ejes — en Planta, coordenadas reales (Este/Norte, EPSG:9377), no un sistema local arbitrario. **Las dos vistas están sincronizadas**: al pasar el cursor sobre una, aparece un marcador en la posición correspondiente de la otra — igual que en PLS-CADD. Arrastra vértices o estructuras para moverlos; un clic (sin arrastrar) los selecciona. El botón de mapa en la cabecera de Planta muestra/oculta un **mapa base real** (Leaflet: calles/OpenStreetMap o satélite/Esri, con control para alternar) detrás del alineamiento, ubicado a partir de las propias coordenadas del alineamiento — ver "Mapa base" abajo.
+- **Planta y Perfil**: lado a lado, cada una llenando el alto disponible — el `viewBox` del SVG se recalcula según el tamaño real del panel. **Zoom con rueda del mouse y pan arrastrando el fondo** (independiente por lienzo, con botones +/−/ajustar en cada cabecera). El proyector centra el contenido dentro del panel (no lo ancla a una esquina) y dibuja una regla con marcas numeradas en ambos ejes — en Planta, coordenadas reales (Este/Norte, EPSG:9377), no un sistema local arbitrario. **Las dos vistas están sincronizadas**: al pasar el cursor sobre una, aparece un marcador en la posición correspondiente de la otra — igual que en PLS-CADD. Arrastra vértices o estructuras para moverlos; un clic (sin arrastrar) los selecciona. El botón de mapa en la cabecera de Planta muestra/oculta un **mapa base real** (Leaflet: calles/OpenStreetMap o satélite/Esri, con control para alternar) detrás del alineamiento, ubicado a partir de las propias coordenadas del alineamiento — ver "Mapa base" abajo. El botón de montaña en la cabecera de Perfil consulta la **elevación real del terreno** a lo largo del alineamiento y ajusta el perfil a ella — ver "Perfil de terreno real" abajo.
 - **Panel de propiedades** (derecha): edición del vértice o estructura seleccionada — reemplaza cualquier formulario flotante por un inspector fijo, como en Figma/AutoCAD/QGIS.
 - **Barra de estado** (inferior, siempre visible): coordenadas en vivo bajo el cursor (X/Y en Planta, station/elevación en Perfil), resumen del proyecto, mensajes transitorios de las últimas acciones, y el zoom vigente de cada lienzo.
 - **Catálogo de estructuras**: crear/editar tipos (nombre, categoría, alturas disponibles, puntos de fijación del conductor por fase).
@@ -48,6 +48,10 @@ El alineamiento (`vertex.x`/`vertex.y`) usa coordenadas **reales**, no un sistem
 ### Mapa base (Fase 2)
 
 `src/ui/mapRenderer.js` monta un mapa de [Leaflet](https://leafletjs.com/) (cargado por CDN, ver `index.html`) como capa de fondo **detrás** del `<svg>` de Planta, no como reemplazo del lienzo: el alineamiento se sigue dibujando exactamente igual que siempre (mismas coordenadas, mismo drag, mismo zoom/pan). Como Leaflet solo entiende lat/lon, cada cambio de zoom/pan del SVG dispara un `map.setView()`/`panBy()` real (sin animación, acotado a una vez por frame) calibrado para que el mapa quede centrado en el punto correcto y a la escala correcta — el centro del bounding box del alineamiento, convertido con `geo.js`, sirve de referencia. (Una primera versión "congelaba" a Leaflet aplicándole solo un transform CSS para simular el zoom/pan: parecía más liviano, pero Leaflet nunca se enteraba de que había que pedir teselas nuevas — se descartó.)
+
+### Perfil de terreno real (Fase 2)
+
+El botón de montaña en la cabecera de Perfil consulta [Open-Elevation](https://open-elevation.com/) (`src/data/elevationSource.js`, servicio público sin API key) para un muestreo del alineamiento (paso adaptable, mínimo cada 20 m, acotado a ~150 puntos por trazado — una sola consulta en lote) y guarda el resultado como `alignment.terrainProfile`. Con ese perfil presente, `profileView.js` dibuja el terreno real (línea de otro color) en vez de la interpolación lineal simulada entre vértices, y cada vértice actualiza su elevación (`vertex.z`) al valor real de su propia station — ver `DATA_MODEL.md` para el detalle y la limitación (las estructuras siguen derivando su elevación por interpolación lineal *entre* vértices, no del perfil denso).
 
 ### Fundamento de diseño
 
@@ -62,7 +66,7 @@ La distribución no es una preferencia estética: se investigó la interfaz real
 
 ## Estructura del proyecto
 
-- `src/data/` — `dataSource.js` (interfaz de datos simulados, reemplazable en Fase 2) y `projectStore.js` (estado del proyecto, mutaciones, persistencia).
+- `src/data/` — `dataSource.js` (interfaz de datos simulados, reemplazable en Fase 2), `elevationSource.js` (consulta de elevación real, Fase 2) y `projectStore.js` (estado del proyecto, mutaciones, persistencia).
 - `src/engine/` — `stationing.js` (geometría del alineamiento/perfil), `catenary.js` (sag-tension), `loadTree.js` (árbol de cargas), `geo.js` (conversión EPSG:9377 ↔ lat/lon, Fase 2). Sin dependencias de DOM: se pueden probar de forma aislada.
 - `src/ui/` — una vista por pantalla (`planView`, `profileView`, `catalogView`, `hypothesesView`, `loadTreeView`), más `app.js` (orquestador), `theme.js`, `viewport.js` (controlador de zoom/pan reutilizable), `mapRenderer.js` (mapa base de Planta, Fase 2), `domUtil.js`/`svgUtil.js` (helpers, incl. construcción de la regla numerada).
 - `assets/` — íconos PWA.
@@ -75,5 +79,5 @@ La distribución no es una preferencia estética: se investigó la interfaz real
 ## Fase 2 — en curso
 
 - ✅ Mapa base real en Planta (Leaflet: calles/OpenStreetMap + satélite/Esri), con el alineamiento en coordenadas reales (MAGNA-SIRGAS / Origen-Nacional, EPSG:9377).
-- ⬜ Importar KMZ real y sustituir `dataSource.js` por una fuente real, sin tocar `engine`/`ui` — reemplazaría el origen manual por coordenadas reales del archivo.
-- ⬜ Perfil de elevación desde un servicio de terreno/DEM real.
+- ✅ Perfil de elevación real (Open-Elevation) — botón en Perfil, ver "Perfil de terreno real" arriba.
+- ⬜ Importar KMZ real y sustituir `dataSource.js` por una fuente real, sin tocar `engine`/`ui`.
