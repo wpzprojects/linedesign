@@ -1,6 +1,7 @@
 :root {
   --app-bg: #eef0f2;
   --status-bg: #f6f6f7;
+  --toolbar-bg: #e6e6e6;
   --panel: #ffffff;
   --panel-alt: #f2f2f4;
   --panel-raised: #ffffff;
@@ -27,6 +28,7 @@
   :root:not([data-theme="light"]) {
     --app-bg: #101012;
     --status-bg: #242429;
+    --toolbar-bg: #1e1e21;
     --panel: #212125;
     --panel-alt: #151517;
     --panel-raised: #29292f;
@@ -46,6 +48,7 @@
 body.dark-theme {
   --app-bg: #101012;
   --status-bg: #242429;
+  --toolbar-bg: #1e1e21;
   --panel: #212125;
   --panel-alt: #151517;
   --panel-raised: #29292f;
@@ -63,6 +66,7 @@ body.dark-theme {
 body:not(.dark-theme) {
   --app-bg: #eef0f2;
   --status-bg: #f6f6f7;
+  --toolbar-bg: #e6e6e6;
   --panel: #ffffff;
   --panel-alt: #f2f2f4;
   --panel-raised: #ffffff;
@@ -665,7 +669,7 @@ input:focus, select:focus, button:focus-visible {
   align-items: center;
   gap: 10px;
   flex-wrap: wrap;
-  background: var(--panel);
+  background: var(--toolbar-bg);
   border: 1px solid var(--line);
   border-radius: 0;
   padding: 10px 14px;
