@@ -1436,17 +1436,21 @@ body:not(.screen-plan-active) .status-bar {
 
   /* Tarjetas del toolbar (Vértice, Estructura, Hipótesis): sin los
      divisores verticales entre ellas (quedan como fragmentos de línea
-     sueltos al envolver a varias filas en un ancho de teléfono) y del
-     mismo ancho entre las que comparten fila (flex-basis 0 + flex-grow
-     igual reparte el ancho disponible parejo, sin importar cuánto
-     contenido tenga cada una). */
+     sueltos al envolver a varias filas en un ancho de teléfono), una
+     por fila a lo ancho completo en vez de compartir fila (flex-basis 0
+     + flex-grow las encogía para caber las tres juntas, en vez de saltar
+     de línea — con .toolbar en columna no hay "fila" que compartir). */
+  .toolbar {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
   .toolbar-sep {
     display: none;
   }
 
   .toolbar-card {
-    flex: 1 1 0;
-    min-width: 0;
+    width: 100%;
   }
 
   /* Planta y Perfil, apiladas en vez de lado a lado: en un ancho de
