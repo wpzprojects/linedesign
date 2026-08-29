@@ -385,26 +385,44 @@
    * toda sección arranca en el índice 0 o donde terminó la anterior, y la
    * última se cierra al llegar al final del arreglo pase lo que pase.
    *
-   * Devuelve, por cada vano (mismo orden/índice que `spanLengths`), el
-   * vano regulador de SU sección — todos los vanos de una misma sección
-   * quedan con el mismo valor, listo para pasarlo a
+   * Devuelve un objeto por sección: `fromId`/`toId` (ids de las
+   * estructuras de anclaje que la delimitan — sirven para seleccionarla
+   * como conjunto y para asignarle un conductor propio, ver
+   * DATA_MODEL.md § sectionConductors), `spanFromIndex`/`spanToIndex`
+   * (rango de índices en el arreglo de vanos que le pertenecen) y
+   * `rulingSpan` (el vano regulador de esa sección).
+   */
+  function computeTensionSections(sortedStructures, spanLengths, isAnchor) {
+    const sections = [];
+    let sectionStart = 0;
+    for (let i = 1; i < sortedStructures.length; i += 1) {
+      if (i === sortedStructures.length - 1 || isAnchor(sortedStructures[i])) {
+        sections.push({
+          fromId: sortedStructures[sectionStart].id,
+          toId: sortedStructures[i].id,
+          spanFromIndex: sectionStart,
+          spanToIndex: i - 1,
+          rulingSpan: rulingSpan(spanLengths.slice(sectionStart, i))
+        });
+        sectionStart = i;
+      }
+    }
+    return sections;
+  }
+
+  /**
+   * Igual que `computeTensionSections`, pero devuelve el vano regulador ya
+   * expandido por vano (mismo orden/índice que `spanLengths`) en vez de
+   * agrupado por sección — para pasarlo directo a
    * `catenary.computeSpanTension` en vez de la longitud real de cada vano
    * individual (que sigue usándose tal cual para dibujar la curva/flecha
    * de cada vano con `catenary.catenaryCurve`).
    */
   function tensionSectionRulingSpans(sortedStructures, spanLengths, isAnchor) {
-    const sectionBounds = [];
-    let sectionStart = 0;
-    for (let i = 1; i < sortedStructures.length; i += 1) {
-      if (i === sortedStructures.length - 1 || isAnchor(sortedStructures[i])) {
-        sectionBounds.push([sectionStart, i - 1]);
-        sectionStart = i;
-      }
-    }
+    const sections = computeTensionSections(sortedStructures, spanLengths, isAnchor);
     const rulingSpanBySpan = new Array(spanLengths.length).fill(0);
-    sectionBounds.forEach(([from, to]) => {
-      const rs = rulingSpan(spanLengths.slice(from, to + 1));
-      for (let i = from; i <= to; i += 1) rulingSpanBySpan[i] = rs;
+    sections.forEach((section) => {
+      for (let i = section.spanFromIndex; i <= section.spanToIndex; i += 1) rulingSpanBySpan[i] = section.rulingSpan;
     });
     return rulingSpanBySpan;
   }
@@ -463,6 +481,7 @@
     computeSpans,
     isAnchorStructure,
     rulingSpan,
+    computeTensionSections,
     tensionSectionRulingSpans,
     niceStep,
     sampleStations,

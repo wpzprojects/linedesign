@@ -13,7 +13,7 @@
   const dataSource = global.LineDesignDataSource;
 
   let project = null;
-  let nextIdCounters = { vertex: 0, structure: 0, catalog: 0, hypothesis: 0, stringingTension: 0 };
+  let nextIdCounters = { vertex: 0, structure: 0, catalog: 0, hypothesis: 0, stringingTension: 0, sectionConductor: 0 };
   const listeners = new Set();
 
   function notify() {
@@ -44,7 +44,8 @@
       structure: maxFrom(project.structures, 'EST-'),
       catalog: maxFrom(project.structureCatalog, 'TIPO-'),
       hypothesis: maxFrom(project.hypotheses, 'H'),
-      stringingTension: maxFrom(project.stringingTensions, 'ST-')
+      stringingTension: maxFrom(project.stringingTensions, 'ST-'),
+      sectionConductor: maxFrom(project.sectionConductors, 'SC-')
     };
   }
 
@@ -63,6 +64,7 @@
     }
     project = restored || dataSource.getInitialProject();
     if (!project.stringingTensions) project.stringingTensions = [];
+    if (!project.sectionConductors) project.sectionConductors = [];
     if (project.groundClearance == null) project.groundClearance = 0;
     if (project.rightOfWayWidth == null) project.rightOfWayWidth = 0;
     // Un proyecto restaurado de localStorage quedó guardado con el
@@ -326,6 +328,33 @@
     notify();
   }
 
+  // ---------- Conductor por sección de tensionamiento ----------
+
+  /**
+   * Asigna (o reemplaza) el conductor de una sección de tensionamiento,
+   * identificada por las estructuras de anclaje que la delimitan
+   * (fromId/toId — ver stationing.computeTensionSections). Una sección
+   * sin entrada aquí usa el conductor del proyecto (comportamiento por
+   * defecto, ver loadTree.resolveSectionConductor).
+   */
+  function setSectionConductor(fromId, toId, conductorId) {
+    const existing = project.sectionConductors.find((s) => s.fromId === fromId && s.toId === toId);
+    if (existing) {
+      existing.conductorId = conductorId;
+    } else {
+      project.sectionConductors.push({ id: nextId('sectionConductor', 'SC-'), fromId, toId, conductorId });
+    }
+    persist();
+    notify();
+  }
+
+  /** Quita el conductor propio de una sección — vuelve a usar el del proyecto. */
+  function clearSectionConductor(fromId, toId) {
+    project.sectionConductors = project.sectionConductors.filter((s) => !(s.fromId === fromId && s.toId === toId));
+    persist();
+    notify();
+  }
+
   // ---------- Terreno ----------
 
   function setGroundClearance(value) {
@@ -409,6 +438,8 @@
     addStringingTension,
     updateStringingTension,
     removeStringingTension,
+    setSectionConductor,
+    clearSectionConductor,
     setGroundClearance,
     setRightOfWayWidth,
     setConductor,

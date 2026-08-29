@@ -399,9 +399,8 @@
   function renderInspector(project) {
     if (selection && selection.type === 'vertex' && !project.alignment.vertices.some((v) => v.id === selection.id)) selection = null;
     if (selection && selection.type === 'structure' && !project.structures.some((s) => s.id === selection.id)) selection = null;
-    if (selection && selection.type === 'span') {
-      const [fromId, toId] = selection.id.split('->');
-      const stillExists = project.structures.some((s) => s.id === fromId) && project.structures.some((s) => s.id === toId);
+    if (selection && selection.type === 'section') {
+      const stillExists = project.structures.some((s) => s.id === selection.fromId) && project.structures.some((s) => s.id === selection.toId);
       if (!stillExists) selection = null;
     }
 
@@ -500,20 +499,39 @@
         }
       }, 'Eliminar estructura'));
     } else {
-      // selection.type === 'span': por ahora la única propiedad editable
-      // de un vano es el conductor del proyecto (uno solo, global — no hay
-      // todavía un conductor distinto por vano, ver comentario en
-      // profileView.js).
-      const [fromId, toId] = selection.id.split('->');
-      inspectorPanel.appendChild(el('div', { class: 'inspector-title' }, `Vano ${fromId} → ${toId}`));
+      // selection.type === 'section': un clic en cualquier vano selecciona
+      // la sección de tensionamiento COMPLETA (todos los vanos entre dos
+      // estructuras de anclaje, ver profileView.js) — el conductor se
+      // asigna a la sección entera, no vano por vano.
+      const { fromId, toId } = selection;
+      const resolvedStructures = stationing.resolveStructures(project.alignment.vertices, project.structures, project.alignment.terrainProfile);
+      const { sorted, spans } = stationing.computeSpans(resolvedStructures);
+      const spanLengths = spans.map((s) => s.length);
+      const sections = stationing.computeTensionSections(
+        sorted, spanLengths, (s) => stationing.isAnchorStructure(s, project.structureCatalog)
+      );
+      const section = sections.find((sec) => sec.fromId === fromId && sec.toId === toId);
+      const vanoCount = section ? section.spanToIndex - section.spanFromIndex + 1 : 0;
+      const conductor = loadTree.resolveSectionConductor(project, fromId, toId);
+      const override = project.sectionConductors.find((s) => s.fromId === fromId && s.toId === toId);
 
-      inspectorPanel.appendChild(el('label', {}, 'Conductor'));
+      inspectorPanel.appendChild(el('div', { class: 'inspector-title' }, `Sección ${fromId} → ${toId}`));
+      inspectorPanel.appendChild(el('p', { class: 'muted conductor-specs' },
+        `${vanoCount} vano${vanoCount === 1 ? '' : 's'} · Vano regulador ${section ? section.rulingSpan.toFixed(1) : '—'} m`));
+
+      inspectorPanel.appendChild(el('label', {}, 'Conductor de la sección'));
       inspectorPanel.appendChild(el('select', {
-        onChange: (e) => store.setConductor(e.target.value)
-      }, project.conductorCatalog.map((c) => el('option', { value: c.id, selected: c.id === project.conductor.id }, c.name))));
+        onChange: (e) => {
+          if (e.target.value === '') store.clearSectionConductor(fromId, toId);
+          else store.setSectionConductor(fromId, toId, e.target.value);
+        }
+      }, [
+        el('option', { value: '', selected: !override }, `Usar el del proyecto (${project.conductor.name})`),
+        ...project.conductorCatalog.map((c) => el('option', { value: c.id, selected: c.id === conductor.id && !!override }, c.name))
+      ]));
 
       inspectorPanel.appendChild(el('p', { class: 'muted conductor-specs' },
-        `Diámetro ${project.conductor.diameter} m · Peso ${project.conductor.weightPerLength} N/m · RTS ${project.conductor.ultimateStrength} N`));
+        `Diámetro ${conductor.diameter} m · Peso ${conductor.weightPerLength} N/m · RTS ${conductor.ultimateStrength} N`));
     }
   }
 

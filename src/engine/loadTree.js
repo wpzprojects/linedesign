@@ -31,6 +31,23 @@
     return project.hypotheses.find((h) => h.id === refId) || project.hypotheses[0];
   }
 
+  /**
+   * Conductor efectivo de una sección de tensionamiento: por defecto el
+   * del proyecto (`project.conductor`), salvo que la sección (identificada
+   * por las estructuras de anclaje que la delimitan) tenga su propio
+   * conductor asignado en `project.sectionConductors` — p. ej. un salto o
+   * derivación con un conductor distinto al resto de la línea.
+   */
+  function resolveSectionConductor(project, fromId, toId) {
+    const override = (project.sectionConductors || []).find((s) => s.fromId === fromId && s.toId === toId);
+    if (!override) return project.conductor;
+    return project.conductorCatalog.find((c) => c.id === override.conductorId) || project.conductor;
+  }
+
+  function referenceHypothesisFor(project, conductor) {
+    return project.hypotheses.find((h) => h.id === conductor.referenceHypothesisId) || project.hypotheses[0];
+  }
+
   function attachmentCount(project, structure) {
     const type = project.structureCatalog.find((t) => t.typeId === structure.typeId);
     const points = (type && type.attachmentPoints) || structure.attachmentPoints || [];
@@ -52,35 +69,39 @@
    * (Retención/Ángulo — Suspensión y Paso no anclan, ver
    * stationing.isAnchorStructure) forman una sección de tensionamiento
    * que comparte una sola tensión, calculada con el vano regulador de esa
-   * sección (stationing.tensionSectionRulingSpans). El vano REAL de cada
-   * uno (span.length) sigue siendo el suyo propio — se usa tal cual para
-   * dibujar la curva/flecha de cada vano, solo la tensión es compartida.
+   * sección. El vano REAL de cada uno (span.length) sigue siendo el suyo
+   * propio — se usa tal cual para dibujar la curva/flecha de cada vano,
+   * solo la tensión es compartida. Cada sección puede tener su propio
+   * conductor (`resolveSectionConductor`) y por lo tanto su propia
+   * hipótesis de referencia — no se asume la del conductor del proyecto
+   * para todas las secciones.
    */
   function computeSpanTensions(project, hypothesisId) {
     const hypothesis = project.hypotheses.find((h) => h.id === hypothesisId);
-    const referenceHypothesis = getReferenceHypothesis(project);
     const resolved = stationing.resolveStructures(project.alignment.vertices, project.structures, project.alignment.terrainProfile);
     const { sorted, spans } = stationing.computeSpans(resolved);
 
     const spanLengths = spans.map((s) => s.length);
-    const rulingSpans = stationing.tensionSectionRulingSpans(
+    const sections = stationing.computeTensionSections(
       sorted,
       spanLengths,
       (s) => stationing.isAnchorStructure(s, project.structureCatalog)
     );
 
     const results = spans.map((span, i) => {
+      const section = sections.find((sec) => i >= sec.spanFromIndex && i <= sec.spanToIndex);
+      const conductor = resolveSectionConductor(project, section.fromId, section.toId);
       const tension = catenary.computeSpanTension(
-        project.conductor,
-        referenceHypothesis,
+        conductor,
+        referenceHypothesisFor(project, conductor),
         hypothesis,
-        rulingSpans[i],
+        section.rulingSpan,
         project.stringingTensions
       );
-      return { ...span, ...tension };
+      return { ...span, ...tension, conductorId: conductor.id, sectionFromId: section.fromId, sectionToId: section.toId };
     });
 
-    return { sorted, spans: results, hypothesis, referenceHypothesis };
+    return { sorted, spans: results, hypothesis, referenceHypothesis: getReferenceHypothesis(project) };
   }
 
   function unitVector(from, to) {
@@ -156,7 +177,7 @@
     return rows;
   }
 
-  const loadTree = { computeSpanTensions, computeLoadTree, getReferenceHypothesis };
+  const loadTree = { computeSpanTensions, computeLoadTree, getReferenceHypothesis, resolveSectionConductor };
 
   if (typeof module !== 'undefined' && module.exports) {
     module.exports = loadTree;

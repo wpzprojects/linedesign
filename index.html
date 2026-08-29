@@ -363,7 +363,7 @@
                 <li>Botón de montaña ("Ajustar al terreno real"): consulta un servicio de elevación real (gratuito, sin API key) para el terreno bajo el alineamiento y lo reemplaza por datos reales en vez de la interpolación lineal simulada entre vértices. Actualiza también la elevación (z) de cada vértice.</li>
                 <li>Botón de ojo: muestra/oculta los valores de flecha ("X.XX m") sobre cada vano.</li>
                 <li>Si defines una "Distancia de seguridad al terreno" en Parámetros de entrada § Terreno, se dibuja una línea punteada gris con la forma del terreno, desplazada esa distancia hacia arriba.</li>
-                <li>Clic sobre la curva de un vano lo selecciona (se resalta en azul) — en Propiedades puedes cambiar el conductor del proyecto desde ahí.</li>
+                <li>Clic sobre la curva de un vano selecciona la <strong>sección de tensionamiento completa</strong> (todos los vanos entre las dos estructuras de anclaje más cercanas, se resaltan juntos en azul) — en Propiedades puedes asignarle un conductor propio a esa sección, distinto al del resto del proyecto.</li>
                 <li>Los círculos rojos que aparecen en Planta o Perfil al mover el cursor sobre el otro lienzo son marcadores de sincronización: muestran la posición correspondiente en la otra vista.</li>
               </ul>
               <p class="muted">Los vanos entre dos estructuras de anclaje (Retención/Ángulo en el catálogo — Suspensión/Paso no anclan) comparten una sola tensión, calculada con el vano regulador de esa sección (√(Σ Lᵢ³ / Σ Lᵢ)), igual que en un software de diseño real. Simplificación: no se modela creep/relajación de largo plazo.</p>
@@ -376,7 +376,7 @@
               <ul>
                 <li><strong>Vértice</strong>: coordenadas Este/Norte/elevación editables, botón para eliminarlo (mínimo 2 vértices).</li>
                 <li><strong>Estructura</strong>: tipo, altura, resistencia (si el tipo la trae), station, botón "Ajustar al vértice más cercano" y botón para eliminarla.</li>
-                <li><strong>Vano</strong>: el conductor del proyecto (uno solo por ahora, no uno distinto por vano).</li>
+                <li><strong>Sección de tensionamiento</strong>: el conductor de esa sección — "Usar el del proyecto" (por defecto) o cualquiera del catálogo, distinto al resto de la línea.</li>
               </ul>
               <p>El botón de la esquina superior colapsa el panel a una franja angosta cuando no lo necesitas.</p>
 

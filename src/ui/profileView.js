@@ -151,16 +151,16 @@
       }
 
       const hypothesis = project.hypotheses.find((h) => h.id === hypothesisId) || project.hypotheses[0];
-      const referenceHypothesis = loadTree.getReferenceHypothesis(project);
 
       // Los vanos entre dos estructuras de anclaje (Retención/Ángulo) forman
-      // una sección de tensionamiento que comparte una sola tensión — se
-      // resuelve con el vano regulador de la sección, no con la longitud
-      // real de cada vano individual (esa se sigue usando tal cual para
-      // dibujar la curva/flecha de cada uno). Mismo criterio que
-      // loadTree.js#computeSpanTensions, ver stationing.tensionSectionRulingSpans.
+      // una sección de tensionamiento que comparte una sola tensión (con el
+      // vano regulador de la sección, no la longitud real de cada vano
+      // individual — esa se sigue usando tal cual para dibujar la
+      // curva/flecha de cada uno) y puede tener su propio conductor
+      // asignado (project.sectionConductors) — ver loadTree.js para el
+      // mismo criterio aplicado al árbol de cargas / Tabla de estructuras.
       const spanLengthsRaw = resolved.slice(0, -1).map((s, i) => resolved[i + 1].station - s.station);
-      const rulingSpans = stationing.tensionSectionRulingSpans(
+      const sections = stationing.computeTensionSections(
         resolved,
         spanLengthsRaw,
         (s) => stationing.isAnchorStructure(s, project.structureCatalog)
@@ -172,7 +172,10 @@
         const spanLength = to.station - from.station;
         if (spanLength <= 0) continue;
 
-        const tension = catenary.computeSpanTension(project.conductor, referenceHypothesis, hypothesis, rulingSpans[i], project.stringingTensions);
+        const section = sections.find((sec) => i >= sec.spanFromIndex && i <= sec.spanToIndex);
+        const conductor = loadTree.resolveSectionConductor(project, section.fromId, section.toId);
+        const referenceHypothesis = project.hypotheses.find((h) => h.id === conductor.referenceHypothesisId) || project.hypotheses[0];
+        const tension = catenary.computeSpanTension(conductor, referenceHypothesis, hypothesis, section.rulingSpan, project.stringingTensions);
         const fromTop = from.z + from.height;
         const toTop = to.z + to.height;
         const curve = catenary.catenaryCurve({
@@ -184,13 +187,12 @@
 
         const screenPoints = curve.points.map((p) => projector.toScreen(from.station + p.x, fromTop + p.y));
 
-        // El vano (tramo de conductor entre dos estructuras consecutivas)
-        // es seleccionable, igual que un vértice o una estructura — por
-        // ahora la única propiedad editable desde ahí es el conductor del
-        // proyecto (un solo conductor global, no uno por vano todavía; ver
-        // renderInspector en app.js).
-        const spanId = `${from.id}->${to.id}`;
-        const isSpanSelected = selection && selection.type === 'span' && selection.id === spanId;
+        // Un clic sobre CUALQUIER vano de la sección selecciona la sección
+        // COMPLETA (todos sus vanos se resaltan juntos) — así se puede
+        // cambiar el conductor de toda la sección de tensionamiento de una
+        // vez desde Propiedades, no vano por vano.
+        const isSectionSelected = selection && selection.type === 'section'
+          && selection.fromId === section.fromId && selection.toId === section.toId;
         const pathD = pathFromPoints(screenPoints);
 
         // Área de clic invisible (más ancha que el trazo visible, que es
@@ -198,12 +200,12 @@
         // de la línea real. Ambas comparten el mismo listener.
         const conductorHit = svgEl('path', { class: 'conductor-hit', d: pathD });
         const conductorLine = svgEl('path', {
-          class: `conductor-line${isSpanSelected ? ' is-selected' : ''}`,
+          class: `conductor-line${isSectionSelected ? ' is-selected' : ''}`,
           d: pathD
         });
         conductorHit.addEventListener('pointerdown', (evt) => {
           evt.stopPropagation();
-          callbacks.onSelect({ type: 'span', id: spanId });
+          callbacks.onSelect({ type: 'section', fromId: section.fromId, toId: section.toId });
         });
         zoomLayer.appendChild(conductorLine);
         zoomLayer.appendChild(conductorHit);
