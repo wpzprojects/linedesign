@@ -25,11 +25,25 @@
 
   function createProfileView(svg, callbacks) {
     const viewport = createViewport();
-    const current = { projector: null, zoomLayer: null, height: 0, vExaggeration: 1 };
+    const current = { projector: null, zoomLayer: null, height: 0, vExaggeration: 1, markers: [] };
+
+    // Marcadores (círculos de poste): viven dentro de zoomLayer para que su
+    // posición pan/zoquee junto con el resto del dibujo, pero cada uno lleva
+    // su propia escala inversa (1/scale) para que su tamaño en pantalla se
+    // mantenga constante — si no, al hacer zoom-in crecerían igual que el
+    // resto de la geometría (mismo motivo que vector-effect en los trazos,
+    // pero eso no aplica al radio de un <circle>, solo al stroke).
+    function updateMarkers() {
+      const inv = 1 / viewport.state.scale;
+      current.markers.forEach((m) => {
+        m.el.setAttribute('transform', `translate(${m.x} ${m.y}) scale(${inv})`);
+      });
+    }
 
     const pan = viewport.attach(svg, {
       onChange: () => {
         if (current.zoomLayer) current.zoomLayer.setAttribute('transform', viewport.transformAttr());
+        updateMarkers();
         callbacks.onZoomChange(viewport.state.scale);
       },
       onBackgroundClick: () => callbacks.onDeselect()
@@ -48,12 +62,14 @@
       const rect = svg.getBoundingClientRect();
       viewport.zoomAt({ x: rect.width / 2, y: rect.height / 2 }, factor);
       current.zoomLayer && current.zoomLayer.setAttribute('transform', viewport.transformAttr());
+      updateMarkers();
       callbacks.onZoomChange(viewport.state.scale);
     }
 
     function resetZoom() {
       viewport.reset();
       current.zoomLayer && current.zoomLayer.setAttribute('transform', viewport.transformAttr());
+      updateMarkers();
       callbacks.onZoomChange(viewport.state.scale);
     }
 
@@ -71,6 +87,7 @@
 
     function render(project, hypothesisId, selection) {
       clear(svg);
+      current.markers = [];
       const rect = svg.getBoundingClientRect();
       const WIDTH = Math.max(Math.round(rect.width), MIN_SIZE);
       const HEIGHT = Math.max(Math.round(rect.height), MIN_SIZE);
@@ -185,7 +202,10 @@
         });
         zoomLayer.appendChild(pole);
         attachStructureDrag(pole, structure.id);
-        zoomLayer.appendChild(svgEl('circle', { class: 'structure-point', cx: topScreen.x, cy: topScreen.y, r: 6 }));
+        const marker = svgEl('g');
+        marker.appendChild(svgEl('circle', { class: 'structure-point', cx: 0, cy: 0, r: 6 }));
+        zoomLayer.appendChild(marker);
+        current.markers.push({ el: marker, x: topScreen.x, y: topScreen.y });
         const label = svgEl('text', { class: 'annotation-label', x: topScreen.x + 8, y: topScreen.y - 8 });
         label.textContent = structure.id;
         zoomLayer.appendChild(label);
@@ -195,6 +215,7 @@
       zoomLayer.appendChild(syncMarker);
       current.syncMarker = syncMarker;
 
+      updateMarkers();
       callbacks.onZoomChange(viewport.state.scale);
     }
 

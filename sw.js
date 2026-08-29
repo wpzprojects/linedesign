@@ -10,7 +10,7 @@
  * vez de quedar atascados en la caché vieja. Esta es una tarea recurrente en
  * cada fase del proyecto (ver README.md).
  */
-const CACHE_NAME = 'linedesign-html-v55';
+const CACHE_NAME = 'linedesign-html-v56';
 const APP_SHELL = [
   './',
   './index.html',
