@@ -314,7 +314,7 @@
           // se mantienen constantes en pantalla en cualquier zoom, y no hace
           // falta reposicionarla aparte durante el arrastre.
           const label = svgEl('text', { class: 'annotation-label', x: 10, y: -10 });
-          label.textContent = structure.id;
+          label.textContent = structure.name || structure.id;
           marker.appendChild(label);
           const markerRecord = { el: marker, x: p.x, y: p.y, type: 'structure' };
           current.markers.push(markerRecord);

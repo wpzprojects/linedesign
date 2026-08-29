@@ -690,7 +690,7 @@
       el('optgroup', { label: 'Estructuras' }, project.structures.map((s) => el('option', {
         value: `structure|${s.id}`,
         selected: !!(selection && selection.type === 'structure' && selection.id === s.id)
-      }, `Estructura ${s.id}`))),
+      }, `Estructura ${s.name || s.id}`))),
       el('optgroup', { label: 'Vanos' }, sections.map((sec) => el('option', {
         value: `section|${sec.fromId}|${sec.toId}`,
         selected: !!(selection && selection.type === 'section' && selection.fromId === sec.fromId && selection.toId === sec.toId)
@@ -770,6 +770,16 @@
 
       inspectorPanel.appendChild(el('div', { class: 'prop-section' }, [
         propCategory('General'),
+        propRow('Nombre', el('input', {
+          class: 'prop-control', type: 'text', value: structure.name || '', placeholder: structure.id,
+          onChange: (e) => {
+            const result = store.updateStructure(structure.id, { name: e.target.value });
+            if (result && !result.ok) {
+              alert(result.reason);
+              render(store.getProject()); // el cambio no se aplicó — revierte el campo al valor guardado
+            }
+          }
+        })),
         propRow('Tipo', el('select', {
           class: 'prop-control',
           onChange: (e) => {

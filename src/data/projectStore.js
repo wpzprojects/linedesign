@@ -287,6 +287,11 @@
     const totalLength = global.LineDesignStationing.totalLength(project.alignment.vertices);
     const structure = {
       id: nextId('structure', 'EST-'),
+      // Nombre propio, aparte del id (EST-XX): opcional, no participa en
+      // ninguna referencia interna (secciones, selección, arrastre...),
+      // así que renombrar nunca puede romper nada — solo cambia lo que
+      // se muestra. Vacío por defecto (se ve el id).
+      name: '',
       typeId: type.typeId,
       station: Math.min(Math.max(station ?? totalLength / 2, 0), totalLength),
       height: height || type.heightOptions[0],
@@ -309,10 +314,23 @@
 
   function updateStructure(id, patch) {
     const structure = project.structures.find((s) => s.id === id);
-    if (!structure) return;
+    if (!structure) return { ok: false, reason: 'La estructura ya no existe.' };
+    if (patch.name !== undefined) {
+      const trimmed = patch.name.trim();
+      // Vacío siempre se permite (varias estructuras sin nombre propio
+      // no es un choque real — todas se ven por su id). Un nombre no
+      // vacío sí debe ser único: si dos quedan mostrando lo mismo, deja
+      // de quedar claro cuál es cuál en el combo de Propiedades y en
+      // las etiquetas de Planta/Perfil.
+      if (trimmed && project.structures.some((s) => s.id !== id && (s.name || '').trim() === trimmed)) {
+        return { ok: false, reason: `Ya hay otra estructura llamada "${trimmed}".` };
+      }
+      patch = { ...patch, name: trimmed };
+    }
     Object.assign(structure, patch);
     persist();
     notify();
+    return { ok: true };
   }
 
   function removeStructure(id) {
