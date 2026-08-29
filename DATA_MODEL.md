@@ -33,6 +33,7 @@
       "name": "Torre suspensión 18 m",
       "type": "Suspensión",
       "heightOptions": [15, 18, 21],
+      "resistanceOptions": [510, 750, 1050, 1350],
       "attachmentPoints": [{ "name": "Fase A", "offsetX": -2.2, "offsetZ": 15.5 }]
     }
   ],
@@ -66,6 +67,8 @@
 `groundClearance` (Parámetros de entrada § Terreno, m): distancia de seguridad al terreno. Cuando es mayor que 0, `profileView.js` dibuja una línea punteada gris con la misma forma del terreno, desplazada esa distancia hacia arriba (en espacio de datos, antes de proyectar — respeta la exageración vertical igual que el resto del perfil).
 
 `rightOfWayWidth` (Parámetros de entrada § Terreno, m): ancho de la franja de servidumbre. Cuando es mayor que 0, `planView.js` dibuja dos líneas punteadas grises paralelas al alineamiento, cada una a `rightOfWayWidth / 2` de distancia — `stationing.offsetPolyline(vertices, distance)` desplaza cada vértice perpendicular al propio trazado (no a los ejes X/Y), promediando la dirección de los dos segmentos que se cruzan en cada vértice interior (aproximación de miter simple, sin corrección de longitud en el ángulo — en un quiebre muy cerrado el borde queda un poco más angosto que el ancho configurado justo en ese PI).
+
+`structureCatalog[i].resistanceOptions` (kgF, opcional): resistencias mecánicas disponibles del tipo de estructura, análogo a `heightOptions` — solo dato de catálogo por ahora, sin usarse todavía en `loadTree.js` ni en ningún cálculo (no hay verificación de resistencia vs. carga en esta fase). Los tipos que no lo traen (p.ej. proyectos guardados antes de este campo) simplemente no muestran esa línea en la tarjeta del catálogo.
 
 ### Decisión clave: posición de estructuras derivada, no almacenada
 

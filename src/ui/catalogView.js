@@ -41,6 +41,9 @@
         el('h3', {}, `${type.name}`),
         el('p', { class: 'muted' }, `${type.type} · ${type.typeId}`),
         el('p', {}, `Alturas: ${type.heightOptions.join(', ')} m`),
+        type.resistanceOptions && type.resistanceOptions.length
+          ? el('p', {}, `Resistencias: ${type.resistanceOptions.join(', ')} kgF`)
+          : null,
         el('p', {}, `Puntos de fijación: ${type.attachmentPoints.length}`),
         el('div', { class: 'row-actions' }, [
           el('button', { class: 'btn btn-small', type: 'button', onClick: () => startEdit(type) }, 'Editar'),
@@ -92,6 +95,11 @@
         value: editingType ? editingType.heightOptions.join(', ') : '15, 18',
         placeholder: 'Ej: 12, 15, 18'
       });
+      const resistanceInput = el('input', {
+        type: 'text', id: 'catalog-resistances-input',
+        value: editingType && editingType.resistanceOptions ? editingType.resistanceOptions.join(', ') : '',
+        placeholder: 'Ej: 510, 750, 1050, 1350'
+      });
 
       const pointsContainer = el('div', { class: 'points-editor' }, draftPoints.map(renderPointRow));
 
@@ -108,10 +116,12 @@
             alert('Agrega al menos un punto de fijación.');
             return;
           }
+          const resistanceOptions = resistanceInput.value.split(',').map((v) => parseFloat(v.trim())).filter((v) => !Number.isNaN(v));
           const payload = {
             name: nameInput.value.trim() || 'Sin nombre',
             type: typeSelect.value,
             heightOptions,
+            resistanceOptions,
             attachmentPoints: draftPoints.map((p) => ({ ...p }))
           };
           if (editingId) {
@@ -129,6 +139,8 @@
         typeSelect,
         el('label', {}, 'Alturas disponibles (m, separadas por coma)'),
         heightInput,
+        el('label', {}, 'Resistencias disponibles (kgF, separadas por coma)'),
+        resistanceInput,
         el('label', {}, 'Puntos de fijación del conductor'),
         pointsContainer,
         el('button', {

@@ -173,6 +173,7 @@
       name: partial.name || 'Nuevo tipo',
       type: partial.type || 'Suspensión',
       heightOptions: partial.heightOptions && partial.heightOptions.length ? partial.heightOptions : [15],
+      resistanceOptions: partial.resistanceOptions || [],
       attachmentPoints: partial.attachmentPoints && partial.attachmentPoints.length
         ? partial.attachmentPoints
         : [{ name: 'Fase A', offsetX: 0, offsetZ: partial.heightOptions ? partial.heightOptions[0] : 15 }]
