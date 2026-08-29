@@ -760,7 +760,7 @@ p.conductor-specs {
   gap: 10px;
   background: var(--panel);
   border: 1px solid var(--line);
-  border-radius: 8px;
+  border-radius: 0;
   /* Sin padding arriba: el borde de la tarjeta queda pegado directo a la
      mini-etiqueta (el único "aire" que queda es el propio interlineado
      de la fuente, no controlable desde aquí). Abajo sí conserva algo de
