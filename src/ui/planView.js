@@ -116,8 +116,7 @@
       if (!current.projector || !current.vertices || !current.syncMarker) return;
       const pos = stationing.pointAtStation(current.vertices, station);
       const p = current.projector.toScreen(pos.x, pos.y);
-      current.syncMarker.setAttribute('cx', p.x);
-      current.syncMarker.setAttribute('cy', p.y);
+      setMarkerPos(current.syncMarkerRecord, p.x, p.y);
       current.syncMarker.classList.add('is-visible');
     }
 
@@ -283,9 +282,13 @@
         attachVertexDrag(circle, vertex.id, markerRecord);
       });
 
-      const syncMarker = svgEl('circle', { class: 'sync-marker', r: 9, cx: -9999, cy: -9999 });
-      zoomLayer.appendChild(syncMarker);
+      const syncMarker = svgEl('circle', { class: 'sync-marker', r: 9, cx: 0, cy: 0 });
+      const syncMarkerGroup = svgEl('g', { transform: markerTransform(-9999, -9999) });
+      syncMarkerGroup.appendChild(syncMarker);
+      zoomLayer.appendChild(syncMarkerGroup);
       current.syncMarker = syncMarker;
+      current.syncMarkerRecord = { el: syncMarkerGroup, x: -9999, y: -9999, type: 'sync' };
+      current.markers.push(current.syncMarkerRecord);
 
       callbacks.onZoomChange(viewport.state.scale);
     }
