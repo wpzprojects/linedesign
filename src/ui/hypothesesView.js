@@ -84,7 +84,7 @@
         el('label', {}, 'Catálogo'),
         conductorSelect,
         el('p', { class: 'muted conductor-specs' },
-          `Diámetro ${project.conductor.diameter} m · Peso ${toDisplayWeight(project, project.conductor.weightPerLength).toFixed(1)} ${weightUnitLabel(project)} · RTS ${toDisplayForce(project, project.conductor.ultimateStrength).toFixed(1)} ${forceUnitLabel(project)}`),
+          `Diámetro ${project.conductor.diameter} m · Peso ${toDisplayWeight(project, project.conductor.weightPerLength).toFixed(1)} ${weightUnitLabel(project)} · Carga de rotura ${toDisplayForce(project, project.conductor.ultimateStrength).toFixed(1)} ${forceUnitLabel(project)}`),
         el('label', {}, 'Hipótesis de referencia (tensión instalada)'),
         refHypSelect,
         el('label', {}, `Tensión horizontal de referencia (${forceUnitLabel(project)})`),
