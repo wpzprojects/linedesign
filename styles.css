@@ -587,6 +587,19 @@ label {
   margin: 10px 0 4px;
 }
 
+/* Más aire arriba (separa de lo que venga justo antes, ej. el botón
+   "Elegir archivo KMZ/KML..." o el select de "Sistema de unidades") que
+   el margen por defecto de "label" de arriba. */
+.label-loose-above {
+  margin-top: 20px;
+}
+
+/* Menos aire abajo (pega la etiqueta a lo que describe justo debajo, ej.
+   los botones Exportar/Importar/Reiniciar). */
+.label-tight-below {
+  margin-bottom: 1px;
+}
+
 input[type="text"],
 input[type="number"],
 select {
