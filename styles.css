@@ -1295,12 +1295,6 @@ body:not(.screen-plan-active) .status-bar {
 /* ---------- Responsive ---------- */
 
 @media (max-width: 980px) {
-  .split-view {
-    grid-template-columns: 1fr;
-    grid-auto-rows: 1fr;
-    min-height: 520px;
-  }
-
   .cad-area {
     flex-direction: column;
   }
@@ -1309,6 +1303,12 @@ body:not(.screen-plan-active) .status-bar {
     width: auto;
     flex: 0 0 auto;
     max-height: 240px;
+    /* Ahora queda apilado debajo de Planta/Perfil (ya no al lado de
+       Perfil), así que necesita su propio sangrado izquierdo — igual al
+       de .split-view — en vez de compartir borde/alineación con ella. */
+    margin-top: 12px;
+    margin-left: -20px;
+    border-left: 1px solid var(--line);
   }
 
   .status-item--coords {
@@ -1318,10 +1318,78 @@ body:not(.screen-plan-active) .status-bar {
 
 @media (max-width: 720px) {
   .workspace-body {
-    padding: 14px;
+    /* Horizontal se mantiene en 20px: varios elementos (.split-view,
+       .toolbar, #screen-plan) sangran con margin -20px asumiendo ese
+       padding — reducirlo aquí también desalinea esos bordes y provoca
+       scroll horizontal. */
+    padding: 14px 20px;
   }
 
   .status-summary, .status-sep {
     display: none;
+  }
+
+  /* Planta y Perfil, apiladas en vez de lado a lado: en un ancho de
+     teléfono no caben las dos una junto a la otra (cada una con
+     min-width: 160px), lo que forzaba scroll horizontal para pasar de
+     una a otra. En columna, cada una ocupa el ancho completo y el
+     "divisor" pasa a ser una franja fija entre ambas (se ignora
+     --split-plan, pensado para el reparto horizontal en escritorio, y
+     se desactiva el arrastre — ver pointerdown en app.js, que mide en
+     clientX/rect.width y no tiene sentido en esta orientación). */
+  .split-view {
+    flex-direction: column;
+    min-height: 520px;
+  }
+
+  .split-view .panel:first-child,
+  .split-view .panel:last-child {
+    flex: 1 1 0;
+    min-width: 0;
+    min-height: 200px;
+  }
+
+  .split-divider {
+    display: none;
+  }
+
+  /* Barra de actividad: de columna fija a la izquierda pasa a franja
+     horizontal por encima de la barra de título, para no quitarle ancho
+     al contenido en una pantalla ya angosta. */
+  .shell {
+    flex-direction: column;
+  }
+
+  .activity-bar {
+    width: auto;
+    height: auto;
+    flex-direction: row;
+    align-items: center;
+    border-right: none;
+    border-bottom: 1px solid var(--line);
+    padding: 6px 10px;
+    gap: 10px;
+  }
+
+  .activity-brand {
+    margin-bottom: 0;
+  }
+
+  .activity-nav {
+    flex-direction: row;
+    flex: 1 1 auto;
+    overflow-x: auto;
+  }
+
+  .activity-bottom {
+    margin-top: 0;
+    margin-left: auto;
+    flex-direction: row;
+  }
+
+  .workspace {
+    height: auto;
+    min-height: 0;
+    flex: 1 1 auto;
   }
 }
