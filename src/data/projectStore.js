@@ -98,6 +98,7 @@
     if (project.rightOfWayWidth == null) project.rightOfWayWidth = 0;
     if (project.displayUnitSystem == null) project.displayUnitSystem = 'kgf';
     if (project.poleSafetyFactor == null) project.poleSafetyFactor = 2;
+    if (project.guySafetyFactor == null) project.guySafetyFactor = 2;
     migrateForceUnitsToKgf(project);
     // Un proyecto restaurado de localStorage quedó guardado con el
     // conductorCatalog vigente en el momento de guardarlo — si luego se
@@ -221,6 +222,7 @@
       type: partial.type || 'Suspensión',
       heightOptions: partial.heightOptions && partial.heightOptions.length ? partial.heightOptions : [15],
       resistanceOptions: partial.resistanceOptions || [],
+      guyResistanceOptions: partial.guyResistanceOptions || [],
       attachmentPoints: partial.attachmentPoints && partial.attachmentPoints.length
         ? partial.attachmentPoints
         : [{ name: 'Fase A', offsetX: 0, offsetZ: partial.heightOptions ? partial.heightOptions[0] : 15 }]
@@ -422,6 +424,13 @@
     notify();
   }
 
+  /** Factor de seguridad sobre la resistencia última del contraviento — ver loadTree.js#checkPoleCapacity. */
+  function setGuySafetyFactor(value) {
+    project.guySafetyFactor = Math.max(1, value || 1);
+    persist();
+    notify();
+  }
+
   // ---------- Conductor ----------
 
   function setConductor(conductorId) {
@@ -497,6 +506,7 @@
     setRightOfWayWidth,
     setDisplayUnitSystem,
     setPoleSafetyFactor,
+    setGuySafetyFactor,
     setConductor,
     updateConductor,
     setProjectName,

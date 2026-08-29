@@ -49,11 +49,15 @@ Además de lo anterior, "Parámetros de entrada" (`hypothesesView.js`) tiene un 
       "type": "Suspensión",
       "heightOptions": [15, 18, 21],
       "resistanceOptions": [510, 750, 1050, 1350],
+      "guyResistanceOptions": [2722, 4082, 5987],
       "attachmentPoints": [{ "name": "Fase A", "offsetX": -2.2, "offsetZ": 15.5 }]
     }
   ],
   "structures": [
-    { "id": "EST-01", "typeId": "TIPO-A", "station": 60, "height": 18, "resistance": 750 }
+    {
+      "id": "EST-01", "typeId": "TIPO-A", "station": 60, "height": 18, "resistance": 750,
+      "hasGuy": true, "guyResistance": 5987, "guyAnchorHeight": 15, "guyAnchorDistance": 15
+    }
   ],
   "conductorCatalog": [ "...", ],
   "conductor": {
@@ -77,17 +81,32 @@ Además de lo anterior, "Parámetros de entrada" (`hypothesesView.js`) tiene un 
   "sectionConductors": [{ "id": "SC-01", "fromId": "EST-01", "toId": "EST-03", "conductorId": "ACSR-336" }],
   "forceUnitsMigratedV1": true,
   "displayUnitSystem": "kgf",
-  "poleSafetyFactor": 2
+  "poleSafetyFactor": 2,
+  "guySafetyFactor": 2
 }
 ```
 
-### Validación "Cumple poste" (`loadTree.js#checkPoleCapacity`)
+### Validación "Cumple poste" / "Cumple contraviento" (`loadTree.js#checkPoleCapacity`)
 
 `structure.resistance` (kgF) es la resistencia ÚLTIMA de rotura del poste, ensayada por el fabricante aplicando una carga horizontal a 20 cm de la punta (convención RETIE/NTC para postes de madera/concreto). La tabla de estructuras (Resumen) muestra una columna "Cumple poste" comparando, para cada estructura con `resistance` asignada:
 
 - **Capacidad**: como un poste de sección circular no tiene eje débil/fuerte, la carga de ensayo actúa a `(structure.height − 0.20 m)` de la base (línea de terreno) — de ahí el momento último en la base: `M_última = resistance × (height − 0.20)`. Se divide entre `project.poleSafetyFactor` (configurable en Parámetros de entrada § Terreno, por defecto 2) para obtener el momento admisible.
-- **Demanda**: la resultante de las fuerzas horizontales del árbol de cargas, `√(transversal² + longitudinal²)`, aplicada a la altura promedio de enganche (`attachHeight`, la misma que usa `momentEstimate`), evaluada para TODAS las hipótesis climáticas — se toma la peor (mayor momento), no solo la de referencia.
+- **Demanda SIN contraviento**: la resultante de las fuerzas horizontales del árbol de cargas, `√(transversal² + longitudinal²)`, aplicada a la altura promedio de enganche (`attachHeight`, la misma que usa `momentEstimate`), evaluada para TODAS las hipótesis climáticas — se toma la peor (mayor momento), no solo la de referencia.
 - **Resultado**: `ratio = M_demanda_máx / M_admisible`; "Cumple" (✓) si `ratio ≤ 1`, "No cumple" (✗) si no. Una estructura sin `resistance` asignada muestra "—" (sin validar).
+
+#### Contravientos (`structure.hasGuy`, solo Retención/Ángulo — ver `stationing.isAnchorStructure`)
+
+Habilitable en Propiedades solo para estructuras que anclan la línea (Retención/Ángulo — Suspensión/Paso quedan deshabilitadas, el conductor las atraviesa sin generar desequilibrio de tensión que anclar). Campos nuevos por estructura: `guyResistance` (kgF, elegido de `type.guyResistanceOptions` — resistencia ÚLTIMA del cable de contraviento), `guyAnchorHeight` (m, altura de enganche en el poste) y `guyAnchorDistance` (m, distancia horizontal del anclaje en tierra) — estos dos definen el ángulo del cable.
+
+Geometría del contraviento (derivada, no capturada por el usuario):
+- **Retención**: dos contravientos internos, uno opuesto a cada vano adyacente (`tensionPrevN`/`tensionNextN` en cada fila del árbol de cargas) — cada uno cancela POR COMPLETO la tensión de SU vano, sin importar el ángulo entre vanos (una estructura en el extremo del alineamiento, con un solo vano, simplemente instala un único contraviento opuesto a ese vano).
+- **Ángulo**: un solo contraviento, opuesto a la resultante de tensión de ambos vanos (`tensionVector`, ya calculado internamente en `computeLoadTree` para separar `forces.transversal`/`forces.longitudinal`).
+
+**Simplificación de Fase 1**: se asume que el contraviento cancela POR COMPLETO la componente de demanda inducida por el desequilibrio de tensión del conductor (se asume orientado exactamente para eso, sin margen de error angular) — la demanda residual sobre el POSTE con contraviento instalado queda entonces limitada a `windTransversal` (el contraviento no está orientado para resistir viento). Esta es una idealización deliberada para mantener el cálculo simple; no modela el contraviento como un apoyo intermedio real (que cambiaría la distribución de momento a lo largo del poste), ni las cargas verticales/de compresión adicionales que el propio contraviento induce en el poste.
+
+**Tracción en el cable de contraviento**: la fuerza horizontal que el contraviento resiste (la misma que se le resta al poste) se convierte a tracción real del cable con la geometría del anclaje: `T_cable = F_horizontal_resistida / cos(θ)`, con `cos(θ) = guyAnchorDistance / √(guyAnchorHeight² + guyAnchorDistance²)`. Se compara contra `structure.guyResistance / project.guySafetyFactor` (factor de seguridad propio, independiente del de postes).
+
+**Resultado por estructura**: `checkPoleCapacity(project)` devuelve `{ [structureId]: { pole, guy } }` — `guy.status` es `'not-applicable'` (Suspensión/Paso), `'none'` (`hasGuy` false), `'undefined'` (falta resistencia o geometría de anclaje) u `'ok'`/`'fail'` con `ratio`/`tensionKgf`/`capacityKgf`/`governingHypothesisId`. En la tabla: "—" para `not-applicable`/`none`, ⚠ para `undefined`, ✓/✗ con el % de uso en los demás casos.
 
 `stringingTensions` (Parámetros de entrada § Tensiones de tendido): equivalente al "Automatic Sagging Criteria" de PLS-CADD — determina la tensión horizontal instalada (H1) por vano, en vez de usar siempre el valor fijo `conductor.referenceHorizontalTension`. `weatherCase`/`applicableCable` guardan el *nombre* (no el id) del caso climático/conductor elegido en el desplegable — texto libre en la práctica, no una referencia validada; `applicableCable` en blanco aplica a todos los conductores. `maxTension`/`maxCatenary` son `null` cuando el campo queda en blanco (opcional); `maxCatenary` es el parámetro de catenaria `C = H/w` (m), no una distancia física.
 

@@ -24,6 +24,9 @@
  *     longitud de vano que el eje de la estructura (los offsets de enganche
  *     son pequeños frente al vano, efecto despreciado en Fase 1).
  *   - No se modela el balanceo de cadenas de aisladores en remates/ángulos.
+ *
+ * checkPoleCapacity(project) (más abajo) valida, aparte, si el poste (y su
+ * contraviento, si tiene) resisten estas cargas — ver su propio docstring.
  */
 (function (global) {
   const stationing = global.LineDesignStationing;
@@ -174,7 +177,16 @@
             longitudinal
           },
           momentEstimate,
-          attachHeight
+          attachHeight,
+          // Para checkPoleCapacity: windTransversal aislado del desequilibrio
+          // de tensión (transversal ya lo mezcla), y la tensión horizontal de
+          // cada vano adyacente por separado (ya multiplicada por `phases`,
+          // igual que el resto de fuerzas de esta fila) — un contraviento en
+          // una estructura de Retención ancla cada vano por su cuenta, no la
+          // resultante combinada.
+          windTransversal,
+          tensionPrevN: prevSpan ? prevSpan.horizontalTension * phases : null,
+          tensionNextN: nextSpan ? nextSpan.horizontalTension * phases : null
         });
       });
     });
@@ -188,59 +200,139 @@
   const RESISTANCE_TEST_OFFSET_FROM_TIP = 0.2;
 
   /**
-   * Validación "Cumple poste": compara, para cada estructura con
-   * `resistance` (kgF, resistencia ÚLTIMA a rotura, ensayada a 20 cm de la
-   * punta — ver catalogView.js) asignada, el momento flector en la base
-   * (línea de terreno) que exigen las cargas del árbol de cargas contra el
-   * momento admisible del poste.
+   * Validación "Cumple poste" y "Cumple contraviento" — ver también
+   * DATA_MODEL.md. Para cada estructura evalúa, bajo TODAS las hipótesis
+   * climáticas (se toma la peor, no solo la de referencia):
    *
-   * Demanda: un poste de sección circular no tiene eje débil/fuerte, así
-   * que lo que lo flecta es la RESULTANTE de las fuerzas horizontales
-   * (transversal + longitudinal), aplicada a la altura promedio de
-   * enganche — se evalúan todas las hipótesis climáticas y se toma la peor
-   * (mayor momento), no solo la de referencia.
+   * POSTE: compara el momento flector en la base (línea de terreno) contra
+   * el momento admisible del poste, si tiene `resistance` (kgF, resistencia
+   * ÚLTIMA a rotura, ensayada a 20 cm de la punta) asignada. Como el poste
+   * es de sección circular (sin eje débil/fuerte), la demanda SIN
+   * contraviento es la resultante de las fuerzas horizontales (transversal
+   * + longitudinal) aplicada a la altura promedio de enganche.
    *
-   * Capacidad: la resistencia de catálogo es la carga de ENSAYO de rotura
-   * aplicada a (altura del poste − 0.20 m) de la base, así que el momento
-   * último en la base es `resistance × (height − 0.20)`. Se divide entre
-   * `project.poleSafetyFactor` (factor de seguridad sobre la resistencia
-   * última, configurable en Parámetros de entrada § Terreno) para obtener
-   * el momento admisible.
+   * Capacidad del poste: `resistance × (height − 0.20)` (momento último en
+   * la base) dividido entre `project.poleSafetyFactor`.
    *
-   * Devuelve un mapa `structureId -> resultado` con `status`:
-   * 'ok' | 'fail' | 'undefined' (sin `resistance` asignada en la estructura).
+   * CONTRAVIENTO (solo estructuras Retención/Ángulo con `structure.hasGuy`):
+   * el contraviento se instala en la dirección que absorbe el desequilibrio
+   * de tensión del conductor — dos contravientos independientes, uno
+   * opuesto a cada vano adyacente, en Retención (cada uno cancela por
+   * completo la tensión de SU vano, sin importar el ángulo entre vanos); un
+   * único contraviento opuesto a la resultante de tensión, en Ángulo. En
+   * ambos casos, simplificación de Fase 1: el contraviento cancela POR
+   * COMPLETO la componente de la demanda inducida por el desequilibrio de
+   * tensión del conductor (se asume orientado exactamente para eso) — la
+   * demanda residual sobre el poste queda entonces limitada al viento
+   * (`windTransversal`), que el contraviento no resiste al no estar
+   * orientado para ello.
+   *
+   * La tracción que debe resistir el contraviento (kgF) se obtiene
+   * proyectando esa fuerza resistida sobre la geometría real del anclaje:
+   * `guyAnchorHeight` (altura de enganche en el poste) y
+   * `guyAnchorDistance` (distancia horizontal del anclaje en tierra) dan el
+   * ángulo del cable; `tensión_cable = fuerza_horizontal_resistida /
+   * cos(ángulo)`, comparada contra `structure.guyResistance /
+   * project.guySafetyFactor`.
+   *
+   * Devuelve `structureId -> { pole, guy }`:
+   *   pole.status: 'ok' | 'fail' | 'undefined' (sin `resistance` asignada)
+   *   guy.status: 'ok' | 'fail' | 'undefined' (sin resistencia/geometría) |
+   *               'none' (hasGuy=false) | 'not-applicable' (Suspensión/Paso)
    */
   function checkPoleCapacity(project) {
     const rows = computeLoadTree(project);
-    const safetyFactor = project.poleSafetyFactor || 1;
+    const structuresById = new Map(project.structures.map((s) => [s.id, s]));
+    const typesById = new Map(project.structureCatalog.map((t) => [t.typeId, t]));
+    const poleSafetyFactor = project.poleSafetyFactor || 1;
+    const guySafetyFactor = project.guySafetyFactor || 1;
 
-    const worstByStructure = new Map();
+    function isGuyableType(type) {
+      return !!type && (type.type === 'Retención' || type.type === 'Ángulo');
+    }
+
+    const worstPoleByStructure = new Map();
+    const worstGuyByStructure = new Map();
+
     rows.forEach((row) => {
-      const horizontalN = Math.hypot(row.forces.transversal, row.forces.longitudinal);
-      const momentDemandKgfm = units.newtonsToKgf(horizontalN) * row.attachHeight;
-      const prev = worstByStructure.get(row.structureId);
-      if (!prev || momentDemandKgfm > prev.momentDemandKgfm) {
-        worstByStructure.set(row.structureId, { momentDemandKgfm, hypothesisId: row.hypothesisId });
+      const structure = structuresById.get(row.structureId);
+      if (!structure) return;
+      const type = typesById.get(structure.typeId);
+      const isGuyed = structure.hasGuy && isGuyableType(type);
+
+      const poleDemandN = isGuyed
+        ? row.windTransversal
+        : Math.hypot(row.forces.transversal, row.forces.longitudinal);
+      const poleDemandKgfm = units.newtonsToKgf(poleDemandN) * row.attachHeight;
+      const prevPole = worstPoleByStructure.get(row.structureId);
+      if (!prevPole || poleDemandKgfm > prevPole.momentDemandKgfm) {
+        worstPoleByStructure.set(row.structureId, { momentDemandKgfm: poleDemandKgfm, hypothesisId: row.hypothesisId });
+      }
+
+      if (isGuyed) {
+        let guyForceN;
+        if (type.type === 'Retención') {
+          guyForceN = Math.max(row.tensionPrevN || 0, row.tensionNextN || 0);
+        } else {
+          const transversalFromTensionN = row.forces.transversal - row.windTransversal;
+          guyForceN = Math.hypot(row.forces.longitudinal, transversalFromTensionN);
+        }
+        const guyForceKgf = units.newtonsToKgf(guyForceN);
+        const prevGuy = worstGuyByStructure.get(row.structureId);
+        if (!prevGuy || guyForceKgf > prevGuy.forceKgf) {
+          worstGuyByStructure.set(row.structureId, { forceKgf: guyForceKgf, hypothesisId: row.hypothesisId });
+        }
       }
     });
 
     const result = {};
     project.structures.forEach((structure) => {
-      const worst = worstByStructure.get(structure.id);
-      if (structure.resistance == null || !worst) {
-        result[structure.id] = { status: 'undefined' };
-        return;
+      const type = typesById.get(structure.typeId);
+      const worstPole = worstPoleByStructure.get(structure.id);
+
+      let pole;
+      if (structure.resistance == null || !worstPole) {
+        pole = { status: 'undefined' };
+      } else {
+        const lever = Math.max(structure.height - RESISTANCE_TEST_OFFSET_FROM_TIP, 0);
+        const capacityKgfm = (structure.resistance * lever) / poleSafetyFactor;
+        const ratio = capacityKgfm > 0 ? worstPole.momentDemandKgfm / capacityKgfm : Infinity;
+        pole = {
+          status: ratio <= 1 ? 'ok' : 'fail',
+          ratio,
+          momentDemandKgfm: worstPole.momentDemandKgfm,
+          capacityKgfm,
+          governingHypothesisId: worstPole.hypothesisId
+        };
       }
-      const lever = Math.max(structure.height - RESISTANCE_TEST_OFFSET_FROM_TIP, 0);
-      const capacityKgfm = (structure.resistance * lever) / safetyFactor;
-      const ratio = capacityKgfm > 0 ? worst.momentDemandKgfm / capacityKgfm : Infinity;
-      result[structure.id] = {
-        status: ratio <= 1 ? 'ok' : 'fail',
-        ratio,
-        momentDemandKgfm: worst.momentDemandKgfm,
-        capacityKgfm,
-        governingHypothesisId: worst.hypothesisId
-      };
+
+      let guy;
+      if (!isGuyableType(type)) {
+        guy = { status: 'not-applicable' };
+      } else if (!structure.hasGuy) {
+        guy = { status: 'none' };
+      } else {
+        const worstGuy = worstGuyByStructure.get(structure.id);
+        const { guyResistance, guyAnchorHeight, guyAnchorDistance } = structure;
+        if (guyResistance == null || !guyAnchorHeight || !guyAnchorDistance || !worstGuy) {
+          guy = { status: 'undefined' };
+        } else {
+          const cableLength = Math.hypot(guyAnchorHeight, guyAnchorDistance);
+          const cosAngle = guyAnchorDistance / cableLength;
+          const tensionKgf = worstGuy.forceKgf / cosAngle;
+          const capacityKgf = guyResistance / guySafetyFactor;
+          const ratio = capacityKgf > 0 ? tensionKgf / capacityKgf : Infinity;
+          guy = {
+            status: ratio <= 1 ? 'ok' : 'fail',
+            ratio,
+            tensionKgf,
+            capacityKgf,
+            governingHypothesisId: worstGuy.hypothesisId
+          };
+        }
+      }
+
+      result[structure.id] = { pole, guy };
     });
     return result;
   }

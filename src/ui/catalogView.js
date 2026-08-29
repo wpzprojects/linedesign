@@ -48,6 +48,9 @@
         type.resistanceOptions && type.resistanceOptions.length
           ? el('p', {}, `Resistencias: ${type.resistanceOptions.join(', ')} kgF`)
           : null,
+        type.guyResistanceOptions && type.guyResistanceOptions.length
+          ? el('p', {}, `Resistencias de contraviento: ${type.guyResistanceOptions.join(', ')} kgF`)
+          : null,
         el('p', {}, `Puntos de fijación: ${type.attachmentPoints.length}`),
         el('div', { class: 'row-actions' }, [
           el('button', { class: 'btn btn-small', type: 'button', onClick: () => startEdit(type) }, 'Editar'),
@@ -104,6 +107,11 @@
         value: editingType && editingType.resistanceOptions ? editingType.resistanceOptions.join(', ') : '',
         placeholder: 'Ej: 510, 750, 1050, 1350'
       });
+      const guyResistanceInput = el('input', {
+        type: 'text', id: 'catalog-guy-resistances-input',
+        value: editingType && editingType.guyResistanceOptions ? editingType.guyResistanceOptions.join(', ') : '',
+        placeholder: 'Ej: 2722, 4082, 5987 (solo aplica a Ángulo/Retención)'
+      });
 
       const pointsContainer = el('div', { class: 'points-editor' }, draftPoints.map(renderPointRow));
 
@@ -121,11 +129,13 @@
             return;
           }
           const resistanceOptions = resistanceInput.value.split(',').map((v) => parseFloat(v.trim())).filter((v) => !Number.isNaN(v));
+          const guyResistanceOptions = guyResistanceInput.value.split(',').map((v) => parseFloat(v.trim())).filter((v) => !Number.isNaN(v));
           const payload = {
             name: nameInput.value.trim() || 'Sin nombre',
             type: typeSelect.value,
             heightOptions,
             resistanceOptions,
+            guyResistanceOptions,
             attachmentPoints: draftPoints.map((p) => ({ ...p }))
           };
           if (editingId) {
@@ -145,6 +155,8 @@
         heightInput,
         el('label', {}, 'Resistencias disponibles (kgF, separadas por coma)'),
         resistanceInput,
+        el('label', {}, 'Resistencias de contraviento disponibles (kgF, separadas por coma)'),
+        guyResistanceInput,
         el('label', {}, 'Puntos de fijación del conductor'),
         pointsContainer,
         el('button', {

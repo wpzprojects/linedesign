@@ -882,6 +882,16 @@ p.conductor-specs {
   text-align: center;
 }
 
+.checkbox-label {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.checkbox-label input[type="checkbox"] {
+  width: auto;
+}
+
 .panel {
   background: var(--panel);
   border: 1px solid var(--line);
@@ -1215,12 +1225,12 @@ circle.sync-marker {
   font-variant-numeric: tabular-nums;
 }
 
-.data-table td.pole-check-ok {
+.data-table td.check-ok {
   color: var(--success);
   font-weight: 600;
 }
 
-.data-table td.pole-check-fail {
+.data-table td.check-fail {
   color: var(--danger);
   font-weight: 600;
 }

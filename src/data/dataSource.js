@@ -135,7 +135,11 @@
           { name: 'Fase A', offsetX: -2.6, offsetZ: 18.5 },
           { name: 'Fase B', offsetX: 0, offsetZ: 21 },
           { name: 'Fase C', offsetX: 2.6, offsetZ: 18.5 }
-        ]
+        ],
+        resistanceOptions: [750, 1050, 1350],
+        // Resistencia última de cable de contraviento (kgF) — cordón de
+        // acero galvanizado ASTM A475, tallas comunes EHS 1/4"/5/16"/3/8".
+        guyResistanceOptions: [2722, 4082, 5987]
       },
       {
         typeId: 'TIPO-C',
@@ -146,14 +150,24 @@
           { name: 'Fase A', offsetX: -1.4, offsetZ: 14 },
           { name: 'Fase B', offsetX: 0, offsetZ: 14 },
           { name: 'Fase C', offsetX: 1.4, offsetZ: 14 }
-        ]
+        ],
+        resistanceOptions: [750, 1050, 1350],
+        guyResistanceOptions: [2722, 4082, 5987]
       }
     ];
   }
 
   function sampleStructures() {
     return [
-      { id: 'EST-01', typeId: 'TIPO-C', station: 0.34, height: 20 },
+      {
+        id: 'EST-01', typeId: 'TIPO-C', station: 0.34, height: 20,
+        resistance: 1350,
+        // Demo de "Cumple contraviento": retención en el extremo del
+        // alineamiento (un solo vano) — un único contraviento opuesto a ese
+        // vano, anclado a 15 m de altura y 15 m de distancia horizontal
+        // (~45°).
+        hasGuy: true, guyResistance: 5987, guyAnchorHeight: 15, guyAnchorDistance: 15
+      },
       { id: 'EST-02', typeId: 'TIPO-A', station: 239.19, height: 16 },
       { id: 'EST-07', typeId: 'TIPO-A', station: 385.82, height: 12 },
       { id: 'EST-08', typeId: 'TIPO-A', station: 500.87, height: 12 },
@@ -411,7 +425,11 @@
       // (structure.resistance, kgF a 20 cm de la punta) para obtener el
       // momento admisible en la validación de "Cumple poste" — ver
       // loadTree.js#checkPoleCapacity.
-      poleSafetyFactor: 2
+      poleSafetyFactor: 2,
+      // Ídem para el cable de contraviento (structure.guyResistance) en la
+      // validación "Cumple contraviento" — factor propio, independiente del
+      // del poste.
+      guySafetyFactor: 2
     };
   }
 

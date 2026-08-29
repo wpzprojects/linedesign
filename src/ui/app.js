@@ -41,6 +41,7 @@
   const groundClearanceInput = document.getElementById('ground-clearance-input');
   const rightOfWayInput = document.getElementById('right-of-way-input');
   const poleSafetyFactorInput = document.getElementById('pole-safety-factor-input');
+  const guySafetyFactorInput = document.getElementById('guy-safety-factor-input');
   const profileVExagSelect = document.getElementById('profile-vexag-select');
   const terrainFetchBtn = document.getElementById('terrain-fetch-btn');
   const sagLabelsToggle = document.getElementById('sag-labels-toggle');
@@ -361,16 +362,33 @@
       }
 
       const check = poleCheck[structure.id];
+
       let poleCell;
-      if (!check || check.status === 'undefined') {
+      if (!check || check.pole.status === 'undefined') {
         poleCell = el('td', {}, '—');
       } else {
-        const pct = Math.round(check.ratio * 100);
-        const hypName = hypothesisById[check.governingHypothesisId] || check.governingHypothesisId;
+        const pole = check.pole;
+        const pct = Math.round(pole.ratio * 100);
+        const hypName = hypothesisById[pole.governingHypothesisId] || pole.governingHypothesisId;
         poleCell = el('td', {
-          class: check.status === 'ok' ? 'pole-check-ok' : 'pole-check-fail',
-          title: `Momento demandado ${check.momentDemandKgfm.toFixed(0)} kgF·m / admisible ${check.capacityKgfm.toFixed(0)} kgF·m — caso gobernante: ${hypName}`
-        }, `${check.status === 'ok' ? '✓' : '✗'} ${pct}%`);
+          class: pole.status === 'ok' ? 'check-ok' : 'check-fail',
+          title: `Momento demandado ${pole.momentDemandKgfm.toFixed(0)} kgF·m / admisible ${pole.capacityKgfm.toFixed(0)} kgF·m — caso gobernante: ${hypName}`
+        }, `${pole.status === 'ok' ? '✓' : '✗'} ${pct}%`);
+      }
+
+      let guyCell;
+      const guy = check && check.guy;
+      if (!guy || guy.status === 'not-applicable' || guy.status === 'none') {
+        guyCell = el('td', {}, '—');
+      } else if (guy.status === 'undefined') {
+        guyCell = el('td', { title: 'Contraviento habilitado pero sin resistencia o geometría de anclaje completa' }, '⚠');
+      } else {
+        const pct = Math.round(guy.ratio * 100);
+        const hypName = hypothesisById[guy.governingHypothesisId] || guy.governingHypothesisId;
+        guyCell = el('td', {
+          class: guy.status === 'ok' ? 'check-ok' : 'check-fail',
+          title: `Tracción demandada ${guy.tensionKgf.toFixed(0)} kgF / admisible ${guy.capacityKgf.toFixed(0)} kgF — caso gobernante: ${hypName}`
+        }, `${guy.status === 'ok' ? '✓' : '✗'} ${pct}%`);
       }
 
       const isSelected = selection && selection.type === 'structure' && selection.id === structure.id;
@@ -388,7 +406,8 @@
         el('td', {}, fmtNum(vanoAdelante, 1)),
         el('td', {}, fmtNum(flecha, 2)),
         el('td', {}, fmtNum(minClearance, 1)),
-        poleCell
+        poleCell,
+        guyCell
       ]));
     });
   }
@@ -485,6 +504,51 @@
         }, type.resistanceOptions.map((r) => el('option', { value: r, selected: r === structure.resistance }, `${r} kgF`))));
       }
 
+      // Contravientos: solo tiene sentido en estructuras que anclan la
+      // línea (Retención/Ángulo) — ver stationing.isAnchorStructure. En
+      // Retención se instalan dos, uno opuesto a cada vano adyacente; en
+      // Ángulo uno solo, opuesto a la resultante de tensión — ver
+      // loadTree.js#checkPoleCapacity para cómo entra esto en "Cumple
+      // poste"/"Cumple contraviento".
+      const isAnchorType = type && (type.type === 'Retención' || type.type === 'Ángulo');
+      inspectorPanel.appendChild(el('label', {}, 'Contravientos'));
+      inspectorPanel.appendChild(el('label', { class: 'checkbox-label' }, [
+        el('input', {
+          type: 'checkbox', checked: !!structure.hasGuy, disabled: !isAnchorType,
+          onChange: (e) => {
+            const patch = { hasGuy: e.target.checked };
+            if (e.target.checked && structure.guyAnchorHeight == null) {
+              patch.guyAnchorHeight = Math.max(structure.height - 3, 1);
+              patch.guyAnchorDistance = patch.guyAnchorHeight;
+              if (type && type.guyResistanceOptions && type.guyResistanceOptions.length) {
+                patch.guyResistance = type.guyResistanceOptions[0];
+              }
+            }
+            store.updateStructure(structure.id, patch);
+          }
+        }),
+        isAnchorType ? ' Instalar contravientos' : ' No aplica (solo Retención/Ángulo)'
+      ]));
+
+      if (isAnchorType && structure.hasGuy) {
+        if (type.guyResistanceOptions && type.guyResistanceOptions.length) {
+          inspectorPanel.appendChild(el('label', {}, 'Resistencia de contraviento (kgF)'));
+          inspectorPanel.appendChild(el('select', {
+            onChange: (e) => store.updateStructure(structure.id, { guyResistance: parseFloat(e.target.value) })
+          }, type.guyResistanceOptions.map((r) => el('option', { value: r, selected: r === structure.guyResistance }, `${r} kgF`))));
+        }
+        inspectorPanel.appendChild(el('label', {}, 'Altura de anclaje en el poste (m)'));
+        inspectorPanel.appendChild(el('input', {
+          type: 'number', step: '0.5', min: '0.5', value: structure.guyAnchorHeight,
+          onChange: (e) => store.updateStructure(structure.id, { guyAnchorHeight: parseFloat(e.target.value) || 0 })
+        }));
+        inspectorPanel.appendChild(el('label', {}, 'Distancia horizontal del anclaje en tierra (m)'));
+        inspectorPanel.appendChild(el('input', {
+          type: 'number', step: '0.5', min: '0.5', value: structure.guyAnchorDistance,
+          onChange: (e) => store.updateStructure(structure.id, { guyAnchorDistance: parseFloat(e.target.value) || 0 })
+        }));
+      }
+
       inspectorPanel.appendChild(el('label', {}, 'Station (m)'));
       inspectorPanel.appendChild(el('input', {
         type: 'number', step: '1', value: structure.station.toFixed(1),
@@ -570,6 +634,7 @@
     groundClearanceInput.value = project.groundClearance;
     rightOfWayInput.value = project.rightOfWayWidth;
     poleSafetyFactorInput.value = project.poleSafetyFactor;
+    guySafetyFactorInput.value = project.guySafetyFactor;
     renderSummary(project);
     syncStructureTypeOptions(project);
     syncPlanHypothesisOptions(project);
@@ -755,6 +820,7 @@
     groundClearanceInput.addEventListener('change', (e) => store.setGroundClearance(parseFloat(e.target.value) || 0));
     rightOfWayInput.addEventListener('change', (e) => store.setRightOfWayWidth(parseFloat(e.target.value) || 0));
     poleSafetyFactorInput.addEventListener('change', (e) => store.setPoleSafetyFactor(parseFloat(e.target.value) || 1));
+    guySafetyFactorInput.addEventListener('change', (e) => store.setGuySafetyFactor(parseFloat(e.target.value) || 1));
 
     conductorColorInput.addEventListener('input', (e) => {
       document.documentElement.style.setProperty('--conductor-color', e.target.value);
