@@ -823,11 +823,11 @@ p.conductor-specs {
    — por eso ningún ancho anterior se vio reflejado. Selector reforzado
    con .toolbar-field para empatar/superar esa especificidad. */
 .toolbar-field input.toolbar-mini-input {
-  width: 120px;
+  width: 110px;
 }
 
 .toolbar-field input.toolbar-station-input {
-  width: 100px;
+  width: 90px;
 }
 
 /* ---------- Área CAD: lienzos + panel de propiedades ---------- */
