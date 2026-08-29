@@ -343,6 +343,42 @@
     statusSummary.textContent = `Vértices ${project.alignment.vertices.length} · Estructuras ${project.structures.length} · Vanos ${spans.length} · ${totalLength.toFixed(1)} m`;
   }
 
+  /**
+   * Station sugerida para "+ estructura" cuando el campo se deja vacío
+   * (se muestra como placeholder, no como valor — así el usuario ve la
+   * sugerencia en gris sin que cuente como algo que ya escribió):
+   * - Vértice seleccionado: la station exacta de ese vértice.
+   * - Estructura seleccionada: la de esa estructura + 10 m (para meter
+   *   una intermedia justo después).
+   * - Nada seleccionado (o una sección): la de la última estructura del
+   *   alineamiento + 10 m; sin estructuras todavía, 0.
+   * En los tres casos, recortada a [0, largo total] — si el +10 se pasa
+   * del final del alineamiento, queda en el final (se traslapa con la
+   * anterior, sin problema).
+   */
+  function computeSuggestedStructureStation(project) {
+    const vertices = project.alignment.vertices;
+    const totalLength = stationing.totalLength(vertices);
+
+    if (selection && selection.type === 'vertex') {
+      const index = vertices.findIndex((v) => v.id === selection.id);
+      if (index !== -1) return stationing.cumulativeDistances(vertices)[index];
+    }
+
+    if (selection && selection.type === 'structure') {
+      const structure = project.structures.find((s) => s.id === selection.id);
+      if (structure) return Math.min(structure.station + 10, totalLength);
+    }
+
+    if (!project.structures.length) return 0;
+    const lastStation = project.structures.reduce((max, s) => Math.max(max, s.station), 0);
+    return Math.min(lastStation + 10, totalLength);
+  }
+
+  function updateNewStructureStationPlaceholder(project) {
+    newStructureStation.placeholder = computeSuggestedStructureStation(project).toFixed(1);
+  }
+
   function syncStructureTypeOptions(project) {
     const current = newStructureType.value;
     clear(newStructureType);
@@ -778,6 +814,7 @@
     guySafetyFactorInput.value = project.guySafetyFactor;
     renderSummary(project);
     syncStructureTypeOptions(project);
+    updateNewStructureStationPlaceholder(project);
     syncPlanHypothesisOptions(project);
     renderStructuresTable(project);
     renderAlignmentTable(project);
@@ -806,7 +843,12 @@
 
     document.getElementById('add-structure-btn').addEventListener('click', () => {
       const typeId = newStructureType.value;
-      const stationValue = newStructureStation.value === '' ? undefined : parseFloat(newStructureStation.value);
+      // Vacío -> la sugerencia mostrada como placeholder (ver
+      // computeSuggestedStructureStation), no el default propio de
+      // store.addStructure (mitad del alineamiento).
+      const stationValue = newStructureStation.value === ''
+        ? computeSuggestedStructureStation(store.getProject())
+        : parseFloat(newStructureStation.value);
       const structure = store.addStructure({ typeId, station: stationValue });
       selection = { type: 'structure', id: structure.id };
       newStructureStation.value = '';
