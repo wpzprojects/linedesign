@@ -35,6 +35,8 @@
   const structuresTableCount = document.getElementById('structures-table-count');
   const alignmentTableBody = document.getElementById('alignment-table-body');
   const alignmentTableCount = document.getElementById('alignment-table-count');
+  const newVertexX = document.getElementById('new-vertex-x');
+  const newVertexY = document.getElementById('new-vertex-y');
   const newStructureType = document.getElementById('new-structure-type');
   const newStructureStation = document.getElementById('new-structure-station');
   const planHypothesisSelect = document.getElementById('plan-hypothesis-select');
@@ -92,7 +94,7 @@
   // Si "Tensiones de tendido" tiene filas cargadas pero ninguna aplica al
   // conductor + caso climático de referencia vigentes (el que define
   // conductor.referenceHypothesisId en la tarjeta Conductor, NO el
-  // selector "Catenaria bajo hipótesis" de Planta y Perfil — ese solo
+  // selector "Hipótesis mostrada" de Planta y Perfil — ese solo
   // cambia qué hipótesis se VE dibujada), NO se usa la tensión horizontal
   // de referencia manual como respaldo silencioso: se busca otra hipótesis
   // que sí tenga fila para este conductor y se cambia la referencia a esa
@@ -655,7 +657,11 @@
 
   function wireToolbar() {
     document.getElementById('add-vertex-btn').addEventListener('click', () => {
-      const vertex = store.addVertex();
+      const x = newVertexX.value === '' ? undefined : parseFloat(newVertexX.value);
+      const y = newVertexY.value === '' ? undefined : parseFloat(newVertexY.value);
+      const vertex = store.addVertex(x !== undefined && y !== undefined ? { x, y } : undefined);
+      newVertexX.value = '';
+      newVertexY.value = '';
       showStatusMessage(`Vértice ${vertex.id} agregado.`);
     });
 

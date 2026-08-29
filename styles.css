@@ -741,6 +741,40 @@ p.conductor-specs {
   text-transform: none;
 }
 
+/* Grupos de la barra de herramientas: un control principal (botón) con sus
+   controles derivados al lado — mismo alto de fila que el resto, no se
+   apilan verticalmente (serían más altos que un botón normal). */
+.toolbar-group {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.toolbar-mini-input {
+  width: 78px;
+}
+
+/* Único grupo apilado (etiqueta encima del selector, como pidió el
+   usuario): tanto la etiqueta como el selector se achican para que la
+   suma de las dos líneas quede lo más cerca posible del alto de fila que
+   ya define el resto de controles (botones/inputs de una sola línea). */
+.toolbar-group--stack {
+  flex-direction: column;
+  align-items: flex-start;
+  justify-content: center;
+  gap: 1px;
+}
+
+.toolbar-label--mini {
+  font-size: 0.62rem;
+  line-height: 1;
+}
+
+.toolbar-select--compact {
+  padding: 4px 8px;
+  font-size: 0.82rem;
+}
+
 /* ---------- Área CAD: lienzos + panel de propiedades ---------- */
 
 .cad-area {

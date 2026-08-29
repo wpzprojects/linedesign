@@ -187,14 +187,14 @@
     return { ok: true };
   }
 
-  function addVertex() {
+  function addVertex(coords) {
     const vertices = project.alignment.vertices;
     const last = vertices[vertices.length - 1];
     const secondLast = vertices[vertices.length - 2] || last;
     const vertex = {
       id: nextId('vertex', 'PI-'),
-      x: last.x + (last.x - secondLast.x || 60),
-      y: last.y + (last.y - secondLast.y || 0),
+      x: coords && Number.isFinite(coords.x) ? coords.x : last.x + (last.x - secondLast.x || 60),
+      y: coords && Number.isFinite(coords.y) ? coords.y : last.y + (last.y - secondLast.y || 0),
       z: last.z
     };
     vertices.push(vertex);

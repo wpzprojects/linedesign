@@ -134,18 +134,26 @@
 
           <section id="screen-plan" class="screen is-active">
             <div class="toolbar">
-              <button id="add-vertex-btn" class="btn btn-small" type="button">+ vértice</button>
+              <div class="toolbar-group">
+                <button id="add-vertex-btn" class="btn btn-small" type="button">+ vértice</button>
+                <input id="new-vertex-x" type="number" step="any" placeholder="X (m)" class="toolbar-mini-input" title="Este (opcional): si se deja vacío, el vértice se agrega extrapolando el alineamiento" />
+                <input id="new-vertex-y" type="number" step="any" placeholder="Y (m)" class="toolbar-mini-input" title="Norte (opcional): si se deja vacío, el vértice se agrega extrapolando el alineamiento" />
+              </div>
 
               <span class="toolbar-sep"></span>
 
-              <select id="new-structure-type"></select>
-              <input id="new-structure-station" type="number" step="1" placeholder="station (m)" />
-              <button id="add-structure-btn" class="btn btn-small" type="button">+ estructura</button>
+              <div class="toolbar-group">
+                <button id="add-structure-btn" class="btn btn-small" type="button">+ estructura</button>
+                <select id="new-structure-type"></select>
+                <input id="new-structure-station" type="number" step="1" placeholder="station (m)" />
+              </div>
 
               <span class="toolbar-sep"></span>
 
-              <label for="plan-hypothesis-select" class="toolbar-label">Catenaria bajo hipótesis</label>
-              <select id="plan-hypothesis-select"></select>
+              <div class="toolbar-group toolbar-group--stack">
+                <label for="plan-hypothesis-select" class="toolbar-label toolbar-label--mini">Hipótesis mostrada</label>
+                <select id="plan-hypothesis-select" class="toolbar-select--compact"></select>
+              </div>
             </div>
 
             <div class="cad-area">
@@ -349,7 +357,7 @@
               <ul>
                 <li><strong>+ vértice</strong>: agrega un punto de inflexión (PI) al final del alineamiento.</li>
                 <li><strong>+ estructura</strong>: agrega una estructura del tipo elegido en el desplegable, en la station (m) indicada (o a la mitad del alineamiento si se deja en blanco).</li>
-                <li><strong>Catenaria bajo hipótesis</strong>: bajo qué caso climático se dibuja la curva del conductor en Perfil. No cambia la tensión instalada del conductor (eso lo define la hipótesis de referencia en Parámetros de entrada) — solo qué hipótesis se está "mirando".</li>
+                <li><strong>Hipótesis mostrada</strong>: bajo qué caso climático se dibuja la curva del conductor en Perfil. No cambia la tensión instalada del conductor (eso lo define la hipótesis de referencia en Parámetros de entrada) — solo qué hipótesis se está "mirando".</li>
               </ul>
 
               <h3>Planta</h3>
