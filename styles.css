@@ -1196,6 +1196,11 @@ p.conductor-specs {
    revés de lo que el nombre sugiere), así que las barras de categoría
    (el gris claro) usan var(--panel) y las filas (el gris oscuro) usan
    var(--panel-alt), explícito en vez de heredado de .inspector. */
+/* Antes sangraban -14px (el padding completo de .inspector), a ras con
+   el borde del panel de Propiedades — sin nada de aire a los lados. Se
+   deja 3px de margen visible: -11px en vez de -14px, y el padding propio
+   se reduce en la misma medida (14px -> 11px) para que el texto no se
+   corra, solo el fondo de color se encoge 3px por lado. */
 .prop-category {
   background: var(--panel);
   color: var(--muted);
@@ -1203,16 +1208,16 @@ p.conductor-specs {
   font-weight: 700;
   text-transform: uppercase;
   letter-spacing: 0.05em;
-  padding: 4px 14px;
-  margin: 0 -14px;
+  padding: 4px 11px;
+  margin: 0 -11px;
 }
 
 .prop-row {
   display: flex;
   align-items: center;
   gap: 8px;
-  padding: 3px 14px;
-  margin: 0 -14px;
+  padding: 3px 11px;
+  margin: 0 -11px;
   background: var(--panel-alt);
   border-bottom: 1px solid var(--line);
 }
