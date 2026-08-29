@@ -730,7 +730,7 @@
           onChange: (e) => store.moveVertex(vertex.id, vertex.x, parseFloat(e.target.value) || 0)
         })),
         propRow('Elevación z (m)', el('input', {
-          class: 'prop-control', type: 'number', step: '0.5', value: vertex.z,
+          class: 'prop-control', type: 'number', step: '0.5', value: roundTo4(vertex.z),
           onChange: (e) => store.setVertexElevation(vertex.id, parseFloat(e.target.value) || 0)
         }))
       ]));
