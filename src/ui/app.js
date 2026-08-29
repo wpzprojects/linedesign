@@ -45,6 +45,7 @@
   const statusSummary = document.getElementById('status-summary');
   const statusZoom = document.getElementById('status-zoom');
   const statusMessage = document.getElementById('status-message');
+  const workspaceBody = document.querySelector('.workspace-body');
 
   let selection = null;
   let planHypothesisId = null;
@@ -340,6 +341,15 @@
   }
 
   function render(project) {
+    // Cada vista rehace su contenido con clear()+rebuild (no hay diffing):
+    // al vaciar un contenedor dentro de .workspace-body, su scrollHeight cae
+    // a 0 por un instante y el navegador recorta scrollTop a ese mínimo de
+    // inmediato — el efecto visible es que la pantalla "salta" al inicio en
+    // cada edición (más notorio en tarjetas largas, como Tensiones de
+    // tendido, que quedan más abajo). Se guarda y restaura el scroll
+    // alrededor del rebuild para que la posición no se pierda.
+    const scrollTop = workspaceBody ? workspaceBody.scrollTop : 0;
+
     projectNameInput.value = project.name;
     renderSummary(project);
     syncStructureTypeOptions(project);
@@ -352,6 +362,8 @@
     catalogView.render(project);
     hypothesesView.render(project);
     loadTreeView.render(project);
+
+    if (workspaceBody) workspaceBody.scrollTop = scrollTop;
   }
 
   function wireToolbar() {
