@@ -80,7 +80,12 @@
       const p0 = projector.toScreen(0, 0);
       const screenX = viewportState.scale * p0.x + viewportState.tx;
       const screenY = viewportState.scale * p0.y + viewportState.ty;
-      map.panBy([screenX - width / 2, screenY - height / 2], { animate: false });
+      // map.panBy(offset) mueve la VISTA por `offset` (como un scroll): el
+      // contenido se desplaza en el sentido CONTRARIO a `offset`. Para que
+      // el contenido (el origen) quede en (screenX, screenY) en vez de en
+      // el centro del contenedor (donde lo dejó setView), hay que pedirle
+      // el desplazamiento inverso — si no, el mapa arrastra al revés.
+      map.panBy([width / 2 - screenX, height / 2 - screenY], { animate: false });
     }
 
     /**
