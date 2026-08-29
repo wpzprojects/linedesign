@@ -1355,14 +1355,14 @@ body:not(.screen-plan-active) .status-bar {
      clientX/rect.width y no tiene sentido en esta orientación). */
   .split-view {
     flex-direction: column;
-    min-height: 1120px;
+    min-height: 520px;
   }
 
   .split-view .panel:first-child,
   .split-view .panel:last-child {
     flex: 1 1 0;
     min-width: 0;
-    min-height: 560px;
+    min-height: 200px;
   }
 
   .split-divider {
