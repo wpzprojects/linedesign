@@ -61,12 +61,22 @@
     return Math.max(points.length, 1);
   }
 
+  /**
+   * `attachmentPoints[].offsetZ` se referencia desde la PUNTA del poste
+   * hacia abajo (0 = en la punta), no desde el piso — así el punto de
+   * fijación sigue siendo válido sin importar cuál de las heightOptions
+   * del catálogo se elija para una estructura en particular (si se
+   * referenciara desde el piso, cambiar la altura del poste dejaría el
+   * offset apuntando a un punto distinto en la realidad). La altura real
+   * sobre el piso, para el cálculo de momento, es structure.height menos
+   * ese offset — ver catalogView.js para el editor/esquema.
+   */
   function averageAttachmentHeight(project, structure) {
     const type = project.structureCatalog.find((t) => t.typeId === structure.typeId);
     const points = (type && type.attachmentPoints) || [];
     if (!points.length) return structure.height;
     const avgOffsetZ = points.reduce((sum, p) => sum + p.offsetZ, 0) / points.length;
-    return avgOffsetZ;
+    return Math.max(structure.height - avgOffsetZ, 0);
   }
 
   /**

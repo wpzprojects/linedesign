@@ -88,6 +88,28 @@
   }
 
   /**
+   * `attachmentPoints[].offsetZ` pasó de referenciarse desde el PISO (la
+   * altura real sobre el terreno) a referenciarse desde la PUNTA del
+   * poste hacia abajo (0 = en la punta) — ver loadTree.js#
+   * averageAttachmentHeight. Un proyecto guardado antes de este cambio
+   * tiene esos valores todavía en el criterio viejo; se convierten una
+   * sola vez usando heightOptions[0] de cada tipo como la altura de
+   * referencia con la que se calibraron originalmente (mismo criterio
+   * que usaba el default de addCatalogType antes de este cambio).
+   */
+  function migrateAttachmentOffsetsFromGround(proj) {
+    if (proj.attachmentOffsetsMigratedV1) return;
+    (proj.structureCatalog || []).forEach((type) => {
+      const refHeight = type.heightOptions && type.heightOptions.length ? type.heightOptions[0] : null;
+      if (refHeight == null) return;
+      (type.attachmentPoints || []).forEach((p) => {
+        if (p.offsetZ != null) p.offsetZ = Math.max(refHeight - p.offsetZ, 0);
+      });
+    });
+    proj.attachmentOffsetsMigratedV1 = true;
+  }
+
+  /**
    * Completa con defaults los campos que un proyecto más viejo (guardado
    * antes de que existieran, o un JSON exportado de una versión anterior)
    * puede no traer, y corre la migración de unidades de fuerza. Compartida
@@ -111,6 +133,7 @@
     if (proj.poleSafetyFactor == null) proj.poleSafetyFactor = 2;
     if (proj.guySafetyFactor == null) proj.guySafetyFactor = 2;
     migrateForceUnitsToKgf(proj);
+    migrateAttachmentOffsetsFromGround(proj);
     if (mergeMissingConductors) {
       const existingIds = new Set(proj.conductorCatalog.map((c) => c.id));
       const missing = dataSource.getConductorCatalog().filter((c) => !existingIds.has(c.id));
@@ -265,7 +288,7 @@
       guyResistanceOptions: partial.guyResistanceOptions || [],
       attachmentPoints: partial.attachmentPoints && partial.attachmentPoints.length
         ? partial.attachmentPoints
-        : [{ name: 'Fase A', offsetX: 0, offsetZ: partial.heightOptions ? partial.heightOptions[0] : 15 }]
+        : [{ name: 'Fase A', offsetX: 0, offsetZ: 0 }]
     };
     project.structureCatalog.push(type);
     persist();

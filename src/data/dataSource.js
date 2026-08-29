@@ -119,10 +119,14 @@
         name: 'Poste suspensión',
         type: 'Suspensión',
         heightOptions: [12, 14, 16, 20, 24, 30],
+        // offsetZ es la distancia desde la PUNTA del poste hacia abajo (0 =
+        // en la punta), no la altura sobre el piso — así el punto sigue
+        // siendo válido sin importar cuál heightOptions se elija para una
+        // estructura en particular. Ver loadTree.js#averageAttachmentHeight.
         attachmentPoints: [
-          { name: 'Fase A', offsetX: -2.2, offsetZ: 15.5 },
-          { name: 'Fase B', offsetX: 0, offsetZ: 18 },
-          { name: 'Fase C', offsetX: 2.2, offsetZ: 15.5 }
+          { name: 'Fase A', offsetX: -2.2, offsetZ: 4.5 },
+          { name: 'Fase B', offsetX: 0, offsetZ: 2 },
+          { name: 'Fase C', offsetX: 2.2, offsetZ: 4.5 }
         ],
         resistanceOptions: [750, 1050]
       },
@@ -132,9 +136,9 @@
         type: 'Ángulo',
         heightOptions: [12, 14, 16, 20, 24, 30],
         attachmentPoints: [
-          { name: 'Fase A', offsetX: -2.6, offsetZ: 18.5 },
-          { name: 'Fase B', offsetX: 0, offsetZ: 21 },
-          { name: 'Fase C', offsetX: 2.6, offsetZ: 18.5 }
+          { name: 'Fase A', offsetX: -2.6, offsetZ: 5 },
+          { name: 'Fase B', offsetX: 0, offsetZ: 2.5 },
+          { name: 'Fase C', offsetX: 2.6, offsetZ: 5 }
         ],
         resistanceOptions: [750, 1050, 1350],
         // Resistencia última de cable de contraviento (kgF) — cordón de
@@ -147,9 +151,9 @@
         type: 'Retención',
         heightOptions: [12, 14, 16, 20, 24, 30],
         attachmentPoints: [
-          { name: 'Fase A', offsetX: -1.4, offsetZ: 14 },
-          { name: 'Fase B', offsetX: 0, offsetZ: 14 },
-          { name: 'Fase C', offsetX: 1.4, offsetZ: 14 }
+          { name: 'Fase A', offsetX: -1.4, offsetZ: 3 },
+          { name: 'Fase B', offsetX: 0, offsetZ: 3 },
+          { name: 'Fase C', offsetX: 1.4, offsetZ: 3 }
         ],
         resistanceOptions: [750, 1050, 1350],
         guyResistanceOptions: [2722, 4082, 5987]
@@ -418,6 +422,11 @@
       // projectStore.js#migrateForceUnitsToKgf lo vuelva a convertir como si
       // fuera un proyecto viejo guardado en N/N-m.
       forceUnitsMigratedV1: true,
+      // attachmentPoints[].offsetZ ya nace referenciado desde la punta del
+      // poste hacia abajo (ver sampleStructureCatalog arriba) — evita que
+      // projectStore.js#migrateAttachmentOffsetsFromGround lo reconvierta
+      // como si fuera un proyecto viejo con offsetZ referenciado al piso.
+      attachmentOffsetsMigratedV1: true,
       // Unidad en que "Parámetros de entrada" muestra/edita fuerza y peso
       // por longitud ('kgf' o 'si') — solo de interfaz, ver projectStore.js#setDisplayUnitSystem.
       displayUnitSystem: 'kgf',

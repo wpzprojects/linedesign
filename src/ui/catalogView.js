@@ -25,7 +25,7 @@
 
     function startNew() {
       editingId = null;
-      draftPoints = [{ name: 'Fase A', offsetX: 0, offsetZ: 15 }];
+      draftPoints = [{ name: 'Fase A', offsetX: 0, offsetZ: 0 }];
       render(store.getProject());
     }
 
@@ -88,36 +88,36 @@
       if (!diagramGroup) return;
       clear(diagramGroup);
 
-      const CX = 70; // centro horizontal del diagrama (offsetX = 0)
-      const GROUND_Y = 210; // línea de base (offsetZ = 0)
-      const TOP_Y = 15;
-      // Alto de referencia del poste: el punto más alto + margen, con un
-      // mínimo razonable para que el diagrama no se vea vacío con pocos
-      // puntos o todos muy bajos.
-      const maxOffsetZ = Math.max(15, ...draftPoints.map((p) => p.offsetZ || 0)) * 1.15;
-      const scaleZ = (GROUND_Y - TOP_Y) / maxOffsetZ;
+      const CX = 90; // centro horizontal del diagrama (offsetX = 0)
+      const TOP_Y = 20; // la PUNTA del poste (offsetZ = 0) — offsetZ crece hacia abajo desde acá
+      const GROUND_Y = 210; // el poste sigue hasta el piso (largo ilustrativo, no una heightOption específica)
+      // Rango de referencia para la escala vertical: el punto más alejado
+      // de la punta + margen, con un mínimo para que el diagrama no se
+      // vea vacío con pocos puntos o todos muy cerca de la punta.
+      const maxOffsetZ = Math.max(3, ...draftPoints.map((p) => p.offsetZ || 0)) * 1.3;
+      const scaleZ = Math.min((GROUND_Y - TOP_Y) / maxOffsetZ, 14);
       // Ancho de referencia: el offsetX más alejado del eje + margen, con
       // un mínimo para que un solo punto centrado no quede sin escala.
       const maxOffsetX = Math.max(1.5, ...draftPoints.map((p) => Math.abs(p.offsetX || 0))) * 1.3;
-      const scaleX = 60 / maxOffsetX;
+      const scaleX = 70 / maxOffsetX;
 
       diagramGroup.appendChild(svgEl('line', {
-        class: 'catalog-diagram-pole', x1: CX, y1: GROUND_Y, x2: CX, y2: GROUND_Y - maxOffsetZ * scaleZ
+        class: 'catalog-diagram-pole', x1: CX, y1: TOP_Y, x2: CX, y2: GROUND_Y
       }));
       diagramGroup.appendChild(svgEl('line', {
-        class: 'catalog-diagram-ground', x1: 10, y1: GROUND_Y, x2: 130, y2: GROUND_Y
+        class: 'catalog-diagram-ground', x1: 10, y1: GROUND_Y, x2: 170, y2: GROUND_Y
       }));
 
       draftPoints.forEach((p) => {
         const cx = CX + (p.offsetX || 0) * scaleX;
-        const cy = GROUND_Y - (p.offsetZ || 0) * scaleZ;
+        const cy = TOP_Y + (p.offsetZ || 0) * scaleZ;
         diagramGroup.appendChild(svgEl('line', { class: 'catalog-diagram-arm', x1: CX, y1: cy, x2: cx, y2: cy }));
         diagramGroup.appendChild(svgEl('circle', { class: 'catalog-diagram-point', cx, cy, r: 4 }));
+        // Centrada y encima del punto (no a los lados, con text-anchor
+        // start/end): un punto cerca del borde izquierdo/derecho hacía que
+        // la etiqueta se saliera del viewBox y quedara recortada.
         const label = svgEl('text', {
-          class: 'catalog-diagram-label',
-          x: cx + (p.offsetX >= 0 ? 7 : -7),
-          y: cy + 3,
-          'text-anchor': p.offsetX >= 0 ? 'start' : 'end'
+          class: 'catalog-diagram-label', x: cx, y: cy - 8, 'text-anchor': 'middle'
         });
         label.textContent = p.name || '';
         diagramGroup.appendChild(label);
@@ -176,12 +176,12 @@
       const pointsHeader = el('div', { class: 'point-row point-row--header' }, [
         el('span', { class: 'point-row-label' }, 'Nombre'),
         el('span', { class: 'point-row-label' }, 'X — horizontal (m)'),
-        el('span', { class: 'point-row-label' }, 'Z — altura (m)'),
+        el('span', { class: 'point-row-label', title: 'Distancia bajo la punta del poste, no altura sobre el piso — así el punto sigue siendo válido sin importar qué altura (de las disponibles) se elija para una estructura en particular.' }, 'Z — bajo la punta (m)'),
         el('span', {})
       ]);
       const pointsContainer = el('div', { class: 'points-editor' }, [pointsHeader, ...draftPoints.map(renderPointRow)]);
 
-      const diagramSvg = svgEl('svg', { class: 'catalog-diagram', viewBox: '0 0 140 220', role: 'img', 'aria-label': 'Esquema de puntos de fijación' });
+      const diagramSvg = svgEl('svg', { class: 'catalog-diagram', viewBox: '0 0 180 220', role: 'img', 'aria-label': 'Esquema de puntos de fijación' });
       diagramGroup = svgEl('g');
       diagramSvg.appendChild(diagramGroup);
       updateDiagram();
@@ -236,7 +236,7 @@
             el('button', {
               class: 'btn btn-small add-point-btn', type: 'button',
               onClick: () => {
-                draftPoints.push({ name: `Fase ${draftPoints.length + 1}`, offsetX: 0, offsetZ: 15 });
+                draftPoints.push({ name: `Fase ${draftPoints.length + 1}`, offsetX: 0, offsetZ: 0 });
                 render(store.getProject());
               }
             }, '+ agregar punto de fijación')
@@ -256,7 +256,7 @@
       return form;
     }
 
-    if (!draftPoints.length) draftPoints = [{ name: 'Fase A', offsetX: 0, offsetZ: 15 }];
+    if (!draftPoints.length) draftPoints = [{ name: 'Fase A', offsetX: 0, offsetZ: 0 }];
 
     return { render };
   }
