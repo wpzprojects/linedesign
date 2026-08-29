@@ -1,7 +1,6 @@
 :root {
   --app-bg: #eef0f2;
-  --status-bg: #f6f6f7;
-  --toolbar-bg: #e6e6e6;
+  --toolbar-bg: #b8b8b8;
   --panel: #ffffff;
   --panel-alt: #f2f2f4;
   --panel-raised: #ffffff;
@@ -27,8 +26,7 @@
 @media (prefers-color-scheme: dark) {
   :root:not([data-theme="light"]) {
     --app-bg: #101012;
-    --status-bg: #242429;
-    --toolbar-bg: #1e1e21;
+    --toolbar-bg: #18181a;
     --panel: #212125;
     --panel-alt: #151517;
     --panel-raised: #29292f;
@@ -47,8 +45,7 @@
 /* Toggle manual de tema (independiente de prefers-color-scheme) */
 body.dark-theme {
   --app-bg: #101012;
-  --status-bg: #242429;
-  --toolbar-bg: #1e1e21;
+  --toolbar-bg: #18181a;
   --panel: #212125;
   --panel-alt: #151517;
   --panel-raised: #29292f;
@@ -65,8 +62,7 @@ body.dark-theme {
 
 body:not(.dark-theme) {
   --app-bg: #eef0f2;
-  --status-bg: #f6f6f7;
-  --toolbar-bg: #e6e6e6;
+  --toolbar-bg: #b8b8b8;
   --panel: #ffffff;
   --panel-alt: #f2f2f4;
   --panel-raised: #ffffff;
@@ -1109,7 +1105,7 @@ circle.sync-marker {
   gap: 10px;
   padding: 5px 16px;
   border-top: 1px solid var(--line);
-  background: var(--status-bg);
+  background: var(--toolbar-bg);
   font-size: 0.76rem;
   color: var(--muted);
 }
