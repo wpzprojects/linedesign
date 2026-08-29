@@ -794,15 +794,20 @@ p.conductor-specs {
   gap: 1px;
 }
 
+/* En vez de pelear con line-height/margen negativo (dependen de las
+   métricas de la fuente, poco controlables), se le da a la etiqueta un
+   alto fijo MENOR que el de su caja de texto natural y se ancla el
+   texto contra el borde inferior de esa caja (align-items: flex-end):
+   el "aire" de la fuente que sobra por arriba queda fuera de esa caja
+   en vez de empujar todo lo de abajo. `height` es el control directo
+   del espacio remanente — se puede afinar con ese solo número. */
 .toolbar-field-label {
+  display: flex;
+  align-items: flex-end;
+  height: 8px;
   color: var(--muted);
   font-size: 0.62rem;
-  /* line-height por sí solo casi no mueve el texto (el navegador recorta
-     el alto de línea parejo arriba y abajo del glifo); el margen negativo
-     es lo que de verdad lo acerca al borde — a la mitad que en v2.9.6
-     (que comía el borde). */
-  line-height: 0.85;
-  margin-top: -0.5px;
+  line-height: 1;
   white-space: nowrap;
 }
 
