@@ -797,7 +797,12 @@ p.conductor-specs {
 .toolbar-field-label {
   color: var(--muted);
   font-size: 0.62rem;
-  line-height: 1;
+  /* < 1 + margen negativo: recorta el "aire" propio de la fuente por
+     encima de la letra que line-height: 1 por sí solo no quita (el
+     alto de línea normal reserva espacio arriba y abajo del glifo
+     según las métricas de la fuente, no solo el tamaño del texto). */
+  line-height: 0.8;
+  margin-top: -1px;
   white-space: nowrap;
 }
 
