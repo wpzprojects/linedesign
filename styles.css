@@ -12,6 +12,13 @@
   --accent: #0d9488;
   --warning: #b45309;
   --danger: #dc2626;
+  /* Colores del lienzo (Configuración § Colores del lienzo): por defecto
+     siguen al tema (referencian --warning/--accent, que sí cambian entre
+     claro/oscuro), pero el usuario puede fijarlos a un color propio desde
+     Configuración — ahí se sobreescriben con un valor inline en <html>,
+     que gana sobre esta referencia sin importar el tema activo. */
+  --conductor-color: var(--warning);
+  --structure-color: var(--accent);
   --shadow: 0 8px 24px rgba(16, 16, 16, 0.08);
   --focus-ring: 0 0 0 3px rgba(37, 99, 235, 0.25);
   --sidebar-width: 280px;
@@ -471,6 +478,16 @@ select {
   color: var(--text);
 }
 
+input[type="color"] {
+  width: 56px;
+  height: 34px;
+  padding: 2px;
+  border-radius: 7px;
+  border: 1px solid var(--line);
+  background: var(--panel);
+  cursor: pointer;
+}
+
 input:focus, select:focus, button:focus-visible {
   outline: none;
   box-shadow: var(--focus-ring);
@@ -913,7 +930,7 @@ svg#plan-svg {
 }
 
 .conductor-line {
-  stroke: var(--warning);
+  stroke: var(--conductor-color);
   stroke-width: 2.5;
   fill: none;
   vector-effect: non-scaling-stroke;
@@ -949,7 +966,7 @@ svg#plan-svg {
 }
 
 .structure-point {
-  fill: var(--accent);
+  fill: var(--structure-color);
   stroke: var(--panel);
   stroke-width: 2;
   cursor: grab;
@@ -963,7 +980,7 @@ svg#plan-svg {
 }
 
 .structure-pole {
-  stroke: var(--accent);
+  stroke: var(--structure-color);
   stroke-width: 4;
   cursor: grab;
   vector-effect: non-scaling-stroke;

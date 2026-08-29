@@ -24,6 +24,9 @@
   const summaryList = document.getElementById('summary-list');
   const projectNameInput = document.getElementById('project-name-input');
   const themeToggle = document.getElementById('theme-toggle');
+  const conductorColorInput = document.getElementById('conductor-color-input');
+  const structureColorInput = document.getElementById('structure-color-input');
+  const resetColorsBtn = document.getElementById('reset-colors-btn');
   const inspectorPanel = document.getElementById('inspector-body');
   const inspectorAside = document.getElementById('inspector-panel');
   const inspectorToggle = document.getElementById('inspector-toggle');
@@ -194,6 +197,37 @@
     setSplitRatio(Number.isFinite(savedSplit) ? savedSplit : 50);
   } catch (error) {
     console.warn('No se pudo leer el reparto Planta/Perfil guardado:', error);
+  }
+
+  // Colores del lienzo (Configuración): por defecto siguen al tema
+  // (--conductor-color/--structure-color referencian --warning/--accent en
+  // styles.css), pero el usuario puede fijar un color propio — se guarda
+  // como override inline en <html>, que gana sobre la referencia de tema
+  // sin importar si después se cambia claro/oscuro.
+  function defaultConductorColor() {
+    return document.body.classList.contains('dark-theme') ? '#f0a63f' : '#b45309';
+  }
+
+  function defaultStructureColor() {
+    return document.body.classList.contains('dark-theme') ? '#2dd4bf' : '#0d9488';
+  }
+
+  try {
+    const savedConductorColor = localStorage.getItem('linedesign-conductor-color');
+    if (savedConductorColor) document.documentElement.style.setProperty('--conductor-color', savedConductorColor);
+    conductorColorInput.value = savedConductorColor || defaultConductorColor();
+  } catch (error) {
+    console.warn('No se pudo leer el color de conductores guardado:', error);
+    conductorColorInput.value = defaultConductorColor();
+  }
+
+  try {
+    const savedStructureColor = localStorage.getItem('linedesign-structure-color');
+    if (savedStructureColor) document.documentElement.style.setProperty('--structure-color', savedStructureColor);
+    structureColorInput.value = savedStructureColor || defaultStructureColor();
+  } catch (error) {
+    console.warn('No se pudo leer el color de postes guardado:', error);
+    structureColorInput.value = defaultStructureColor();
   }
 
   const catalogView = window.LineDesignCatalogView.createCatalogView(document.getElementById('catalog-container'), store);
@@ -649,6 +683,37 @@
 
     groundClearanceInput.addEventListener('change', (e) => store.setGroundClearance(parseFloat(e.target.value) || 0));
     rightOfWayInput.addEventListener('change', (e) => store.setRightOfWayWidth(parseFloat(e.target.value) || 0));
+
+    conductorColorInput.addEventListener('input', (e) => {
+      document.documentElement.style.setProperty('--conductor-color', e.target.value);
+      try {
+        localStorage.setItem('linedesign-conductor-color', e.target.value);
+      } catch (error) {
+        console.warn('No se pudo guardar el color de conductores:', error);
+      }
+    });
+
+    structureColorInput.addEventListener('input', (e) => {
+      document.documentElement.style.setProperty('--structure-color', e.target.value);
+      try {
+        localStorage.setItem('linedesign-structure-color', e.target.value);
+      } catch (error) {
+        console.warn('No se pudo guardar el color de postes:', error);
+      }
+    });
+
+    resetColorsBtn.addEventListener('click', () => {
+      document.documentElement.style.removeProperty('--conductor-color');
+      document.documentElement.style.removeProperty('--structure-color');
+      try {
+        localStorage.removeItem('linedesign-conductor-color');
+        localStorage.removeItem('linedesign-structure-color');
+      } catch (error) {
+        console.warn('No se pudo restablecer los colores guardados:', error);
+      }
+      conductorColorInput.value = defaultConductorColor();
+      structureColorInput.value = defaultStructureColor();
+    });
 
     planMapToggle.addEventListener('click', () => {
       const next = planMapToggle.getAttribute('aria-pressed') !== 'true';
