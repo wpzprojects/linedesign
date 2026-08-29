@@ -11,21 +11,21 @@
   function sampleAlignment() {
     // Coordenadas reales en MAGNA-SIRGAS / Origen-Nacional (EPSG:9377) —
     // Este/Norte en metros, el sistema nativo de todo el proyecto (ver
-    // DATA_MODEL.md y src/engine/geo.js). PI-1 ubicado en zona rural plana
-    // del Valle del Cauca, cerca de Cali — deliberadamente NO montañosa
-    // (prueba temporal para descartar que el perfil "en escalones" del
-    // servicio de elevación gratuito sea específico del terreno andino
-    // accidentado del norte de Ibagué, no un problema general). El resto
-    // conserva la misma forma relativa (offsets en metros) que tenía el
-    // trazado de ejemplo original.
+    // DATA_MODEL.md y src/engine/geo.js). PI-1 ubicado en zona montañosa de
+    // Boyacá (Cordillera Oriental, cerca de Duitama/Nobsa) — segunda zona
+    // de prueba del perfil de terreno real, distinta a la de Ibagué, para
+    // ver si el problema del perfil "en escalones" con los servicios
+    // gratuitos se repite en otra región andina o fue puntual de esa zona.
+    // El resto conserva la misma forma relativa (offsets en metros) que
+    // tenía el trazado de ejemplo original.
     return {
       vertices: [
-        { id: 'PI-1', x: 4608644, y: 1938538, z: 1000 },
-        { id: 'PI-2', x: 4608824, y: 1938598, z: 1000 },
-        { id: 'PI-3', x: 4609004, y: 1938578, z: 1000 },
-        { id: 'PI-4', x: 4609184, y: 1938648, z: 1000 },
-        { id: 'PI-5', x: 4609364, y: 1938628, z: 1000 },
-        { id: 'PI-6', x: 4609544, y: 1938688, z: 1000 }
+        { id: 'PI-1', x: 4994467, y: 2198889, z: 2600 },
+        { id: 'PI-2', x: 4994647, y: 2198949, z: 2615 },
+        { id: 'PI-3', x: 4994827, y: 2198929, z: 2650 },
+        { id: 'PI-4', x: 4995007, y: 2198999, z: 2625 },
+        { id: 'PI-5', x: 4995187, y: 2198979, z: 2660 },
+        { id: 'PI-6', x: 4995367, y: 2199039, z: 2635 }
       ]
     };
   }
