@@ -372,13 +372,15 @@
         return;
       }
 
-      // Muestreo cada metro sobre el alineamiento (una sola consulta en
-      // lote al servicio de elevación, ver elevationSource.js). Para
-      // trazados absurdamente largos (>10 km) se cae a un paso más grueso
-      // que deje un lote manejable, en vez de pedir decenas de miles de
-      // puntos de una sola vez.
-      const MAX_POINTS = 10000;
-      const step = totalLength / MAX_POINTS > 1 ? totalLength / MAX_POINTS : 1;
+      // Paso de muestreo: Open-Elevation sirve datos SRTM con resolución
+      // real de ~30 m — pedir puntos más seguido que eso no agrega detalle
+      // de terreno real, solo repite el valor de la misma celda del modelo
+      // muchas veces (se ve como "escalones" en vez de una curva de
+      // terreno). 25 m es un paso denso sin caer en esa redundancia; para
+      // trazados largos (>10 km) se cae a un paso más grueso que deje un
+      // lote manejable en una sola consulta.
+      const MAX_POINTS = 500;
+      const step = totalLength / MAX_POINTS > 25 ? totalLength / MAX_POINTS : 25;
       const stations = stationing.sampleStations(vertices, step);
       const points = stations.map((s) => {
         const pos = stationing.pointAtStation(vertices, s);
