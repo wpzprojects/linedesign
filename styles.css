@@ -334,6 +334,10 @@ body.dark-theme .icon-moon {
   color: var(--muted);
 }
 
+.card a {
+  color: var(--primary);
+}
+
 .form-card, .catalog-card {
   background: var(--panel-alt);
   border: 1px solid var(--line);

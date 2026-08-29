@@ -1,28 +1,29 @@
 /**
  * elevationSource.js — Consulta elevación real de terreno (Fase 2, prompt
- * maestro Apéndice A.2). Prueba dos servicios públicos sin API key, en
+ * maestro Apéndice A.2).
+ *
+ * Por defecto ("auto"), prueba dos servicios públicos SIN API key, en
  * orden, y usa el primero que responda:
  *
  *   1) OpenTopoData (dataset SRTM 30m) — mejor calidad de dato, pero su
  *      API pública no parece soportar CORS de forma consistente: `fetch()`
  *      desde el navegador puede fallar directamente (sin ni siquiera
  *      llegar a responder con un error HTTP).
- *   2) Open-Elevation — sí acepta peticiones desde el navegador, pero se
- *      observó (con datos reales exportados de un proyecto) que a veces
- *      devuelve el mismo valor de elevación para tramos enteros entre
- *      vértices (un perfil en "escalones" que no corresponde al terreno
- *      real) — datos degradados del servidor público de demo, no un bug
- *      de esta app.
+ *   2) Open-Elevation — sí acepta peticiones desde el navegador, pero en
+ *      zonas montañosas con vacíos en el dataset puede devolver el mismo
+ *      valor de elevación para tramos enteros entre vértices (un perfil
+ *      en "escalones" que no corresponde al terreno real) — limitación
+ *      del dato gratuito, no un bug de esta app.
  *
- * Ninguno de los dos es perfecto (son servicios gratuitos de terceros,
- * "pueden ser lentos o inestables bajo carga" — prompt maestro, Apéndice
- * A.2), así que se intenta el mejor primero y se cae al otro si falla,
- * en vez de apostarlo todo a uno solo. El llamador es responsable de
- * mostrar un estado de carga y manejar el error final si ambos fallan.
+ * Si esos dos no alcanzan (terreno muy accidentado), la pantalla
+ * Configuración permite elegir la Google Elevation API en su lugar
+ * (`provider: 'google'`, requiere una API key propia — ver ese apartado).
+ * El llamador (app.js) es responsable de leer esa preferencia guardada,
+ * mostrar un estado de carga y manejar el error final si todo falla.
  *
- * Reemplazable: si más adelante hace falta otro servicio (MapTiler
- * Elevation, un DEM propio, etc.), basta con agregar/quitar entradas de
- * `PROVIDERS` — todas exponen la misma forma `(points) => Promise<number[]>`.
+ * Reemplazable/ampliable: cada proveedor expone la misma forma
+ * `(points) => Promise<number[]>` — agregar uno nuevo es una función más
+ * en este archivo.
  */
 (function (global) {
   function chunk(array, size) {
@@ -106,20 +107,54 @@
     });
   }
 
-  const PROVIDERS = [
+  // ---------- Google Elevation API (requiere API key propia) ----------
+
+  const GOOGLE_ENDPOINT = 'https://maps.googleapis.com/maps/api/elevation/json';
+  const GOOGLE_MAX_LOCATIONS = 300; // margen prudente bajo el límite de URL, no un límite documentado de Google
+
+  async function fetchGoogleChunk(points, apiKey) {
+    const locations = points.map((p) => `${p.lat},${p.lon}`).join('|');
+    const url = `${GOOGLE_ENDPOINT}?locations=${encodeURIComponent(locations)}&key=${encodeURIComponent(apiKey)}`;
+    const response = await fetch(url);
+    const data = await response.json().catch(() => null);
+    if (!data || data.status !== 'OK' || !Array.isArray(data.results) || data.results.length !== points.length) {
+      const reason = data && data.error_message ? data.error_message : (data && data.status) || `HTTP ${response.status}`;
+      throw new Error(`Google Elevation API respondió con error (${reason}). Revisa que la API key sea válida y tenga la Elevation API habilitada.`);
+    }
+    return data.results.map((r) => r.elevation);
+  }
+
+  function fetchFromGoogle(apiKey) {
+    return async (points) => {
+      if (!apiKey) throw new Error('Falta configurar la API key de Google en Configuración.');
+      const chunks = chunk(points, GOOGLE_MAX_LOCATIONS);
+      const elevations = [];
+      for (let i = 0; i < chunks.length; i += 1) {
+        elevations.push(...(await fetchGoogleChunk(chunks[i], apiKey)));
+      }
+      return elevations;
+    };
+  }
+
+  const FREE_PROVIDERS = [
     { name: 'OpenTopoData', fetch: fetchFromOpenTopoData },
     { name: 'Open-Elevation', fetch: fetchFromOpenElevation }
   ];
 
   /**
-   * `points`: array de { lat, lon }. Devuelve un array paralelo de
-   * elevaciones (m), probando cada proveedor de `PROVIDERS` en orden hasta
-   * que uno funcione. Lanza un Error con mensaje legible (incluyendo lo
-   * que falló en cada proveedor) si todos fallan.
+   * `points`: array de { lat, lon }. `options.provider`: `'auto'` (los dos
+   * servicios gratuitos, en orden, ver arriba) o `'google'` (Google
+   * Elevation API, requiere `options.apiKey`). Devuelve un array paralelo
+   * de elevaciones (m). Lanza un Error con mensaje legible (incluyendo lo
+   * que falló en cada proveedor probado) si ninguno responde.
    */
-  async function fetchElevations(points) {
+  async function fetchElevations(points, options = {}) {
+    const providers = options.provider === 'google'
+      ? [{ name: 'Google Elevation API', fetch: fetchFromGoogle(options.apiKey) }]
+      : FREE_PROVIDERS;
+
     const failures = [];
-    for (const provider of PROVIDERS) {
+    for (const provider of providers) {
       try {
         return await provider.fetch(points);
       } catch (error) {
