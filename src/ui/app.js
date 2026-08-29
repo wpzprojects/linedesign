@@ -420,27 +420,43 @@
     return bestIndex;
   }
 
+  /** Índice del tramo (i, i+1) del alineamiento donde cae `station` —
+   * para saber entre qué dos vértices insertar uno nuevo cuando la
+   * sugerencia viene de una estructura que no está sobre un vértice. */
+  function findSegmentIndexForStation(vertices, station) {
+    const distances = stationing.cumulativeDistances(vertices);
+    for (let i = 0; i < distances.length - 1; i += 1) {
+      if (station >= distances[i] - 1e-6 && station <= distances[i + 1] + 1e-6) return i;
+    }
+    return Math.max(distances.length - 2, 0);
+  }
+
   /**
-   * Posición (x, y) sugerida para "+ vértice" cuando X/Y se dejan vacíos:
+   * Posición (x, y) e índice de inserción sugeridos para "+ vértice"
+   * cuando X/Y se dejan vacíos — el índice es indispensable: sin él,
+   * store.addVertex() agrega siempre al final del arreglo, y un vértice
+   * "de en medio" quedaría bien ubicado en el espacio pero conectado al
+   * final de la secuencia en vez de entre los dos vértices correctos.
    * - Vértice seleccionado: si tiene un vértice siguiente, la mitad de
-   *   ese tramo (para meter uno intermedio); si es el último, el punto
-   *   extrapolado tras él.
+   *   ese tramo (para meter uno intermedio, insertIndex justo después de
+   *   él); si es el último, el punto extrapolado tras él (al final).
    * - Estructura seleccionada: si esa estructura está sobre un vértice
    *   (dentro de VERTEX_STATION_TOLERANCE), se trata igual que si ese
-   *   vértice estuviera seleccionado (mitad del tramo siguiente, o
-   *   extrapolado si es el último); si no, se sugiere la posición exacta
-   *   de la estructura (para "promoverla" a vértice/PI ahí mismo).
+   *   vértice estuviera seleccionado; si no, se sugiere la posición
+   *   exacta de la estructura (para "promoverla" a vértice/PI ahí mismo),
+   *   insertada en el tramo donde realmente cae su station.
    * - Nada seleccionado (o una sección): el punto extrapolado tras el
-   *   último vértice.
+   *   último vértice (al final).
    */
-  function computeSuggestedVertexPosition(project) {
+  function computeSuggestedVertexInsertion(project) {
     const vertices = project.alignment.vertices;
 
     function midpointOrExtrapolate(index) {
       const vertex = vertices[index];
       const next = vertices[index + 1];
-      if (next) return { x: (vertex.x + next.x) / 2, y: (vertex.y + next.y) / 2 };
-      return extrapolateNextVertex(vertices);
+      if (next) return { x: (vertex.x + next.x) / 2, y: (vertex.y + next.y) / 2, insertIndex: index + 1 };
+      const p = extrapolateNextVertex(vertices);
+      return { x: p.x, y: p.y, insertIndex: vertices.length };
     }
 
     if (selection && selection.type === 'vertex') {
@@ -454,15 +470,17 @@
         const nearIndex = findVertexIndexNearStation(vertices, structure.station, VERTEX_STATION_TOLERANCE);
         if (nearIndex !== -1) return midpointOrExtrapolate(nearIndex);
         const pos = stationing.pointAtStation(vertices, structure.station);
-        return { x: pos.x, y: pos.y };
+        const segmentIndex = findSegmentIndexForStation(vertices, structure.station);
+        return { x: pos.x, y: pos.y, insertIndex: segmentIndex + 1 };
       }
     }
 
-    return extrapolateNextVertex(vertices);
+    const p = extrapolateNextVertex(vertices);
+    return { x: p.x, y: p.y, insertIndex: vertices.length };
   }
 
   function updateNewVertexPlaceholders(project) {
-    const pos = computeSuggestedVertexPosition(project);
+    const pos = computeSuggestedVertexInsertion(project);
     newVertexX.placeholder = pos.x.toFixed(2);
     newVertexY.placeholder = pos.y.toFixed(2);
   }
@@ -923,13 +941,16 @@
   function wireToolbar() {
     document.getElementById('add-vertex-btn').addEventListener('click', () => {
       // Vacío -> la sugerencia mostrada como placeholder (ver
-      // computeSuggestedVertexPosition), no el default propio de
+      // computeSuggestedVertexInsertion), no el default propio de
       // store.addVertex (siempre extrapola tras el último). Cada campo
       // es independiente: si solo escribiste X, Y toma la sugerencia.
-      const suggested = computeSuggestedVertexPosition(store.getProject());
+      // insertIndex viaja siempre desde la sugerencia (según la
+      // selección vigente), incluso si X/Y se escribieron a mano —
+      // decide DÓNDE en la secuencia va, no en qué coordenadas.
+      const suggested = computeSuggestedVertexInsertion(store.getProject());
       const x = newVertexX.value === '' ? suggested.x : parseFloat(newVertexX.value);
       const y = newVertexY.value === '' ? suggested.y : parseFloat(newVertexY.value);
-      const vertex = store.addVertex({ x, y });
+      const vertex = store.addVertex({ x, y }, suggested.insertIndex);
       newVertexX.value = '';
       newVertexY.value = '';
       showStatusMessage(`Vértice ${vertex.id} agregado.`);

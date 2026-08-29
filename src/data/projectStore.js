@@ -187,7 +187,14 @@
     return { ok: true };
   }
 
-  function addVertex(coords) {
+  /** `insertIndex` (opcional): posición del arreglo donde insertar el
+   * vértice — sin él (o fuera de rango), se agrega al final, como
+   * antes. Necesario para insertar un vértice intermedio (p. ej. a
+   * mitad de un tramo): sin esto, el vértice quedaba bien ubicado en el
+   * espacio pero conectado al final de la secuencia, no entre los dos
+   * vértices correctos — el alineamiento se dibujaba "disparado" hacia
+   * él en vez de pasar por ahí en orden. */
+  function addVertex(coords, insertIndex) {
     const vertices = project.alignment.vertices;
     const last = vertices[vertices.length - 1];
     const secondLast = vertices[vertices.length - 2] || last;
@@ -197,7 +204,11 @@
       y: coords && Number.isFinite(coords.y) ? coords.y : last.y + (last.y - secondLast.y || 0),
       z: last.z
     };
-    vertices.push(vertex);
+    if (Number.isInteger(insertIndex) && insertIndex >= 0 && insertIndex <= vertices.length) {
+      vertices.splice(insertIndex, 0, vertex);
+    } else {
+      vertices.push(vertex);
+    }
     persist();
     notify();
     return vertex;
