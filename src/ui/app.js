@@ -40,6 +40,7 @@
   const planHypothesisSelect = document.getElementById('plan-hypothesis-select');
   const groundClearanceInput = document.getElementById('ground-clearance-input');
   const rightOfWayInput = document.getElementById('right-of-way-input');
+  const poleSafetyFactorInput = document.getElementById('pole-safety-factor-input');
   const profileVExagSelect = document.getElementById('profile-vexag-select');
   const terrainFetchBtn = document.getElementById('terrain-fetch-btn');
   const sagLabelsToggle = document.getElementById('sag-labels-toggle');
@@ -328,6 +329,8 @@
     const { sorted, spans } = loadTree.computeSpanTensions(project, referenceHypothesis.id);
     const terrainProfile = project.alignment.terrainProfile;
     const vertices = project.alignment.vertices;
+    const poleCheck = loadTree.checkPoleCapacity(project);
+    const hypothesisById = Object.fromEntries(project.hypotheses.map((h) => [h.id, h.name]));
 
     sorted.forEach((structure, index) => {
       const type = project.structureCatalog.find((t) => t.typeId === structure.typeId);
@@ -357,6 +360,19 @@
         }, Infinity);
       }
 
+      const check = poleCheck[structure.id];
+      let poleCell;
+      if (!check || check.status === 'undefined') {
+        poleCell = el('td', {}, '—');
+      } else {
+        const pct = Math.round(check.ratio * 100);
+        const hypName = hypothesisById[check.governingHypothesisId] || check.governingHypothesisId;
+        poleCell = el('td', {
+          class: check.status === 'ok' ? 'pole-check-ok' : 'pole-check-fail',
+          title: `Momento demandado ${check.momentDemandKgfm.toFixed(0)} kgF·m / admisible ${check.capacityKgfm.toFixed(0)} kgF·m — caso gobernante: ${hypName}`
+        }, `${check.status === 'ok' ? '✓' : '✗'} ${pct}%`);
+      }
+
       const isSelected = selection && selection.type === 'structure' && selection.id === structure.id;
       structuresTableBody.appendChild(el('tr', {
         class: `is-clickable${isSelected ? ' is-active' : ''}`,
@@ -371,7 +387,8 @@
         el('td', {}, structure.resistance ? fmtNum(structure.resistance, 0) : '—'),
         el('td', {}, fmtNum(vanoAdelante, 1)),
         el('td', {}, fmtNum(flecha, 2)),
-        el('td', {}, fmtNum(minClearance, 1))
+        el('td', {}, fmtNum(minClearance, 1)),
+        poleCell
       ]));
     });
   }
@@ -552,6 +569,7 @@
     projectNameInput.value = project.name;
     groundClearanceInput.value = project.groundClearance;
     rightOfWayInput.value = project.rightOfWayWidth;
+    poleSafetyFactorInput.value = project.poleSafetyFactor;
     renderSummary(project);
     syncStructureTypeOptions(project);
     syncPlanHypothesisOptions(project);
@@ -736,6 +754,7 @@
 
     groundClearanceInput.addEventListener('change', (e) => store.setGroundClearance(parseFloat(e.target.value) || 0));
     rightOfWayInput.addEventListener('change', (e) => store.setRightOfWayWidth(parseFloat(e.target.value) || 0));
+    poleSafetyFactorInput.addEventListener('change', (e) => store.setPoleSafetyFactor(parseFloat(e.target.value) || 1));
 
     conductorColorInput.addEventListener('input', (e) => {
       document.documentElement.style.setProperty('--conductor-color', e.target.value);

@@ -76,9 +76,18 @@ Además de lo anterior, "Parámetros de entrada" (`hypothesesView.js`) tiene un 
   "rightOfWayWidth": 0,
   "sectionConductors": [{ "id": "SC-01", "fromId": "EST-01", "toId": "EST-03", "conductorId": "ACSR-336" }],
   "forceUnitsMigratedV1": true,
-  "displayUnitSystem": "kgf"
+  "displayUnitSystem": "kgf",
+  "poleSafetyFactor": 2
 }
 ```
+
+### Validación "Cumple poste" (`loadTree.js#checkPoleCapacity`)
+
+`structure.resistance` (kgF) es la resistencia ÚLTIMA de rotura del poste, ensayada por el fabricante aplicando una carga horizontal a 20 cm de la punta (convención RETIE/NTC para postes de madera/concreto). La tabla de estructuras (Resumen) muestra una columna "Cumple poste" comparando, para cada estructura con `resistance` asignada:
+
+- **Capacidad**: como un poste de sección circular no tiene eje débil/fuerte, la carga de ensayo actúa a `(structure.height − 0.20 m)` de la base (línea de terreno) — de ahí el momento último en la base: `M_última = resistance × (height − 0.20)`. Se divide entre `project.poleSafetyFactor` (configurable en Parámetros de entrada § Terreno, por defecto 2) para obtener el momento admisible.
+- **Demanda**: la resultante de las fuerzas horizontales del árbol de cargas, `√(transversal² + longitudinal²)`, aplicada a la altura promedio de enganche (`attachHeight`, la misma que usa `momentEstimate`), evaluada para TODAS las hipótesis climáticas — se toma la peor (mayor momento), no solo la de referencia.
+- **Resultado**: `ratio = M_demanda_máx / M_admisible`; "Cumple" (✓) si `ratio ≤ 1`, "No cumple" (✗) si no. Una estructura sin `resistance` asignada muestra "—" (sin validar).
 
 `stringingTensions` (Parámetros de entrada § Tensiones de tendido): equivalente al "Automatic Sagging Criteria" de PLS-CADD — determina la tensión horizontal instalada (H1) por vano, en vez de usar siempre el valor fijo `conductor.referenceHorizontalTension`. `weatherCase`/`applicableCable` guardan el *nombre* (no el id) del caso climático/conductor elegido en el desplegable — texto libre en la práctica, no una referencia validada; `applicableCable` en blanco aplica a todos los conductores. `maxTension`/`maxCatenary` son `null` cuando el campo queda en blanco (opcional); `maxCatenary` es el parámetro de catenaria `C = H/w` (m), no una distancia física.
 

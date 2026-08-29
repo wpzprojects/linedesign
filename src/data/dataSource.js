@@ -406,7 +406,12 @@
       forceUnitsMigratedV1: true,
       // Unidad en que "Parámetros de entrada" muestra/edita fuerza y peso
       // por longitud ('kgf' o 'si') — solo de interfaz, ver projectStore.js#setDisplayUnitSystem.
-      displayUnitSystem: 'kgf'
+      displayUnitSystem: 'kgf',
+      // Factor de seguridad sobre la resistencia ÚLTIMA de rotura del poste
+      // (structure.resistance, kgF a 20 cm de la punta) para obtener el
+      // momento admisible en la validación de "Cumple poste" — ver
+      // loadTree.js#checkPoleCapacity.
+      poleSafetyFactor: 2
     };
   }
 

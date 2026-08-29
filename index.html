@@ -104,6 +104,7 @@
                       <th>Vano adelante (m)</th>
                       <th>Flecha vano adelante (m)</th>
                       <th>Distancia mínima al piso (m)</th>
+                      <th>Cumple poste</th>
                     </tr>
                   </thead>
                   <tbody id="structures-table-body"></tbody>
@@ -261,6 +262,8 @@
                 <input id="ground-clearance-input" type="number" step="0.1" min="0" />
                 <label for="right-of-way-input">Ancho de servidumbre (m)</label>
                 <input id="right-of-way-input" type="number" step="0.5" min="0" />
+                <label for="pole-safety-factor-input">Factor de seguridad de postes (sobre resistencia última)</label>
+                <input id="pole-safety-factor-input" type="number" step="0.05" min="1" />
               </div>
 
               <div class="card">
@@ -390,12 +393,18 @@
               <ul>
                 <li><strong>Proyecto</strong>: nombre del proyecto, exportar/importar el proyecto completo como JSON, botón para reiniciar al proyecto de ejemplo (borra tus cambios, pide confirmación del navegador).</li>
                 <li><strong>Unidades</strong>: longitudes y coordenadas fijas — sistema internacional (métrico) y MAGNA-SIRGAS / Origen-Nacional (EPSG:9377). Fuerza y peso por longitud (tensión del conductor, RTS, tensión de tendido) sí tienen un selector, kgF/kg-km o N/N-m — solo cambia cómo se muestran y editan esos campos en pantalla; lo guardado y lo exportado siempre queda en kgF/kg-km.</li>
-                <li><strong>Terreno</strong>: distancia de seguridad al terreno y ancho de servidumbre (ver Planta y Perfil arriba para cómo se dibujan).</li>
+                <li><strong>Terreno</strong>: distancia de seguridad al terreno y ancho de servidumbre (ver Planta y Perfil arriba para cómo se dibujan), y el factor de seguridad de postes (ver "Cumple poste" más abajo).</li>
                 <li><strong>Importar alineamiento</strong>: carga un archivo KMZ o KML (p. ej. exportado de Google Earth) y reemplaza el alineamiento, las estructuras y el perfil de terreno del proyecto actual. Si hay más de un trazado en el archivo, puedes elegir cuál importar y si invertir su orden. Si el archivo no trae altitud, usa después "Ajustar al terreno real" en Perfil.</li>
                 <li><strong>Conductor</strong>: catálogo de conductores (ACSR, AAAC, ACAR, cables de guarda), hipótesis de referencia (bajo qué caso climático se considera "instalado" el conductor) y tensión horizontal de referencia.</li>
                 <li><strong>Casos climáticos</strong>: tabla de hipótesis de carga (nombre, temperatura, viento, hielo) — mínimo 1, la app pide al menos 3 para el criterio de aceptación de Fase 1 (everyday, temperatura alta, viento).</li>
                 <li><strong>Tensiones de tendido</strong>: ver sección propia más abajo.</li>
               </ul>
+            </div>
+
+            <div class="card">
+              <h2>Cumple poste (validación de resistencia)</h2>
+              <p>Columna en la Tabla de estructuras (Resumen) que valida si el poste resiste las cargas calculadas. Requiere que la estructura tenga una <strong>resistencia</strong> asignada (kgF, la resistencia última a rotura del poste, ensayada por el fabricante a 20 cm de la punta — convención RETIE/NTC); si no la tiene, la columna muestra "—" (sin validar).</p>
+              <p>Como el poste es de sección circular (sin eje débil/fuerte), lo que lo flecta es la resultante de las fuerzas horizontales del árbol de cargas (transversal + longitudinal) aplicada a la altura promedio de enganche — se evalúa bajo todas las hipótesis climáticas y se toma la peor, no solo la de referencia. Esa demanda se compara contra el momento admisible del poste: la resistencia última × (altura del poste − 0.20 m), dividida entre el "Factor de seguridad de postes" definido en Parámetros de entrada § Terreno. Se muestra ✓ y el % de uso si cumple, ✗ y el % si lo excede; el detalle (momento demandado, admisible y caso climático gobernante) aparece al pasar el cursor sobre la celda.</p>
             </div>
 
             <div class="card">
@@ -417,7 +426,7 @@
               <h2>Resumen</h2>
               <ul>
                 <li><strong>Resumen</strong>: conteo de vértices/estructuras/vanos, longitud total, conductor e hipótesis en uso.</li>
-                <li><strong>Tabla de estructuras</strong>: ID, tipo, station, altura, cota de terreno, cota de punta (elevación del enganche), resistencia, y del vano hacia la siguiente estructura — su longitud, la flecha y la distancia mínima al piso (la separación real mínima entre la curva de catenaria y el terreno a lo largo de ese vano), todo bajo la hipótesis de referencia del conductor.</li>
+                <li><strong>Tabla de estructuras</strong>: ID, tipo, station, altura, cota de terreno, cota de punta (elevación del enganche), resistencia, y del vano hacia la siguiente estructura — su longitud, la flecha y la distancia mínima al piso (la separación real mínima entre la curva de catenaria y el terreno a lo largo de ese vano), todo bajo la hipótesis de referencia del conductor. La columna "Cumple poste" valida si la estructura resiste las cargas del árbol de cargas — ver sección propia más abajo.</li>
                 <li><strong>Alineamiento</strong>: ID, station, Este, Norte y elevación de cada vértice.</li>
               </ul>
               <p>Clic en cualquier fila selecciona ese elemento y salta a Planta y Perfil.</p>

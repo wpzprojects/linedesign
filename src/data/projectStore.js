@@ -97,6 +97,7 @@
     if (project.groundClearance == null) project.groundClearance = 0;
     if (project.rightOfWayWidth == null) project.rightOfWayWidth = 0;
     if (project.displayUnitSystem == null) project.displayUnitSystem = 'kgf';
+    if (project.poleSafetyFactor == null) project.poleSafetyFactor = 2;
     migrateForceUnitsToKgf(project);
     // Un proyecto restaurado de localStorage quedó guardado con el
     // conductorCatalog vigente en el momento de guardarlo — si luego se
@@ -414,6 +415,13 @@
     notify();
   }
 
+  /** Factor de seguridad sobre la resistencia última del poste — ver loadTree.js#checkPoleCapacity. */
+  function setPoleSafetyFactor(value) {
+    project.poleSafetyFactor = Math.max(1, value || 1);
+    persist();
+    notify();
+  }
+
   // ---------- Conductor ----------
 
   function setConductor(conductorId) {
@@ -488,6 +496,7 @@
     setGroundClearance,
     setRightOfWayWidth,
     setDisplayUnitSystem,
+    setPoleSafetyFactor,
     setConductor,
     updateConductor,
     setProjectName,

@@ -28,6 +28,7 @@
 (function (global) {
   const stationing = global.LineDesignStationing;
   const catenary = global.LineDesignCatenary;
+  const units = global.LineDesignUnits;
 
   function getReferenceHypothesis(project) {
     const refId = project.conductor.referenceHypothesisId;
@@ -172,7 +173,8 @@
             transversal,
             longitudinal
           },
-          momentEstimate
+          momentEstimate,
+          attachHeight
         });
       });
     });
@@ -180,7 +182,70 @@
     return rows;
   }
 
-  const loadTree = { computeSpanTensions, computeLoadTree, getReferenceHypothesis, resolveSectionConductor };
+  // 20 cm: convención de fabricante/norma (RETIE/NTC) para la carga de
+  // ensayo de rotura de un poste — se aplica cerca de la punta, no en la
+  // punta misma.
+  const RESISTANCE_TEST_OFFSET_FROM_TIP = 0.2;
+
+  /**
+   * Validación "Cumple poste": compara, para cada estructura con
+   * `resistance` (kgF, resistencia ÚLTIMA a rotura, ensayada a 20 cm de la
+   * punta — ver catalogView.js) asignada, el momento flector en la base
+   * (línea de terreno) que exigen las cargas del árbol de cargas contra el
+   * momento admisible del poste.
+   *
+   * Demanda: un poste de sección circular no tiene eje débil/fuerte, así
+   * que lo que lo flecta es la RESULTANTE de las fuerzas horizontales
+   * (transversal + longitudinal), aplicada a la altura promedio de
+   * enganche — se evalúan todas las hipótesis climáticas y se toma la peor
+   * (mayor momento), no solo la de referencia.
+   *
+   * Capacidad: la resistencia de catálogo es la carga de ENSAYO de rotura
+   * aplicada a (altura del poste − 0.20 m) de la base, así que el momento
+   * último en la base es `resistance × (height − 0.20)`. Se divide entre
+   * `project.poleSafetyFactor` (factor de seguridad sobre la resistencia
+   * última, configurable en Parámetros de entrada § Terreno) para obtener
+   * el momento admisible.
+   *
+   * Devuelve un mapa `structureId -> resultado` con `status`:
+   * 'ok' | 'fail' | 'undefined' (sin `resistance` asignada en la estructura).
+   */
+  function checkPoleCapacity(project) {
+    const rows = computeLoadTree(project);
+    const safetyFactor = project.poleSafetyFactor || 1;
+
+    const worstByStructure = new Map();
+    rows.forEach((row) => {
+      const horizontalN = Math.hypot(row.forces.transversal, row.forces.longitudinal);
+      const momentDemandKgfm = units.newtonsToKgf(horizontalN) * row.attachHeight;
+      const prev = worstByStructure.get(row.structureId);
+      if (!prev || momentDemandKgfm > prev.momentDemandKgfm) {
+        worstByStructure.set(row.structureId, { momentDemandKgfm, hypothesisId: row.hypothesisId });
+      }
+    });
+
+    const result = {};
+    project.structures.forEach((structure) => {
+      const worst = worstByStructure.get(structure.id);
+      if (structure.resistance == null || !worst) {
+        result[structure.id] = { status: 'undefined' };
+        return;
+      }
+      const lever = Math.max(structure.height - RESISTANCE_TEST_OFFSET_FROM_TIP, 0);
+      const capacityKgfm = (structure.resistance * lever) / safetyFactor;
+      const ratio = capacityKgfm > 0 ? worst.momentDemandKgfm / capacityKgfm : Infinity;
+      result[structure.id] = {
+        status: ratio <= 1 ? 'ok' : 'fail',
+        ratio,
+        momentDemandKgfm: worst.momentDemandKgfm,
+        capacityKgfm,
+        governingHypothesisId: worst.hypothesisId
+      };
+    });
+    return result;
+  }
+
+  const loadTree = { computeSpanTensions, computeLoadTree, checkPoleCapacity, getReferenceHypothesis, resolveSectionConductor };
 
   if (typeof module !== 'undefined' && module.exports) {
     module.exports = loadTree;

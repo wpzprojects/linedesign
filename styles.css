@@ -12,6 +12,7 @@
   --accent: #0d9488;
   --warning: #b45309;
   --danger: #dc2626;
+  --success: #15803d;
   /* Colores del lienzo (Configuración § Colores del lienzo): por defecto
      siguen al tema (referencian --warning/--accent, que sí cambian entre
      claro/oscuro), pero el usuario puede fijarlos a un color propio desde
@@ -45,6 +46,7 @@
     --accent: #2dd4bf;
     --warning: #f0a63f;
     --danger: #f57373;
+    --success: #4ade80;
     --shadow: 0 12px 32px rgba(0, 0, 0, 0.5);
   }
 }
@@ -64,6 +66,7 @@ body.dark-theme {
   --accent: #2dd4bf;
   --warning: #f0a63f;
   --danger: #f57373;
+  --success: #4ade80;
   --shadow: 0 12px 32px rgba(0, 0, 0, 0.5);
 }
 
@@ -81,6 +84,7 @@ body:not(.dark-theme) {
   --accent: #0d9488;
   --warning: #b45309;
   --danger: #dc2626;
+  --success: #15803d;
   --shadow: 0 8px 24px rgba(16, 16, 16, 0.08);
 }
 
@@ -1209,6 +1213,16 @@ circle.sync-marker {
 .data-table th.num, .data-table td.num {
   text-align: right;
   font-variant-numeric: tabular-nums;
+}
+
+.data-table td.pole-check-ok {
+  color: var(--success);
+  font-weight: 600;
+}
+
+.data-table td.pole-check-fail {
+  color: var(--danger);
+  font-weight: 600;
 }
 
 .data-table input {
