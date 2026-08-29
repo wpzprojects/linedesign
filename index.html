@@ -9,6 +9,7 @@
     <link rel="icon" href="./assets/icon-192.png" />
     <link rel="apple-touch-icon" href="./assets/icon-192.png" />
     <link rel="stylesheet" href="./styles.css" />
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css" />
   </head>
   <body>
     <div id="shell" class="shell">
@@ -126,6 +127,10 @@
                   <div class="panel-head">
                     <h2>Planta</h2>
                     <div class="panel-tools">
+                      <button id="plan-map-toggle" class="icon-btn icon-btn--tiny" type="button" aria-pressed="false" title="Mostrar mapa base">
+                        <svg class="icon" viewBox="0 0 24 24"><polygon points="3,6 9,3 15,6 21,3 21,18 15,21 9,18 3,21" /><line x1="9" y1="3" x2="9" y2="18" /><line x1="15" y1="6" x2="15" y2="21" /></svg>
+                      </button>
+                      <span class="toolbar-sep"></span>
                       <button class="icon-btn icon-btn--tiny" type="button" data-view="plan" data-zoom="out" title="Alejar">
                         <svg class="icon" viewBox="0 0 24 24"><circle cx="11" cy="11" r="7" /><line x1="21" y1="21" x2="16.6" y2="16.6" /><line x1="8" y1="11" x2="14" y2="11" /></svg>
                       </button>
@@ -137,7 +142,10 @@
                       </button>
                     </div>
                   </div>
-                  <svg id="plan-svg" viewBox="0 0 700 520" role="img" aria-label="Vista en planta"></svg>
+                  <div class="plan-canvas-wrap">
+                    <div id="plan-map" class="plan-map"></div>
+                    <svg id="plan-svg" viewBox="0 0 700 520" role="img" aria-label="Vista en planta"></svg>
+                  </div>
                 </section>
 
                 <section class="panel">
@@ -203,6 +211,19 @@
                   <strong>SI métrico</strong>
                 </div>
               </div>
+              <div class="card">
+                <h2>Ubicación geográfica</h2>
+                <p class="muted">
+                  Punto real (lat/lon) que corresponde al vértice PI-1 del alineamiento, y el rumbo del eje Y
+                  local respecto al norte. Ubica el trazo sobre el mapa base de Planta (ver botón de mapa en esa pantalla).
+                </p>
+                <label for="origin-lat-input">Latitud</label>
+                <input id="origin-lat-input" type="number" step="0.0001" />
+                <label for="origin-lon-input">Longitud</label>
+                <input id="origin-lon-input" type="number" step="0.0001" />
+                <label for="origin-bearing-input">Rumbo del eje Y (° desde el norte, horario)</label>
+                <input id="origin-bearing-input" type="number" step="1" />
+              </div>
             </div>
             <div id="hypotheses-container"></div>
           </section>
@@ -223,15 +244,18 @@
       </main>
     </div>
 
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.js"></script>
     <script src="./src/ui/domUtil.js"></script>
     <script src="./src/ui/svgUtil.js"></script>
     <script src="./src/ui/viewport.js"></script>
     <script src="./src/engine/stationing.js"></script>
     <script src="./src/engine/catenary.js"></script>
     <script src="./src/engine/loadTree.js"></script>
+    <script src="./src/engine/geo.js"></script>
     <script src="./src/data/dataSource.js"></script>
     <script src="./src/data/projectStore.js"></script>
     <script src="./src/ui/theme.js"></script>
+    <script src="./src/ui/mapRenderer.js"></script>
     <script src="./src/ui/planView.js"></script>
     <script src="./src/ui/profileView.js"></script>
     <script src="./src/ui/catalogView.js"></script>

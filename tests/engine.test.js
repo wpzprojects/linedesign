@@ -19,6 +19,7 @@ global.localStorage = {
 const stationing = require('../src/engine/stationing.js');
 const catenary = require('../src/engine/catenary.js');
 const loadTree = require('../src/engine/loadTree.js');
+const geo = require('../src/engine/geo.js');
 const dataSource = require('../src/data/dataSource.js');
 require('../src/data/projectStore.js');
 const store = global.LineDesignStore;
@@ -216,6 +217,42 @@ check('vanos desbalanceados en hipótesis no-referencia producen longitudinal no
   const midHot = rows.find((r) => r.structureId === 'EST-02' && r.hypothesisId === 'H2');
   assert.ok(midRef.forces.longitudinal < 1e-6, `ref longitudinal=${midRef.forces.longitudinal}`);
   assert.ok(midHot.forces.longitudinal > 1e-6, `hot longitudinal=${midHot.forces.longitudinal}`);
+});
+
+// --- geo ---
+const origin = { lat: 3.4372, lon: -76.5225, bearingDeg: 0 };
+
+check('localToLatLon: el origen local (0,0) es el propio origen', () => {
+  const latLon = geo.localToLatLon(origin, { x: 0, y: 0 });
+  assert.ok(Math.abs(latLon.lat - origin.lat) < 1e-9);
+  assert.ok(Math.abs(latLon.lon - origin.lon) < 1e-9);
+});
+
+check('localToLatLon: con bearing 0, +Y es hacia el norte (lat crece)', () => {
+  const latLon = geo.localToLatLon(origin, { x: 0, y: 1000 });
+  assert.ok(latLon.lat > origin.lat);
+  assert.ok(Math.abs(latLon.lon - origin.lon) < 1e-9);
+});
+
+check('localToLatLon / latLonToLocal son inversas (roundtrip)', () => {
+  const point = { x: 342.5, y: -128.7 };
+  const latLon = geo.localToLatLon(origin, point);
+  const back = geo.latLonToLocal(origin, latLon);
+  assert.ok(Math.abs(back.x - point.x) < 1e-6, `x=${back.x}`);
+  assert.ok(Math.abs(back.y - point.y) < 1e-6, `y=${back.y}`);
+});
+
+check('localToLatLon respeta el rumbo: bearing 90 hace que +Y apunte al este', () => {
+  const rotated = { ...origin, bearingDeg: 90 };
+  const latLon = geo.localToLatLon(rotated, { x: 0, y: 1000 });
+  assert.ok(Math.abs(latLon.lat - origin.lat) < 1e-9, `lat=${latLon.lat}`);
+  assert.ok(latLon.lon > origin.lon);
+});
+
+check('zoomForScale / metersPerPixel son inversas', () => {
+  const zoom = geo.zoomForScale(2.5, origin.lat);
+  const metersPerPx = geo.metersPerPixel(zoom, origin.lat);
+  assert.ok(Math.abs(metersPerPx - 2.5) < 1e-9, `metersPerPx=${metersPerPx}`);
 });
 
 // --- dataSource / projectStore ---

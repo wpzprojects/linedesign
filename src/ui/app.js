@@ -7,13 +7,19 @@
 (function () {
   const store = window.LineDesignStore;
   const stationing = window.LineDesignStationing;
+  const geo = window.LineDesignGeo;
   const { el, clear } = window.LineDesignDomUtil;
   const { downloadFile } = window.LineDesignSvgUtil;
 
   const planSvg = document.getElementById('plan-svg');
+  const planMapContainer = document.getElementById('plan-map');
+  const planMapToggle = document.getElementById('plan-map-toggle');
   const profileSvg = document.getElementById('profile-svg');
   const summaryList = document.getElementById('summary-list');
   const projectNameInput = document.getElementById('project-name-input');
+  const originLatInput = document.getElementById('origin-lat-input');
+  const originLonInput = document.getElementById('origin-lon-input');
+  const originBearingInput = document.getElementById('origin-bearing-input');
   const themeToggle = document.getElementById('theme-toggle');
   const inspectorPanel = document.getElementById('inspector-body');
   const inspectorAside = document.getElementById('inspector-panel');
@@ -61,7 +67,7 @@
     statusZoom.textContent = `Planta ${Math.round(zoomLevels.plan * 100)}% · Perfil ${Math.round(zoomLevels.profile * 100)}%`;
   }
 
-  const planView = window.LineDesignPlanView.createPlanView(planSvg, {
+  const planView = window.LineDesignPlanView.createPlanView(planSvg, planMapContainer, {
     onSelect,
     onDeselect,
     onCommitVertexMove: (id, x, y) => store.moveVertex(id, x, y),
@@ -89,7 +95,12 @@
         profileView.hideSyncMarker();
         return;
       }
-      statusCoords.textContent = `X: ${dataPoint.x.toFixed(1)} m · Y: ${dataPoint.y.toFixed(1)} m`;
+      let text = `X: ${dataPoint.x.toFixed(1)} m · Y: ${dataPoint.y.toFixed(1)} m`;
+      if (planView.isMapVisible()) {
+        const latLon = geo.localToLatLon(store.getProject().alignment.origin, dataPoint);
+        text += ` · ${latLon.lat.toFixed(5)}, ${latLon.lon.toFixed(5)}`;
+      }
+      statusCoords.textContent = text;
       const station = stationing.nearestStation(store.getProject().alignment.vertices, dataPoint);
       profileView.showSyncMarker(station);
     }
@@ -123,6 +134,19 @@
     console.warn('No se pudo leer la exageración vertical guardada:', error);
   }
   profileVExagSelect.value = String(profileView.getVerticalExaggeration());
+
+  function setPlanMapVisible(visible) {
+    planView.setMapVisible(visible);
+    planMapToggle.setAttribute('aria-pressed', String(visible));
+    planMapToggle.classList.toggle('is-active', visible);
+    planMapToggle.title = visible ? 'Ocultar mapa base' : 'Mostrar mapa base';
+  }
+
+  try {
+    setPlanMapVisible(localStorage.getItem('linedesign-plan-map') === 'true');
+  } catch (error) {
+    console.warn('No se pudo leer el estado del mapa base:', error);
+  }
 
   const catalogView = window.LineDesignCatalogView.createCatalogView(document.getElementById('catalog-container'), store);
   const hypothesesView = window.LineDesignHypothesesView.createHypothesesView(document.getElementById('hypotheses-container'), store);
@@ -293,6 +317,9 @@
 
   function render(project) {
     projectNameInput.value = project.name;
+    originLatInput.value = project.alignment.origin.lat;
+    originLonInput.value = project.alignment.origin.lon;
+    originBearingInput.value = project.alignment.origin.bearingDeg;
     renderSummary(project);
     syncStructureTypeOptions(project);
     syncPlanHypothesisOptions(project);
@@ -339,6 +366,21 @@
     });
 
     projectNameInput.addEventListener('change', (e) => store.setProjectName(e.target.value.trim() || 'Proyecto sin nombre'));
+
+    originLatInput.addEventListener('change', (e) => store.setOrigin({ lat: parseFloat(e.target.value) || 0 }));
+    originLonInput.addEventListener('change', (e) => store.setOrigin({ lon: parseFloat(e.target.value) || 0 }));
+    originBearingInput.addEventListener('change', (e) => store.setOrigin({ bearingDeg: parseFloat(e.target.value) || 0 }));
+
+    planMapToggle.addEventListener('click', () => {
+      const next = planMapToggle.getAttribute('aria-pressed') !== 'true';
+      setPlanMapVisible(next);
+      try {
+        localStorage.setItem('linedesign-plan-map', String(next));
+      } catch (error) {
+        console.warn('No se pudo guardar el estado del mapa base:', error);
+      }
+      render(store.getProject());
+    });
 
     document.querySelectorAll('.nav-btn').forEach((btn) => {
       btn.addEventListener('click', () => {

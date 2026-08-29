@@ -17,7 +17,14 @@
         { id: 'PI-4', x: 540, y: 110, z: 1205 },
         { id: 'PI-5', x: 720, y: 90, z: 1240 },
         { id: 'PI-6', x: 900, y: 150, z: 1215 }
-      ]
+      ],
+      // Georreferencia del alineamiento (Fase 2): punto real (lat/lon) que
+      // corresponde al vértice local (0,0), más el rumbo (grados, sentido
+      // horario desde el norte) hacia el que apunta el eje Y local. Permite
+      // ubicar el trazo simulado sobre un mapa real sin necesidad de un KMZ
+      // importado; ver Apéndice A del prompt maestro. Punto de ejemplo: zona
+      // rural cerca de Cali (Valle del Cauca).
+      origin: { lat: 3.4372, lon: -76.5225, bearingDeg: 0 }
     };
   }
 

@@ -242,6 +242,12 @@ button, input, select, textarea {
   color: var(--primary);
 }
 
+.icon-btn.is-active {
+  background: var(--primary-soft);
+  border-color: var(--primary);
+  color: var(--primary);
+}
+
 .icon-btn--tiny {
   width: 26px;
   height: 26px;
@@ -742,7 +748,7 @@ input:focus, select:focus, button:focus-visible {
   font-size: 0.8rem;
 }
 
-svg#plan-svg, svg#profile-svg {
+svg#profile-svg {
   display: block;
   width: 100%;
   flex: 1 1 auto;
@@ -750,6 +756,61 @@ svg#plan-svg, svg#profile-svg {
   border: 1px solid var(--line);
   border-radius: 8px;
   background: var(--panel-alt);
+  touch-action: none;
+  user-select: none;
+}
+
+/* Planta: el <svg> ya no es el único contenido del panel — vive dentro de
+   .plan-canvas-wrap, superpuesto a .plan-map (el mapa base de Leaflet,
+   Fase 2), así que el borde/fondo/tamaño pasan al contenedor y el propio
+   <svg> queda transparente y ocupando exactamente el mismo rectángulo. */
+.plan-canvas-wrap {
+  position: relative;
+  flex: 1 1 auto;
+  min-height: 0;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: var(--panel-alt);
+  overflow: hidden;
+}
+
+.plan-map {
+  /* Sin z-index propio a propósito: si lo tuviera, crearía su propio
+     contexto de apilamiento y "atraparía" a sus hijos (el control de
+     capas Calles/Satélite de Leaflet) por debajo del <svg> hermano sin
+     posibilidad de escapar. Al no tenerlo, cada hijo de Leaflet compite
+     por z-index directamente con el <svg> en el contexto del padre común
+     (.plan-canvas-wrap): las teselas (z-index ~200 en Leaflet) quedan
+     debajo del <svg>, pero el control (~800-1000 en Leaflet) queda arriba
+     y sigue siendo clickeable — ver z-index de svg#plan-svg abajo. */
+  position: absolute;
+  inset: 0;
+  display: none;
+}
+
+/* Atribución de Leaflet legible sobre el tema oscuro de la app. */
+.plan-map .leaflet-control-attribution,
+.plan-map .leaflet-control-layers {
+  background: var(--panel);
+  color: var(--text);
+}
+
+.plan-map .leaflet-control-attribution a {
+  color: var(--primary);
+}
+
+svg#plan-svg {
+  position: absolute;
+  inset: 0;
+  /* Por encima de las teselas de Leaflet (z-index ~200) para que el mapa
+     quede detrás del dibujo, pero por debajo de sus controles propios
+     (Calles/Satélite, atribución — z-index ~800-1000) para que sigan
+     siendo clickeables (ver nota en .plan-map). */
+  z-index: 300;
+  width: 100%;
+  height: 100%;
+  display: block;
+  background: transparent;
   touch-action: none;
   user-select: none;
 }

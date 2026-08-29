@@ -2,6 +2,8 @@
  * planView.js — Vista en Planta: alineamiento + estructuras, con arrastre,
  * zoom (rueda) y pan (arrastrar el fondo). Reporta la posición del cursor y
  * el nivel de zoom para que app.js los muestre en la barra de estado.
+ * Opcionalmente muestra un mapa real (mapRenderer.js) detrás del SVG,
+ * sincronizado con el mismo zoom/pan — ver comentario en mapRenderer.js.
  *
  * Estrategia de arrastre de vértices/estructuras: durante el drag se
  * redibuja localmente (sin tocar el store) usando el proyector vigente
@@ -20,6 +22,7 @@
   const { svgEl, clear, toSvgPoint, buildRulerGrid } = global.LineDesignSvgUtil;
   const stationing = global.LineDesignStationing;
   const { createViewport } = global.LineDesignViewport;
+  const { createMapRenderer } = global.LineDesignMapRenderer;
 
   const PADDING = 40;
   const MIN_SIZE = 200;
@@ -28,16 +31,22 @@
     return points.map((p, i) => `${i === 0 ? 'M' : 'L'} ${p.x} ${p.y}`).join(' ');
   }
 
-  function createPlanView(svg, callbacks) {
+  function createPlanView(svg, mapContainer, callbacks) {
     const viewport = createViewport();
+    const mapRenderer = createMapRenderer(mapContainer);
     // Referencias mutables al render vigente, para que los listeners
     // registrados una sola vez (wheel, hover) siempre operen sobre el
     // proyector/zoomLayer actuales y no sobre los de un render anterior.
     const current = { project: null, selection: null, projector: null, zoomLayer: null };
 
+    function applyTransform() {
+      if (current.zoomLayer) current.zoomLayer.setAttribute('transform', viewport.transformAttr());
+      mapRenderer.applyTransform(viewport.state);
+    }
+
     const pan = viewport.attach(svg, {
       onChange: () => {
-        if (current.zoomLayer) current.zoomLayer.setAttribute('transform', viewport.transformAttr());
+        applyTransform();
         callbacks.onZoomChange(viewport.state.scale);
       },
       onBackgroundClick: () => callbacks.onDeselect()
@@ -55,14 +64,22 @@
     function zoomBy(factor) {
       const rect = svg.getBoundingClientRect();
       viewport.zoomAt({ x: rect.width / 2, y: rect.height / 2 }, factor);
-      current.zoomLayer && current.zoomLayer.setAttribute('transform', viewport.transformAttr());
+      applyTransform();
       callbacks.onZoomChange(viewport.state.scale);
     }
 
     function resetZoom() {
       viewport.reset();
-      current.zoomLayer && current.zoomLayer.setAttribute('transform', viewport.transformAttr());
+      applyTransform();
       callbacks.onZoomChange(viewport.state.scale);
+    }
+
+    function setMapVisible(visible) {
+      mapRenderer.setVisible(visible);
+    }
+
+    function isMapVisible() {
+      return mapRenderer.isVisible();
     }
 
     function showSyncMarker(station) {
@@ -96,6 +113,9 @@
       const bounds = stationing.planBounds(vertices);
       const projector = stationing.makeProjector(bounds, WIDTH, HEIGHT, PADDING);
       current.projector = projector;
+
+      mapRenderer.syncBase(project.alignment.origin, projector, WIDTH, HEIGHT);
+      mapRenderer.applyTransform(viewport.state);
 
       // Fondo NO transformado (fuera de la capa de zoom): así el pan se
       // puede iniciar arrastrando en cualquier parte visible del lienzo.
@@ -228,7 +248,7 @@
       callbacks.onZoomChange(viewport.state.scale);
     }
 
-    return { render, zoomBy, resetZoom, showSyncMarker, hideSyncMarker };
+    return { render, zoomBy, resetZoom, showSyncMarker, hideSyncMarker, setMapVisible, isMapVisible };
   }
 
   global.LineDesignPlanView = { createPlanView };
