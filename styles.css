@@ -1308,8 +1308,20 @@ svg#plan-svg {
   vector-effect: non-scaling-stroke;
 }
 
+/* Color del conductor (no var(--muted) genérico): a simple vista queda
+   claro que la flecha es del conductor, igual que .clearance-label
+   abajo usa el color del terreno. */
 .sag-label {
-  fill: var(--muted);
+  fill: var(--conductor-color);
+  font-size: 10px;
+  text-anchor: middle;
+}
+
+/* Distancia mínima real del conductor al terreno en el vano (toggle
+   aparte, ver #clearance-labels-toggle) — misma posición que .sag-label
+   (comparten .sag-marker) pero una fila más abajo (y="32" vs "16"). */
+.clearance-label {
+  fill: var(--terrain-color);
   font-size: 10px;
   text-anchor: middle;
 }

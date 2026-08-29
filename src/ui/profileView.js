@@ -25,7 +25,7 @@
 
   function createProfileView(svg, callbacks) {
     const viewport = createViewport();
-    const current = { projector: null, zoomLayer: null, height: 0, vExaggeration: 1, markers: [], showSag: true };
+    const current = { projector: null, zoomLayer: null, height: 0, vExaggeration: 1, markers: [], showSag: true, showClearance: false };
 
     // Marcadores (círculos de poste, sus etiquetas y las de "flecha"): viven
     // dentro de zoomLayer para que su posición pan/zoquee junto con el resto
@@ -219,10 +219,28 @@
 
         const midScreen = projector.toScreen(from.station + spanLength / 2, Math.min(fromTop, toTop));
         const sagMarker = svgEl('g', { class: 'sag-marker' });
-        if (!current.showSag) sagMarker.style.display = 'none';
         const sagLabel = svgEl('text', { class: 'sag-label', x: 0, y: 16 });
         sagLabel.textContent = `${curve.sag.toFixed(2)} m`;
+        if (!current.showSag) sagLabel.style.display = 'none';
         sagMarker.appendChild(sagLabel);
+
+        // Distancia mínima real del conductor al terreno dentro del vano
+        // (no la distancia de seguridad configurada — esa es la línea
+        // punteada; esto es lo que realmente hay). Mismo cálculo que la
+        // columna "Distancia mínima al piso" de la Tabla de estructuras
+        // (Resumen) — ver app.js#renderStructuresTable.
+        const minClearance = curve.points.reduce((min, p) => {
+          const station = from.station + p.x;
+          const terrainZ = terrainProfile
+            ? stationing.elevationAtStation(terrainProfile, station)
+            : stationing.pointAtStation(vertices, station).z;
+          return Math.min(min, (fromTop + p.y) - terrainZ);
+        }, Infinity);
+        const clearanceLabel = svgEl('text', { class: 'clearance-label', x: 0, y: 32 });
+        clearanceLabel.textContent = `${minClearance.toFixed(2)} m`;
+        if (!current.showClearance) clearanceLabel.style.display = 'none';
+        sagMarker.appendChild(clearanceLabel);
+
         zoomLayer.appendChild(sagMarker);
         current.markers.push({ el: sagMarker, x: midScreen.x, y: midScreen.y });
       }
@@ -303,11 +321,14 @@
 
     // Alterna solo la visibilidad de las etiquetas ya dibujadas (sin
     // re-render completo, para que responda al instante); el estado queda
-    // en current.showSag para que los vanos que se dibujen después (nuevo
-    // render, p. ej. al cambiar de hipótesis) también respeten la elección.
+    // en current.showSag/showClearance para que los vanos que se dibujen
+    // después (nuevo render, p. ej. al cambiar de hipótesis) también
+    // respeten la elección. Cada etiqueta se oculta por separado (no todo
+    // el .sag-marker) para que flecha y distancia al terreno se puedan
+    // mostrar/ocultar de forma independiente, aunque compartan posición.
     function setSagLabelsVisible(visible) {
       current.showSag = visible;
-      svg.querySelectorAll('.sag-marker').forEach((el) => {
+      svg.querySelectorAll('.sag-label').forEach((el) => {
         el.style.display = visible ? '' : 'none';
       });
     }
@@ -316,8 +337,20 @@
       return current.showSag;
     }
 
+    function setClearanceLabelsVisible(visible) {
+      current.showClearance = visible;
+      svg.querySelectorAll('.clearance-label').forEach((el) => {
+        el.style.display = visible ? '' : 'none';
+      });
+    }
+
+    function getClearanceLabelsVisible() {
+      return current.showClearance;
+    }
+
     return {
       render, zoomBy, resetZoom, showSyncMarker, hideSyncMarker,
+      setClearanceLabelsVisible, getClearanceLabelsVisible,
       setVerticalExaggeration, getVerticalExaggeration,
       setSagLabelsVisible, getSagLabelsVisible
     };

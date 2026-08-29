@@ -49,6 +49,7 @@
   const profileVExagSelect = document.getElementById('profile-vexag-select');
   const terrainFetchBtn = document.getElementById('terrain-fetch-btn');
   const sagLabelsToggle = document.getElementById('sag-labels-toggle');
+  const clearanceLabelsToggle = document.getElementById('clearance-labels-toggle');
   const kmzImportBtn = document.getElementById('kmz-import-btn');
   const kmzImportFile = document.getElementById('kmz-import-file');
   const kmzImportPicker = document.getElementById('kmz-import-picker');
@@ -216,6 +217,22 @@
     setSagLabelsVisible(localStorage.getItem('linedesign-sag-labels') !== 'false');
   } catch (error) {
     console.warn('No se pudo leer el estado de los valores de flecha:', error);
+  }
+
+  function setClearanceLabelsVisible(visible) {
+    profileView.setClearanceLabelsVisible(visible);
+    clearanceLabelsToggle.setAttribute('aria-pressed', String(visible));
+    clearanceLabelsToggle.classList.toggle('is-active', visible);
+    clearanceLabelsToggle.title = visible ? 'Ocultar distancia mínima al terreno' : 'Mostrar distancia mínima al terreno';
+  }
+
+  // Apagado por defecto (a diferencia de la flecha): es una etiqueta
+  // nueva, arranca oculta hasta que el usuario la active — así no le
+  // agrega ruido de entrada a quien ya usaba Perfil sin pedirla.
+  try {
+    setClearanceLabelsVisible(localStorage.getItem('linedesign-clearance-labels') === 'true');
+  } catch (error) {
+    console.warn('No se pudo leer el estado de la distancia mínima al terreno:', error);
   }
 
   // Reparto Planta/Perfil (arrastre del divisor entre las dos ventanas):
@@ -1009,6 +1026,16 @@
         localStorage.setItem('linedesign-sag-labels', String(next));
       } catch (error) {
         console.warn('No se pudo guardar el estado de los valores de flecha:', error);
+      }
+    });
+
+    clearanceLabelsToggle.addEventListener('click', () => {
+      const next = clearanceLabelsToggle.getAttribute('aria-pressed') !== 'true';
+      setClearanceLabelsVisible(next);
+      try {
+        localStorage.setItem('linedesign-clearance-labels', String(next));
+      } catch (error) {
+        console.warn('No se pudo guardar el estado de la distancia mínima al terreno:', error);
       }
     });
 
