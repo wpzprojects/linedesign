@@ -630,7 +630,7 @@
 
       inspectorPanel.appendChild(el('div', { class: 'prop-actions' }, [
         el('button', {
-          class: 'btn btn-small btn-primary', type: 'button',
+          class: 'btn btn-small toolbar-card-btn', type: 'button',
           onClick: () => {
             const vertices = project.alignment.vertices;
             const distances = stationing.cumulativeDistances(vertices);

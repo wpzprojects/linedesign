@@ -990,16 +990,31 @@ p.conductor-specs {
    las categorías muestran. Paleta = la del resto de la app (var(--...)),
    no los colores del mockup de referencia. */
 
+/* La tarjeta es este contenedor (rectangular, a los bordes del panel);
+   el <select> de adentro no lleva su propio borde/esquinas — solo el
+   texto, para que se vea embebido en la tarjeta en vez de ser un pill
+   flotando encima de ella. */
 .prop-toolbar {
   display: flex;
   gap: 8px;
-  margin-bottom: 4px;
+  margin: 0 -14px 8px;
+  padding: 6px 14px;
+  background: var(--panel-alt);
+  border: 1px solid var(--line);
 }
 
 .prop-object-select {
   flex: 1 1 auto;
   font-weight: 600;
-  background: var(--panel-alt);
+  background: transparent;
+  border: none;
+  border-radius: 0;
+  padding: 4px 2px;
+}
+
+.prop-object-select:focus {
+  box-shadow: none;
+  border: none;
 }
 
 .prop-section + .prop-section {
