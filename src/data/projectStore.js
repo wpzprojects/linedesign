@@ -50,9 +50,13 @@
     };
   }
 
+  function formatSequentialId(prefix, n) {
+    return `${prefix}${String(n).padStart(2, '0')}`;
+  }
+
   function nextId(kind, prefix) {
     nextIdCounters[kind] += 1;
-    return `${prefix}${String(nextIdCounters[kind]).padStart(2, '0')}`;
+    return formatSequentialId(prefix, nextIdCounters[kind]);
   }
 
   /**
@@ -209,6 +213,15 @@
     } else {
       vertices.push(vertex);
     }
+    // Renumera todos los PI- en orden del alineamiento: sin esto, uno
+    // insertado en medio se queda con el siguiente número del contador
+    // (p. ej. PI-11) aunque geométricamente quede antes de vértices ya
+    // numerados con un consecutivo menor — el número deja de reflejar
+    // el orden real. Los vértices no se referencian por id desde otro
+    // lado del modelo (estructuras/secciones usan station, no id de
+    // vértice), así que renumerar es seguro.
+    vertices.forEach((v, i) => { v.id = formatSequentialId('PI-', i + 1); });
+    nextIdCounters.vertex = vertices.length;
     persist();
     notify();
     return vertex;
