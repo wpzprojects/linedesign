@@ -1825,11 +1825,10 @@ body:not(.screen-plan-active) .status-bar {
     display: none;
   }
 
-  /* El botón de Visualización se muda acá (ver layoutPlanVisibilityField
-     en app.js) dejando su tarjeta propia vacía/oculta. El select de
-     Hipótesis se encoge para dejarle espacio en el mismo renglón — sin
-     esto, el nombre de la hipótesis podía empujar el ancho del select
-     más allá de lo que cabe junto al botón. */
+  /* Visualización e Hipótesis mostrada comparten tarjeta (ver index.html)
+     — el select se encoge para dejarle espacio al botón en el mismo
+     renglón; sin esto, el nombre de la hipótesis podía empujar el ancho
+     del select más allá de lo que cabe junto al botón. */
   #plan-hypothesis-field {
     flex: 1 1 auto;
     min-width: 0;

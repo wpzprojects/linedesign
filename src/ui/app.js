@@ -84,37 +84,6 @@
     planProfileVisibilityBtn.textContent = PLAN_PROFILE_VISIBILITY_LABEL[planProfileVisibility];
   }
 
-  // En móvil, el botón de Visualización se muda a la tarjeta de "Hipótesis
-  // mostrada" (a la izquierda del select) en vez de tener su propia
-  // tarjeta/renglón — la tarjeta de Hipótesis tiene ancho de sobra y así
-  // los tres botones de acento del toolbar (+Vértice, +Estructura,
-  // Visualización) quedan a la izquierda en cada renglón. En escritorio
-  // vuelve a su propia tarjeta, separada por el divisor. Se reubica el
-  // mismo nodo del DOM (no se duplica) para no perder sus listeners.
-  const planVisibilityField = planProfileVisibilityBtn.closest('.toolbar-field');
-  const planVisibilityCard = document.getElementById('plan-visibility-card');
-  const planVisibilitySep = document.getElementById('plan-visibility-sep');
-  const planHypothesisField = document.getElementById('plan-hypothesis-field');
-  const mobileToolbarQuery = window.matchMedia('(max-width: 720px)');
-
-  function layoutPlanVisibilityField(isMobile) {
-    if (isMobile) {
-      planHypothesisField.parentElement.insertBefore(planVisibilityField, planHypothesisField);
-      // .toolbar-card/.toolbar-sep fijan su propio "display" (flex/inline),
-      // que le gana en cascada al "display:none" que el navegador aplica
-      // por [hidden] — por eso se pisa con estilo inline en vez de con el
-      // atributo, o se quedarían visibles aunque vacías.
-      planVisibilityCard.style.display = 'none';
-      planVisibilitySep.style.display = 'none';
-    } else {
-      planVisibilityCard.appendChild(planVisibilityField);
-      planVisibilityCard.style.display = '';
-      planVisibilitySep.style.display = '';
-    }
-  }
-  layoutPlanVisibilityField(mobileToolbarQuery.matches);
-  mobileToolbarQuery.addEventListener('change', (e) => layoutPlanVisibilityField(e.matches));
-
   function roundTo4(value) {
     return Math.round(value * 10000) / 10000;
   }
