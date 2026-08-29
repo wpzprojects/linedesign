@@ -451,14 +451,19 @@
    * Desplaza el alineamiento `distance` metros perpendicular a su propio
    * trazado (positivo/negativo = un lado u otro) — usado para dibujar el
    * borde de la franja de servidumbre en Planta. En cada vértice interior
-   * el desplazamiento usa la dirección promedio de los dos segmentos que
-   * se cruzan ahí (aproximación de "miter" simple, sin corrección de
-   * longitud en el ángulo — suficiente para los quiebres graduales típicos
-   * de un alineamiento de línea de transmisión; en un ángulo muy cerrado
-   * el borde quedaría un poco más angosto que `distance` justo en el PI).
+   * el desplazamiento sigue la bisectriz de los dos segmentos que se
+   * cruzan ahí, pero con la magnitud corregida por el ángulo del quiebre
+   * (`distance / cos(ángulo/2)`, el punto real donde se cruzan las dos
+   * líneas paralelas desplazadas) — sin esa corrección, en un ángulo
+   * cerrado el desplazamiento quedaba más corto de lo debido (o cruzaba
+   * al lado contrario), "estrangulando" la franja justo en el PI. Con un
+   * tope (`MITER_LIMIT`) para no generar picos absurdos en un quiebre casi
+   * de 180° — más allá de eso se recorta al máximo permitido en vez de
+   * seguir creciendo sin límite.
    */
   function offsetPolyline(vertices, distance) {
     if (vertices.length < 2) return vertices.map((v) => ({ x: v.x, y: v.y }));
+    const MITER_LIMIT = 4;
     const dirs = [];
     for (let i = 0; i < vertices.length - 1; i += 1) {
       const dx = vertices[i + 1].x - vertices[i].x;
@@ -466,22 +471,30 @@
       const len = Math.hypot(dx, dy) || 1;
       dirs.push({ x: dx / len, y: dy / len });
     }
+    const normalOf = (d) => ({ x: -d.y, y: d.x });
     return vertices.map((v, i) => {
-      let dir;
       if (i === 0) {
-        dir = dirs[0];
-      } else if (i === vertices.length - 1) {
-        dir = dirs[dirs.length - 1];
-      } else {
-        const a = dirs[i - 1];
-        const b = dirs[i];
-        const mx = a.x + b.x;
-        const my = a.y + b.y;
-        const mlen = Math.hypot(mx, my);
-        dir = mlen > 1e-9 ? { x: mx / mlen, y: my / mlen } : { x: -a.y, y: a.x };
+        const n = normalOf(dirs[0]);
+        return { x: v.x + n.x * distance, y: v.y + n.y * distance };
       }
-      // Perpendicular (rotación de 90°) de la dirección del trazado.
-      return { x: v.x + -dir.y * distance, y: v.y + dir.x * distance };
+      if (i === vertices.length - 1) {
+        const n = normalOf(dirs[dirs.length - 1]);
+        return { x: v.x + n.x * distance, y: v.y + n.y * distance };
+      }
+      const na = normalOf(dirs[i - 1]);
+      const nb = normalOf(dirs[i]);
+      const mx = na.x + nb.x;
+      const my = na.y + nb.y;
+      const mlen = Math.hypot(mx, my);
+      if (mlen <= 1e-9) {
+        // Quiebre de ~180° (el trazado se dobla sobre sí mismo): no hay
+        // bisectriz real — usa la normal del segmento entrante tal cual.
+        return { x: v.x + na.x * distance, y: v.y + na.y * distance };
+      }
+      const bisector = { x: mx / mlen, y: my / mlen };
+      const cosHalf = bisector.x * na.x + bisector.y * na.y;
+      const scale = cosHalf > 1e-6 ? Math.min(1 / cosHalf, MITER_LIMIT) : MITER_LIMIT;
+      return { x: v.x + bisector.x * distance * scale, y: v.y + bisector.y * distance * scale };
     });
   }
 
