@@ -13,21 +13,20 @@
     // trazado inventado — coordenadas en MAGNA-SIRGAS / Origen-Nacional
     // (EPSG:9377), Este/Norte en metros (ver DATA_MODEL.md y
     // src/engine/geo.js). Cae en una zona de cañón entre Cundinamarca y
-    // Tolima (lat ≈ 4.49° N, lon ≈ -74.98° O), altitudes entre ~561 y 601
-    // msnm, 8 vértices. Incluye el perfil de terreno real ya consultado
+    // Tolima (lat ≈ 4.49° N, lon ≈ -74.98° O), altitudes entre ~562 y 601
+    // msnm, 7 vértices. Incluye el perfil de terreno real ya consultado
     // (ver terrainProfile abajo) — no hace falta presionar "Ajustar al
     // terreno real" para verlo, aunque se puede volver a consultar si se
     // editan los vértices.
     return {
       vertices: [
         { id: 'PI-01', x: 4779670.08, y: 2054088.5, z: 600.94 },
-        { id: 'PI-02', x: 4780131.29, y: 2054546.35, z: 575 },
-        { id: 'PI-03', x: 4780483.48, y: 2054639.29, z: 569.26 },
-        { id: 'PI-04', x: 4780388.7, y: 2055012.69, z: 561.95 },
-        { id: 'PI-05', x: 4780698.31, y: 2055200.74, z: 563.87 },
-        { id: 'PI-06', x: 4780854.48, y: 2055142.56, z: 570 },
-        { id: 'PI-07', x: 4781012.76, y: 2055075.29, z: 570 },
-        { id: 'PI-08', x: 4781170.51, y: 2055000.47, z: 570 }
+        { id: 'PI-02', x: 4779906.92, y: 2054278.75, z: 587.97 },
+        { id: 'PI-03', x: 4779905.21, y: 2054413.17, z: 580.06 },
+        { id: 'PI-04', x: 4779857.07, y: 2054573.82, z: 578 },
+        { id: 'PI-05', x: 4780163.13, y: 2054736.88, z: 583 },
+        { id: 'PI-06', x: 4780217.36, y: 2054836.42, z: 581.97 },
+        { id: 'PI-07', x: 4780661.37, y: 2054964.61, z: 562 }
       ],
       terrainProfile: [
         { station: 0, elevation: 600.94 },
@@ -37,77 +36,68 @@
         { station: 100, elevation: 594.19 },
         { station: 125, elevation: 590.15 },
         { station: 150, elevation: 587.49 },
-        { station: 175, elevation: 586.81 },
+        { station: 175, elevation: 586.82 },
         { station: 200, elevation: 587.23 },
-        { station: 225, elevation: 587.7 },
+        { station: 225, elevation: 587.71 },
         { station: 250, elevation: 587.93 },
         { station: 275, elevation: 587.99 },
-        { station: 300, elevation: 588 },
-        { station: 325, elevation: 587.98 },
-        { station: 350, elevation: 587.87 },
-        { station: 375, elevation: 587.43 },
-        { station: 400, elevation: 586.26 },
-        { station: 425, elevation: 584.08 },
-        { station: 450, elevation: 581.24 },
-        { station: 475, elevation: 578.58 },
-        { station: 500, elevation: 576.69 },
-        { station: 525, elevation: 575.64 },
-        { station: 550, elevation: 575.19 },
-        { station: 575, elevation: 575.04 },
-        { station: 600, elevation: 575.01 },
-        { station: 625, elevation: 575 },
-        { station: 649.88, elevation: 575 },
-        { station: 650, elevation: 575 },
-        { station: 675, elevation: 574.99 },
-        { station: 700, elevation: 574.91 },
-        { station: 725, elevation: 574.57 },
-        { station: 750, elevation: 573.65 },
-        { station: 775, elevation: 572 },
-        { station: 800, elevation: 570 },
-        { station: 825, elevation: 568.37 },
-        { station: 850, elevation: 567.5 },
-        { station: 875, elevation: 567.33 },
-        { station: 900, elevation: 567.7 },
-        { station: 925, elevation: 568.5 },
-        { station: 950, elevation: 569.39 },
-        { station: 975, elevation: 569.82 },
-        { station: 1000, elevation: 569.6 },
-        { station: 1014.13, elevation: 569.26 },
-        { station: 1025, elevation: 568.94 },
-        { station: 1050, elevation: 568.15 },
-        { station: 1075, elevation: 567.5 },
-        { station: 1100, elevation: 567.15 },
-        { station: 1125, elevation: 567.02 },
-        { station: 1150, elevation: 566.94 },
-        { station: 1175, elevation: 566.72 },
-        { station: 1200, elevation: 566.15 },
-        { station: 1225, elevation: 565.12 },
-        { station: 1250, elevation: 563.88 },
-        { station: 1275, elevation: 562.85 },
-        { station: 1300, elevation: 562.28 },
-        { station: 1325, elevation: 562.06 },
-        { station: 1350, elevation: 562.01 },
-        { station: 1375, elevation: 562 },
-        { station: 1400, elevation: 561.99 },
-        { station: 1425, elevation: 561.96 },
-        { station: 1427.97, elevation: 561.95 },
-        { station: 1450, elevation: 561.86 },
-        { station: 1475, elevation: 561.67 },
-        { station: 1500, elevation: 561.4 },
-        { station: 1525, elevation: 561.18 },
-        { station: 1550, elevation: 561.08 },
-        { station: 1575, elevation: 561.13 },
-        { station: 1600, elevation: 561.46 },
-        { station: 1625, elevation: 562.28 },
-        { station: 1650, elevation: 563.7 },
-        { station: 1652.36, elevation: 563.87 },
-        { station: 1675, elevation: 565.64 },
-        { station: 1700, elevation: 567.65 },
-        { station: 1725, elevation: 569.11 },
-        { station: 1750, elevation: 569.77 },
-        { station: 1775, elevation: 569.96 },
-        { station: 1800, elevation: 569.99 },
-        { station: 1819.33, elevation: 570 }
+        { station: 300, elevation: 587.98 },
+        { station: 303.79, elevation: 587.97 },
+        { station: 325, elevation: 587.86 },
+        { station: 350, elevation: 587.32 },
+        { station: 375, elevation: 585.85 },
+        { station: 400, elevation: 583.45 },
+        { station: 425, elevation: 581.05 },
+        { station: 438.22, elevation: 580.06 },
+        { station: 450, elevation: 579.38 },
+        { station: 475, elevation: 578.48 },
+        { station: 500, elevation: 578.12 },
+        { station: 525, elevation: 578.02 },
+        { station: 550, elevation: 578 },
+        { station: 575, elevation: 578 },
+        { station: 600, elevation: 578 },
+        { station: 605.93, elevation: 578 },
+        { station: 625, elevation: 578.01 },
+        { station: 650, elevation: 578.05 },
+        { station: 675, elevation: 578.17 },
+        { station: 700, elevation: 578.42 },
+        { station: 725, elevation: 578.85 },
+        { station: 750, elevation: 579.51 },
+        { station: 775, elevation: 580.45 },
+        { station: 800, elevation: 581.49 },
+        { station: 825, elevation: 582.32 },
+        { station: 850, elevation: 582.78 },
+        { station: 875, elevation: 582.95 },
+        { station: 900, elevation: 582.99 },
+        { station: 925, elevation: 583 },
+        { station: 950, elevation: 583 },
+        { station: 952.72, elevation: 583 },
+        { station: 975, elevation: 583 },
+        { station: 1000, elevation: 582.98 },
+        { station: 1025, elevation: 582.88 },
+        { station: 1050, elevation: 582.5 },
+        { station: 1066.07, elevation: 581.97 },
+        { station: 1075, elevation: 581.54 },
+        { station: 1100, elevation: 579.74 },
+        { station: 1125, elevation: 577.47 },
+        { station: 1150, elevation: 575.74 },
+        { station: 1175, elevation: 575.04 },
+        { station: 1200, elevation: 574.93 },
+        { station: 1225, elevation: 574.92 },
+        { station: 1250, elevation: 574.66 },
+        { station: 1275, elevation: 573.71 },
+        { station: 1300, elevation: 571.61 },
+        { station: 1325, elevation: 568.7 },
+        { station: 1347.59, elevation: 566.15 },
+        { station: 1350, elevation: 565.91 },
+        { station: 1375, elevation: 563.85 },
+        { station: 1400, elevation: 562.66 },
+        { station: 1425, elevation: 562.16 },
+        { station: 1450, elevation: 562.03 },
+        { station: 1475, elevation: 562 },
+        { station: 1500, elevation: 562 },
+        { station: 1525, elevation: 562 },
+        { station: 1538.41, elevation: 562 }
       ]
     };
   }
@@ -124,9 +114,9 @@
         // siendo válido sin importar cuál heightOptions se elija para una
         // estructura en particular. Ver loadTree.js#averageAttachmentHeight.
         attachmentPoints: [
-          { name: 'Fase A', offsetX: -2.2, offsetZ: 4.5 },
-          { name: 'Fase B', offsetX: 0, offsetZ: 2 },
-          { name: 'Fase C', offsetX: 2.2, offsetZ: 4.5 }
+          { name: 'Fase A', offsetX: -2.2, offsetZ: 0 },
+          { name: 'Fase B', offsetX: 0, offsetZ: 0 },
+          { name: 'Fase C', offsetX: 2.2, offsetZ: 0 }
         ],
         resistanceOptions: [750, 1050]
       },
@@ -136,9 +126,9 @@
         type: 'Ángulo',
         heightOptions: [12, 14, 16, 20, 24, 30],
         attachmentPoints: [
-          { name: 'Fase A', offsetX: -2.6, offsetZ: 5 },
-          { name: 'Fase B', offsetX: 0, offsetZ: 2.5 },
-          { name: 'Fase C', offsetX: 2.6, offsetZ: 5 }
+          { name: 'Fase A', offsetX: -2.6, offsetZ: 0 },
+          { name: 'Fase B', offsetX: 0, offsetZ: 0 },
+          { name: 'Fase C', offsetX: 2.6, offsetZ: 0 }
         ],
         resistanceOptions: [750, 1050, 1350],
         // Resistencia última de cable de contraviento (kgF) — cordón de
@@ -151,9 +141,9 @@
         type: 'Retención',
         heightOptions: [12, 14, 16, 20, 24, 30],
         attachmentPoints: [
-          { name: 'Fase A', offsetX: -1.4, offsetZ: 3 },
-          { name: 'Fase B', offsetX: 0, offsetZ: 3 },
-          { name: 'Fase C', offsetX: 1.4, offsetZ: 3 }
+          { name: 'Fase A', offsetX: -1.4, offsetZ: 0 },
+          { name: 'Fase B', offsetX: 0, offsetZ: 0 },
+          { name: 'Fase C', offsetX: 1.4, offsetZ: 0 }
         ],
         resistanceOptions: [750, 1050, 1350],
         guyResistanceOptions: [2722, 4082, 5987]
@@ -163,22 +153,10 @@
 
   function sampleStructures() {
     return [
-      {
-        id: 'EST-01', typeId: 'TIPO-C', station: 0.34, height: 20,
-        resistance: 1350,
-        // Demo de "Cumple contraviento": retención en el extremo del
-        // alineamiento (un solo vano) — un único contraviento opuesto a ese
-        // vano, anclado a 15 m de altura y 15 m de distancia horizontal
-        // (~45°).
-        hasGuy: true, guyResistance: 5987, guyAnchorHeight: 15, guyAnchorDistance: 15
-      },
-      { id: 'EST-02', typeId: 'TIPO-A', station: 239.19, height: 16 },
-      { id: 'EST-07', typeId: 'TIPO-A', station: 385.82, height: 12 },
-      { id: 'EST-08', typeId: 'TIPO-A', station: 500.87, height: 12 },
-      { id: 'EST-03', typeId: 'TIPO-C', station: 649.88, height: 20 },
-      { id: 'EST-05', typeId: 'TIPO-C', station: 1014.13, height: 16 },
-      { id: 'EST-04', typeId: 'TIPO-A', station: 1127.5, height: 12 },
-      { id: 'EST-06', typeId: 'TIPO-C', station: 1399.36, height: 12 }
+      { id: 'EST-01', typeId: 'TIPO-C', station: 0, height: 12, resistance: 750 },
+      { id: 'EST-02', typeId: 'TIPO-A', station: 115.59, height: 12, resistance: 750 },
+      { id: 'EST-03', typeId: 'TIPO-C', station: 303.79, height: 12, resistance: 750 },
+      { id: 'EST-04', typeId: 'TIPO-B', station: 438.22, height: 12, resistance: 750 }
     ];
   }
 
@@ -368,17 +346,18 @@
 
   function sampleHypotheses() {
     return [
-      { id: 'H1', name: 'Everyday (EDS)', temperature: 15, windSpeed: 0, iceThickness: 0 },
+      { id: 'H1', name: 'Everyday (EDS)', temperature: 25, windSpeed: 0, iceThickness: 0 },
       { id: 'H2', name: 'Máxima flecha (temperatura alta)', temperature: 75, windSpeed: 0, iceThickness: 0 },
-      { id: 'H3', name: 'Viento máximo', temperature: 20, windSpeed: 30, iceThickness: 0 },
+      { id: 'H3', name: 'Viento máximo', temperature: 20, windSpeed: 27.78, iceThickness: 0 },
       { id: 'H4', name: 'Manguito de hielo', temperature: -5, windSpeed: 10, iceThickness: 12 }
     ];
   }
 
   function sampleStringingTensions() {
     return [
-      { id: 'ST-01', weatherCase: 'Everyday (EDS)', cableCondition: '', percentUltimate: 30, maxTension: null, maxCatenary: null, applicableCable: '' },
-      { id: 'ST-02', weatherCase: 'Viento máximo', cableCondition: '', percentUltimate: 50, maxTension: null, maxCatenary: null, applicableCable: '' }
+      { id: 'ST-01', weatherCase: 'Everyday (EDS)', cableCondition: '', percentUltimate: 20, maxTension: null, maxCatenary: null, applicableCable: '' },
+      { id: 'ST-02', weatherCase: 'Máxima flecha (temperatura alta)', cableCondition: '', percentUltimate: 30, maxTension: null, maxCatenary: null, applicableCable: '' },
+      { id: 'ST-03', weatherCase: 'Viento máximo', cableCondition: '', percentUltimate: 50, maxTension: null, maxCatenary: null, applicableCable: '' }
     ];
   }
 
@@ -417,7 +396,7 @@
       stringingTensions: sampleStringingTensions(),
       sectionConductors: [],
       groundClearance: 5.6,
-      rightOfWayWidth: 30,
+      rightOfWayWidth: 7,
       // Ya nace en kgF/kg-km (ver sampleConductorCatalog arriba) — evita que
       // projectStore.js#migrateForceUnitsToKgf lo vuelva a convertir como si
       // fuera un proyecto viejo guardado en N/N-m.
@@ -434,7 +413,7 @@
       // (structure.resistance, kgF a 20 cm de la punta) para obtener el
       // momento admisible en la validación de "Cumple poste" — ver
       // loadTree.js#checkPoleCapacity.
-      poleSafetyFactor: 2,
+      poleSafetyFactor: 2.5,
       // Ídem para el cable de contraviento (structure.guyResistance) en la
       // validación "Cumple contraviento" — factor propio, independiente del
       // del poste.
