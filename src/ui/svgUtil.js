@@ -42,8 +42,19 @@
    * espaciado. Vive en el mismo espacio de datos que el contenido dibujado
    * (dentro de la capa de zoom), así que la grilla se mueve/escala junto
    * con el dibujo — comportamiento estándar en herramientas CAD.
+   *
+   * niceStep elige el paso solo en función del rango de datos (~6
+   * divisiones), sin saber cuántos píxeles hay realmente disponibles —
+   * a exageración vertical baja (1×/2× en Perfil) el rango de elevación
+   * ocupa pocos píxeles y esas mismas ~6 marcas terminan encimadas. Para
+   * evitarlo, cada eje se filtra en pantalla: si una marca cae a menos de
+   * `MIN_LABEL_GAP` px de la última dibujada, se salta (línea + etiqueta
+   * juntas, no solo el texto — una línea sin su número no aporta), en vez
+   * de reducir el tamaño de letra o el paso de datos.
    */
   function buildRulerGrid({ svgEl: makeEl, niceStep, projector, bounds, padding }) {
+    const MIN_LABEL_GAP_X = 34;
+    const MIN_LABEL_GAP_Y = 16;
     const group = makeEl('g', { class: 'ruler-grid' });
     const spanX = bounds.maxX - bounds.minX;
     const spanY = bounds.maxY - bounds.minY;
@@ -52,8 +63,11 @@
 
     if (stepX > 0) {
       const startX = Math.ceil(bounds.minX / stepX) * stepX;
+      let lastScreenX = null;
       for (let x = startX; x <= bounds.maxX + 1e-9; x += stepX) {
         const p1 = projector.toScreen(x, bounds.minY);
+        if (lastScreenX !== null && Math.abs(p1.x - lastScreenX) < MIN_LABEL_GAP_X) continue;
+        lastScreenX = p1.x;
         const p2 = projector.toScreen(x, bounds.maxY);
         group.appendChild(makeEl('line', { class: 'ruler-line', x1: p1.x, y1: p1.y, x2: p2.x, y2: p2.y }));
         const label = makeEl('text', { class: 'ruler-label', x: p1.x + 3, y: p1.y + 14 });
@@ -64,8 +78,11 @@
 
     if (stepY > 0) {
       const startY = Math.ceil(bounds.minY / stepY) * stepY;
+      let lastScreenY = null;
       for (let y = startY; y <= bounds.maxY + 1e-9; y += stepY) {
         const p1 = projector.toScreen(bounds.minX, y);
+        if (lastScreenY !== null && Math.abs(p1.y - lastScreenY) < MIN_LABEL_GAP_Y) continue;
+        lastScreenY = p1.y;
         const p2 = projector.toScreen(bounds.maxX, y);
         group.appendChild(makeEl('line', { class: 'ruler-line', x1: p1.x, y1: p1.y, x2: p2.x, y2: p2.y }));
         const label = makeEl('text', { class: 'ruler-label', x: padding - 6, y: p1.y + 3, 'text-anchor': 'end' });
