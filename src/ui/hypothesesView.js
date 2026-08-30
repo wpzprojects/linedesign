@@ -193,7 +193,7 @@
         el('h2', {}, 'Conductor'),
         el('label', {}, 'Catálogo'),
         conductorSelect,
-        el('div', { class: 'row-actions' }, [
+        el('div', { class: 'row-actions row-actions--wrap' }, [
           el('button', {
             class: 'btn btn-small btn-danger btn-fixed-height', type: 'button',
             title: 'Elimina del catálogo el conductor seleccionado arriba',

@@ -803,11 +803,14 @@ input:focus, select:focus, button:focus-visible {
   margin-top: 12px;
 }
 
-/* Solo la usan los 3 botones de la tarjeta Proyecto (Exportar/Importar
-   JSON, Reiniciar ejemplo): en vez de envolver a una segunda FILA
-   cuando la tarjeta se angosta, cada botón se encoge (flex) y su propio
-   texto envuelve a dos renglones — mismo tamaño de letra que el resto
-   de .btn-small, solo cambia el ancho/wrap del texto. */
+/* La usan los 3 botones de la tarjeta Proyecto (Exportar/Importar JSON,
+   Reiniciar ejemplo) y los 2 de Conductor (Eliminar/Agregar nuevo): en
+   vez de envolver a una segunda FILA cuando la tarjeta se angosta, cada
+   botón se encoge (flex) y su propio texto envuelve a dos renglones —
+   mismo tamaño de letra que el resto de .btn-small, solo cambia el
+   ancho/wrap del texto. Efecto secundario buscado en Conductor: como
+   ambos botones quedan flex:1, ocupan el ancho completo repartido en
+   partes iguales en vez de solo lo que su texto necesita. */
 .row-actions--wrap {
   flex-wrap: nowrap;
   align-items: stretch;
@@ -1024,6 +1027,14 @@ p.conductor-specs {
   align-items: center;
   justify-content: center;
   box-sizing: border-box;
+}
+
+/* En la tarjeta Proyecto (Parámetros de entrada), el botón de importar
+   KMZ/KML va debajo del campo "Nombre" — se le da el mismo ancho que ese
+   input (100% de la tarjeta) para que la tarjeta se vea uniforme, en vez
+   de encogerse a lo que mide su propio texto. */
+#kmz-import-btn {
+  width: 100%;
 }
 
 .toolbar-card-btn:hover {
