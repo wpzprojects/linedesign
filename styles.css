@@ -1707,7 +1707,7 @@ svg#plan-svg {
   fill: var(--structure-color-plan);
   stroke: var(--panel);
   stroke-width: 2;
-  r: var(--structure-radius-plan, 7);
+  r: var(--structure-radius-plan, 4);
   cursor: grab;
   vector-effect: non-scaling-stroke;
 }

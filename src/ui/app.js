@@ -430,12 +430,11 @@
   // valor por defecto es una sola constante, no una función condicional.
   const DEFAULT_CONDUCTOR_WIDTH = 1.5;
   const DEFAULT_STRUCTURE_WIDTH = 2;
-  // El poste en Planta es un círculo (no una línea): su "grosor" ya
-  // controlaba el radio hardcodeado del círculo (r=7 en planView.js), no
-  // el grosor 2 de arriba (ese solo afectaba el trazo del poste en
-  // Perfil) — el valor por defecto correcto acá es 7, para no encoger los
-  // círculos al separar el control.
-  const DEFAULT_STRUCTURE_RADIUS_PLAN = 7;
+  // El poste en Planta es un círculo (no una línea): su "grosor" es el
+  // radio del círculo — 4px por defecto (pedido explícitamente, más chico
+  // que el radio de 7 que tenía hardcodeado el círculo antes de separar
+  // este control de "Postes (Perfil)").
+  const DEFAULT_STRUCTURE_RADIUS_PLAN = 4;
   const DEFAULT_ALIGNMENT_WIDTH = 4;
   // Igual que arriba: el vértice ya tenía su propio grosor de borde
   // hardcodeado (stroke-width: 3 en .vertex-point), distinto del grosor 4
