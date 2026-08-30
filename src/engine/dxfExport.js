@@ -6,10 +6,11 @@
  * AutoCAD sí validan estrictamente — de ahí el error "Null object Id" al
  * probar con un HEADER declarando AC1015 sin las tablas que ese formato
  * espera). El color va por índice ACI (código 62, paleta estándar de 255
- * colores) en vez de color verdadero (420, que requiere R2000+). Sin
- * TABLES tampoco hay linetypes propios (DASHED, etc.) — la servidumbre se
- * dibuja "punteada a mano": tramos LINE cortos con huecos entre ellos, en
- * vez de un linetype real, para no depender de ninguna sección extra.
+ * colores) en vez de color verdadero (420, que requiere R2000+). Todas las
+ * polilíneas (incl. servidumbre y distancia de seguridad) se dibujan como
+ * tramos LINE continuos y conectados — a propósito, no punteados: así se
+ * pueden seleccionar y unir ("Join") como una sola entidad en el programa
+ * de edición, cosa que una serie de tramos con huecos no permite.
  *
  * Coordenadas reales (1 unidad de dibujo = 1 metro) — pensado para
  * overlay/medición en CAD, no para verse "bonito". Cada elemento va en su
@@ -100,38 +101,6 @@
     return lines;
   }
 
-  /** Misma polilínea, pero "punteada a mano" (tramos LINE cortos con huecos
-   * — ver comentario del módulo, no hay linetype propio sin TABLES). */
-  function dashedPolylineAsLines(points, layer, color, dashLen = 2, gapLen = 1.2) {
-    const lines = [];
-    let remaining = dashLen;
-    let drawing = true;
-    for (let i = 0; i < points.length - 1; i += 1) {
-      const x1 = points[i].x;
-      const y1 = points[i].y;
-      const x2 = points[i + 1].x;
-      const y2 = points[i + 1].y;
-      const segLen = Math.hypot(x2 - x1, y2 - y1);
-      if (segLen < 1e-9) continue;
-      const dx = (x2 - x1) / segLen;
-      const dy = (y2 - y1) / segLen;
-      let pos = 0;
-      while (pos < segLen) {
-        const step = Math.min(remaining, segLen - pos);
-        if (drawing) {
-          lines.push(...dxfLine(x1 + dx * pos, y1 + dy * pos, x1 + dx * (pos + step), y1 + dy * (pos + step), layer, color));
-        }
-        pos += step;
-        remaining -= step;
-        if (remaining <= 1e-9) {
-          drawing = !drawing;
-          remaining = drawing ? dashLen : gapLen;
-        }
-      }
-    }
-    return lines;
-  }
-
   function buildDxfDocument(entityGroups) {
     return ['0', 'SECTION', '2', 'ENTITIES', ...entityGroups.flat(), '0', 'ENDSEC', '0', 'EOF'].join('\n');
   }
@@ -196,7 +165,7 @@
     if (rightOfWayWidth > 0 && vertices.length >= 2) {
       const half = rightOfWayWidth / 2;
       [half, -half].forEach((offset) => {
-        entities.push(dashedPolylineAsLines(stationing.offsetPolyline(vertices, offset), 'SERVIDUMBRE', colors.servidumbre));
+        entities.push(polylineAsLines(stationing.offsetPolyline(vertices, offset), 'SERVIDUMBRE', colors.servidumbre));
       });
     }
 
@@ -286,7 +255,7 @@
     const groundClearance = project.groundClearance || 0;
     if (groundClearance > 0) {
       const clearancePoints = terrainPointsRaw.map((p) => ({ x: p.x, y: scaleY(p.y + groundClearance) }));
-      entities.push(dashedPolylineAsLines(clearancePoints, 'DISTANCIA_SEGURIDAD', colors.clearance));
+      entities.push(polylineAsLines(clearancePoints, 'DISTANCIA_SEGURIDAD', colors.clearance));
     }
 
     if (showVertexLines) {
