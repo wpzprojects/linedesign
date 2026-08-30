@@ -323,8 +323,12 @@
       const conductor = loadTree.resolveSectionConductor(project, section.fromId, section.toId);
       const referenceHypothesis = project.hypotheses.find((h) => h.id === conductor.referenceHypothesisId) || project.hypotheses[0];
       const tension = catenary.computeSpanTension(conductor, referenceHypothesis, hypothesis, section.rulingSpan, project.stringingTensions);
-      const fromTop = from.z + from.height;
-      const toTop = to.z + to.height;
+      // Mismo criterio que profileView.js: el conductor cuelga del punto de
+      // fijación real (descuenta attachmentPoints[].offsetZ desde la punta
+      // del poste), no de la punta misma — el poste en sí sigue
+      // dibujándose hasta su punta real más arriba, eso no cambia.
+      const fromTop = from.z + loadTree.averageAttachmentHeight(project, from);
+      const toTop = to.z + loadTree.averageAttachmentHeight(project, to);
       structureTopMax = Math.max(structureTopMax, fromTop, toTop);
       const curve = catenary.catenaryCurve({
         span: spanLength, heightDiff: toTop - fromTop, H: tension.horizontalTension, unitWeight: tension.verticalUnitWeight

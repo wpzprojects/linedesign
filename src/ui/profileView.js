@@ -199,8 +199,15 @@
         const conductor = loadTree.resolveSectionConductor(project, section.fromId, section.toId);
         const referenceHypothesis = project.hypotheses.find((h) => h.id === conductor.referenceHypothesisId) || project.hypotheses[0];
         const tension = catenary.computeSpanTension(conductor, referenceHypothesis, hypothesis, section.rulingSpan, project.stringingTensions);
-        const fromTop = from.z + from.height;
-        const toTop = to.z + to.height;
+        // El conductor cuelga del punto de fijación real (loadTree.js#
+        // averageAttachmentHeight, que descuenta attachmentPoints[].offsetZ
+        // desde la punta del poste), no de la punta misma — antes usaba
+        // "from.height"/"to.height" directo, así que cambiar el offsetZ de
+        // un tipo de estructura en el catálogo no tenía ningún efecto
+        // visible acá (el poste en sí sí sigue dibujándose hasta su punta
+        // real más abajo, eso no cambia).
+        const fromTop = from.z + loadTree.averageAttachmentHeight(project, from);
+        const toTop = to.z + loadTree.averageAttachmentHeight(project, to);
         const curve = catenary.catenaryCurve({
           span: spanLength,
           heightDiff: toTop - fromTop,

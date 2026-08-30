@@ -347,7 +347,10 @@
     return result;
   }
 
-  const loadTree = { computeSpanTensions, computeLoadTree, checkPoleCapacity, getReferenceHypothesis, resolveSectionConductor };
+  const loadTree = {
+    computeSpanTensions, computeLoadTree, checkPoleCapacity, getReferenceHypothesis, resolveSectionConductor,
+    averageAttachmentHeight
+  };
 
   if (typeof module !== 'undefined' && module.exports) {
     module.exports = loadTree;
