@@ -275,6 +275,18 @@
    * criterio que attachmentPoints[].offsetZ) es solo informativo/geometría
    * real de referencia, no entra en este cálculo simplificado.
    *
+   * LIMITACIÓN CONOCIDA (Fase 1, pendiente — ver IDEAS_FUTURAS.md): al no
+   * usar `guyAnchorHeight` en el cálculo, el modelo asume implícitamente que
+   * el contraviento está enganchado a la misma altura que el conductor, de
+   * modo que cancela el desequilibrio de tensión en todo el tramo del poste
+   * por encima del anclaje. Si en la instalación real el contraviento queda
+   * enganchado más abajo que el punto de amarre del conductor, el segmento
+   * de poste entre ambos puntos sigue sometido a un momento flector no
+   * cancelado por el contraviento, que hoy no se verifica. El campo de
+   * altura de enganche se deja bloqueado en la UI mientras esto no se
+   * implemente, precisamente para no sugerir una precisión que el cálculo
+   * todavía no ofrece.
+   *
    * Devuelve `structureId -> { pole, guy }`:
    *   pole.status: 'ok' | 'fail' | 'undefined' (sin `resistance` asignada)
    *   guy.status: 'ok' | 'fail' | 'undefined' (sin resistencia/geometría) |

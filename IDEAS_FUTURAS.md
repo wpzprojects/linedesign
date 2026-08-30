@@ -160,3 +160,43 @@ leerlo, en línea con cómo ya se construyó el exportador DXF (texto puro).
   abre un `<input type="file">`, lee el archivo con `FileReader`, llama al
   parser, y rellena los `value` de los inputs ya existentes del formulario
   (el usuario conserva control para ajustar antes de enviar).
+
+---
+
+## 4. Momento residual del poste por altura real del contraviento
+
+**Motivación**: `checkPoleCapacity` (`loadTree.js`) valida el contraviento
+con una simplificación de Fase 1 — asume que el contraviento, orientado
+para resistir el desequilibrio de tensión del conductor, lo cancela por
+completo, y usa solo `guyAnchorAngle` (ángulo respecto a la vertical) para
+calcular la tensión del cable. `guyAnchorHeight` (altura de enganche desde
+la punta del poste) se guarda como referencia geométrica pero **no entra en
+ningún cálculo** — el campo se dejó bloqueado en la UI (v3.20.56) por esto
+mismo, para no sugerir una precisión que el cálculo aún no ofrece.
+
+El usuario señaló el vacío real que eso deja: si el contraviento está
+enganchado más abajo que el punto de amarre del conductor (caso típico en
+campo, por facilidad de instalación o por usar un punto de anclaje
+predefinido en el poste), el segmento de poste ENTRE ambas alturas queda
+sometido a un momento flector que el contraviento, actuando desde más
+abajo, no cancela — y que "Cumple poste" hoy no verifica.
+
+**Veredicto**: gap real y válido, aceptado como simplificación documentada
+de Fase 1 (no se implementa todavía). Confirmado con el usuario.
+
+### Qué requeriría implementarlo
+
+- Modelar el poste como una viga con dos apoyos/restricciones a alturas
+  distintas (empotramiento en la base + el punto de amarre del
+  contraviento), en vez del criterio actual de "poste en voladizo con un
+  único punto de aplicación de fuerza en la punta".
+- Calcular el momento flector en el tramo entre la altura de enganche del
+  contraviento y la altura de amarre del conductor (la fuerza no cancelada
+  ahí es la componente horizontal de tensión del conductor que el
+  contraviento, actuando más abajo, no alcanza a compensar en ese tramo).
+- Verificar ese momento residual contra la resistencia del poste en esa
+  cota (no necesariamente la misma resistencia ensayada a 20 cm de la
+  punta que usa `checkPoleCapacity` hoy — la resistencia de un poste varía
+  con la altura).
+- Una vez implementado esto, desbloquear el campo "Altura de enganche desde
+  la punta (m)" en Propiedades (hoy deshabilitado a propósito).

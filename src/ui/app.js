@@ -96,6 +96,25 @@
     return Math.round(value * 10000) / 10000;
   }
 
+  /** Ángulo de deflexión de un vértice (PI) intermedio: cuánto gira el
+   * alineamiento ahí para pasar de la dirección de llegada a la de
+   * salida — positivo = gira a la izquierda (sentido antihorario en
+   * Este/Norte), negativo = a la derecha. `null` en el primer/último
+   * vértice (no hay tramo de llegada o de salida para comparar). Solo
+   * informativo (no editable) — ver renderInspector § vértice. */
+  function vertexDeflectionAngle(vertices, index) {
+    if (index <= 0 || index >= vertices.length - 1) return null;
+    const prev = vertices[index - 1];
+    const curr = vertices[index];
+    const next = vertices[index + 1];
+    const inHeading = Math.atan2(curr.y - prev.y, curr.x - prev.x);
+    const outHeading = Math.atan2(next.y - curr.y, next.x - curr.x);
+    let deltaDeg = (outHeading - inHeading) * 180 / Math.PI;
+    while (deltaDeg > 180) deltaDeg -= 360;
+    while (deltaDeg <= -180) deltaDeg += 360;
+    return deltaDeg;
+  }
+
   function onSelect(sel) {
     selection = sel;
     render(store.getProject());
@@ -769,8 +788,8 @@
   /** Fila de solo lectura (valores calculados, no editables — p. ej. las
    * specs del conductor de un vano): mismo look que propRow, pero el
    * valor es texto plano en vez de un input/select. */
-  function propRowStatic(labelText, valueText) {
-    return propRow(labelText, el('span', { class: 'prop-value-text' }, valueText));
+  function propRowStatic(labelText, valueText, options = {}) {
+    return propRow(labelText, el('span', { class: 'prop-value-text' }, valueText), options);
   }
 
   /** Combo del encabezado de Propiedades: mismo panel para vértice,
@@ -822,21 +841,30 @@
 
     if (selection.type === 'vertex') {
       const vertex = project.alignment.vertices.find((v) => v.id === selection.id);
+      const vertexIndex = project.alignment.vertices.findIndex((v) => v.id === selection.id);
+      const deflection = vertexDeflectionAngle(project.alignment.vertices, vertexIndex);
 
       inspectorPanel.appendChild(el('div', { class: 'prop-section' }, [
         propCategory('General'),
         propRow('Este (m) — EPSG:9377', el('input', {
           class: 'prop-control', type: 'number', step: '0.5', value: roundTo4(vertex.x),
           onChange: (e) => store.moveVertex(vertex.id, parseFloat(e.target.value) || 0, vertex.y)
-        })),
+        }), { title: 'Coordenada este del vértice, en MAGNA-SIRGAS / Origen-Nacional (EPSG:9377).' }),
         propRow('Norte (m) — EPSG:9377', el('input', {
           class: 'prop-control', type: 'number', step: '0.5', value: roundTo4(vertex.y),
           onChange: (e) => store.moveVertex(vertex.id, vertex.x, parseFloat(e.target.value) || 0)
-        })),
+        }), { title: 'Coordenada norte del vértice, en MAGNA-SIRGAS / Origen-Nacional (EPSG:9377).' }),
         propRow('Elevación z (m)', el('input', {
           class: 'prop-control', type: 'number', step: '0.5', value: roundTo4(vertex.z),
           onChange: (e) => store.setVertexElevation(vertex.id, parseFloat(e.target.value) || 0)
-        }))
+        }), { title: 'Cota de terreno en este vértice — se sobrescribe si usas "Ajustar al terreno real" en Perfil.' }),
+        deflection == null
+          ? propRowStatic('Ángulo de deflexión', '— (extremo del alineamiento)')
+          : propRowStatic(
+            'Ángulo de deflexión',
+            `${Math.abs(deflection).toFixed(1)}° ${deflection > 0 ? 'a la izquierda' : deflection < 0 ? 'a la derecha' : '(recto)'}`,
+            { title: 'Cuánto gira el alineamiento en este vértice para pasar de la dirección de llegada a la de salida — informativo, no editable.' }
+          )
       ]));
 
       inspectorPanel.appendChild(el('div', { class: 'prop-actions' }, [
@@ -901,7 +929,7 @@
               render(store.getProject()); // el cambio no se aplicó — revierte el campo al valor guardado
             }
           }
-        })),
+        }), { title: 'Nombre propio de esta estructura (debe ser único en el proyecto) — si se deja en blanco, se muestra su id automático.' }),
         propRow('Tipo', el('select', {
           class: 'prop-control',
           onChange: (e) => {
@@ -913,20 +941,22 @@
         propRow('Station (m)', el('input', {
           class: 'prop-control', type: 'number', step: '1', value: structure.station.toFixed(1),
           onChange: (e) => store.moveStructure(structure.id, parseFloat(e.target.value) || 0)
-        }))
+        }), { title: 'Distancia acumulada a lo largo del alineamiento desde el primer vértice — determina la posición de la estructura en Planta y Perfil.' })
       ]));
 
       const geometryRows = [
         propRow('Altura (m)', el('select', {
           class: 'prop-control',
           onChange: (e) => store.updateStructure(structure.id, { height: parseFloat(e.target.value) })
-        }, (type ? type.heightOptions : [structure.height]).map((h) => el('option', { value: h, selected: h === structure.height }, `${h} m`))))
+        }, (type ? type.heightOptions : [structure.height]).map((h) => el('option', { value: h, selected: h === structure.height }, `${h} m`))),
+        { title: 'Altura del poste tal como está en el catálogo (opciones definidas por tipo). Si el tipo considera profundidad de enterramiento, la altura libre real sobre el terreno es menor — ver Catálogo de estructuras.' })
       ];
       if (type && type.resistanceOptions && type.resistanceOptions.length) {
         geometryRows.push(propRow('Resistencia (kgF)', el('select', {
           class: 'prop-control',
           onChange: (e) => store.updateStructure(structure.id, { resistance: parseFloat(e.target.value) })
-        }, type.resistanceOptions.map((r) => el('option', { value: r, selected: r === structure.resistance }, `${r} kgF`)))));
+        }, type.resistanceOptions.map((r) => el('option', { value: r, selected: r === structure.resistance }, `${r} kgF`))),
+        { title: 'Resistencia última a rotura del poste (kgF), ensayada a 20 cm de la punta (convención RETIE/NTC) — usada para validar "Cumple poste".' }));
       }
       inspectorPanel.appendChild(el('div', { class: 'prop-section' }, [propCategory('Geometría'), ...geometryRows]));
 
@@ -962,14 +992,18 @@
           disabled: !hasGuy,
           title: 'Resistencia última a rotura del cable de contraviento (kgF) — opciones definidas en el catálogo de estructuras. Se compara contra la tensión que le exige la carga, dividida entre el "Factor de seguridad de contravientos".'
         }),
+        // Bloqueado a propósito (no solo cuando !hasGuy): el valor hoy no
+        // entra en ningún cálculo (ver nota de "Fase 1" en loadTree.js y
+        // IDEAS_FUTURAS.md § Momento residual del contraviento) — dejar un
+        // valor propio editable sería sugerir una precisión que no existe
+        // todavía. Se reactiva cuando se implemente esa validación.
         propRow('Altura de enganche desde la punta (m)', el('input', {
-          class: 'prop-control', type: 'number', step: '0.5', min: '0', disabled: !hasGuy,
-          title: 'Distancia desde la PUNTA del poste hacia abajo (no altura sobre el piso) — mismo criterio que los puntos de fijación del conductor, sugerido según la altura real de enganche del conductor en esta estructura.',
-          value: hasGuy ? Math.round(structure.guyAnchorHeight * 100) / 100 : previewGuyHeight,
-          onChange: (e) => store.updateStructure(structure.id, { guyAnchorHeight: parseFloat(e.target.value) || 0 })
+          class: 'prop-control', type: 'number', step: '0.5', min: '0', disabled: true,
+          title: 'Distancia desde la PUNTA del poste hacia abajo (no altura sobre el piso) — sugerida según la altura real de enganche del conductor en esta estructura. Bloqueada: hoy es solo referencia, no entra en ningún cálculo (ver Ideas futuras § momento residual del contraviento).',
+          value: hasGuy ? Math.round(structure.guyAnchorHeight * 100) / 100 : previewGuyHeight
         }), {
           disabled: !hasGuy,
-          title: 'Distancia desde la PUNTA del poste hacia abajo (no altura sobre el piso) — geometría de referencia; no entra en el cálculo de tensión del cable, que depende solo del ángulo.'
+          title: 'Distancia desde la PUNTA del poste hacia abajo — geometría de referencia. Bloqueada: no entra en ningún cálculo todavía (ver Ideas futuras § momento residual del contraviento).'
         }),
         propRow('Ángulo de la retenida (°, respecto al poste)', el('input', {
           class: 'prop-control', type: 'number', step: '1', min: '5', max: '85', disabled: !hasGuy,
@@ -1031,7 +1065,7 @@
         }, [
           el('option', { value: '', selected: !override }, `Usar el del proyecto (${project.conductor.name})`),
           ...project.conductorCatalog.map((c) => el('option', { value: c.id, selected: c.id === conductor.id && !!override }, c.name))
-        ]))
+        ]), { title: 'Conductor a usar en esta sección específica del alineamiento — si se deja en "Usar el del proyecto", hereda el conductor definido a nivel de proyecto.' })
       ]));
 
       const isSI = project.displayUnitSystem === 'si';
@@ -1040,11 +1074,11 @@
 
       inspectorPanel.appendChild(el('div', { class: 'prop-section' }, [
         propCategory('Conductor'),
-        propRowStatic('Vanos', String(vanoCount)),
-        propRowStatic('Vano regulador (m)', section ? section.rulingSpan.toFixed(1) : '—'),
-        propRowStatic('Diámetro (m)', String(conductor.diameter)),
-        propRowStatic(`Peso (${isSI ? 'N/m' : 'kg/km'})`, weightDisplay.toFixed(1)),
-        propRowStatic(`Carga de rotura (${isSI ? 'N' : 'kgF'})`, strengthDisplay.toFixed(1))
+        propRowStatic('Vanos', String(vanoCount), { title: 'Número de vanos (tramos entre estructuras consecutivas) que componen esta sección.' }),
+        propRowStatic('Vano regulador (m)', section ? section.rulingSpan.toFixed(1) : '—', { title: 'Vano regulador equivalente de la sección — usado para calcular la tensión de montaje/flecha representativa de todos los vanos de la sección.' }),
+        propRowStatic('Diámetro (m)', String(conductor.diameter), { title: 'Diámetro exterior del conductor seleccionado, según su ficha técnica.' }),
+        propRowStatic(`Peso (${isSI ? 'N/m' : 'kg/km'})`, weightDisplay.toFixed(1), { title: 'Peso propio del conductor por unidad de longitud, según su ficha técnica.' }),
+        propRowStatic(`Carga de rotura (${isSI ? 'N' : 'kgF'})`, strengthDisplay.toFixed(1), { title: 'Carga de rotura nominal (RTS) del conductor — referencia para el factor de seguridad de las hipótesis de tensión.' })
       ]));
     }
   }
