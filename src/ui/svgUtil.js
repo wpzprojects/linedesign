@@ -167,7 +167,14 @@
   function toCsv(headers, rows) {
     const lines = [headers.map(csvCell).join(',')];
     rows.forEach((row) => lines.push(row.map(csvCell).join(',')));
-    return lines.join('\r\n');
+    // BOM UTF-8 (﻿) al inicio: sin él, Excel (sobre todo en equipos con
+    // configuración regional en español) abre un CSV UTF-8 asumiendo que
+    // está en ANSI/Windows-1252, y cada tilde/ñ/° sale como texto corrupto
+    // (mojibake, ej. "Ã¡" en vez de "á") — no es un error del exportador,
+    // es cómo Excel detecta la codificación de un CSV sin esta marca. Con
+    // el BOM, Excel reconoce UTF-8 y todo se ve correcto sin tener que
+    // sacrificar las tildes/ñ del contenido.
+    return '﻿' + lines.join('\r\n');
   }
 
   const svgUtil = { svgEl, clear, toSvgPoint, buildRulerGrid, downloadFile, resolveExportTheme, rgbStringToHex, toCsv };
