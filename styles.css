@@ -1443,6 +1443,10 @@ p.conductor-specs {
   font-size: 0.8rem;
 }
 
+.panel-head .row-actions {
+  margin-top: 0;
+}
+
 svg#profile-svg {
   display: block;
   width: 100%;

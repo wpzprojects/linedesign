@@ -4,7 +4,7 @@
  */
 (function (global) {
   const { el, clear } = global.LineDesignDomUtil;
-  const { downloadFile } = global.LineDesignSvgUtil;
+  const { downloadFile, toCsv } = global.LineDesignSvgUtil;
   const loadTree = global.LineDesignLoadTree;
   const units = global.LineDesignUnits;
 
@@ -42,10 +42,16 @@
       const card = el('div', { class: 'card' }, [
         el('div', { class: 'panel-head' }, [
           el('h2', {}, 'Árbol de cargas'),
-          el('button', {
-            class: 'btn btn-primary btn-small', type: 'button',
-            onClick: () => exportLoadTree(project, rows)
-          }, 'Exportar JSON')
+          el('div', { class: 'row-actions' }, [
+            el('button', {
+              class: 'btn btn-primary btn-small', type: 'button',
+              onClick: () => exportLoadTree(project, rows)
+            }, 'Exportar JSON'),
+            el('button', {
+              class: 'btn btn-primary btn-small', type: 'button',
+              onClick: () => exportLoadTreeCsv(project, rows, hypothesisById)
+            }, 'Exportar CSV')
+          ])
         ]),
         el('p', { class: 'muted' }, 'Fuerzas por estructura para cada hipótesis: vertical (peso del conductor), transversal (viento + desequilibrio de tensión) y longitudinal (desequilibrio de tensión entre vanos adyacentes). Momento: estimación simplificada = vertical × altura de enganche promedio.'),
         el('div', { class: 'table-wrap' }, [
@@ -88,6 +94,21 @@
         loadTree: rowsKgf
       };
       downloadFile(`arbol-de-cargas-${project.name.replace(/\s+/g, '_')}.json`, JSON.stringify(payload, null, 2));
+    }
+
+    function exportLoadTreeCsv(project, rows, hypothesisById) {
+      // Mismo criterio de unidades que exportLoadTree: siempre kgF/kgF·m,
+      // sin importar la unidad elegida para la vista en pantalla.
+      const headers = ['Estructura', 'Hipótesis', 'Vertical (kgF)', 'Transversal (kgF)', 'Longitudinal (kgF)', 'Momento est. (kgF·m)'];
+      const csvRows = rows.map((row) => [
+        row.structureId,
+        hypothesisById[row.hypothesisId] || row.hypothesisId,
+        units.newtonsToKgf(row.forces.vertical).toFixed(1),
+        units.newtonsToKgf(row.forces.transversal).toFixed(1),
+        units.newtonsToKgf(row.forces.longitudinal).toFixed(1),
+        units.newtonsToKgf(row.momentEstimate).toFixed(1)
+      ]);
+      downloadFile(`arbol-de-cargas-${project.name.replace(/\s+/g, '_')}.csv`, toCsv(headers, csvRows), 'text/csv');
     }
 
     return { render };

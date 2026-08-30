@@ -155,6 +155,21 @@
     URL.revokeObjectURL(url);
   }
 
-  const svgUtil = { svgEl, clear, toSvgPoint, buildRulerGrid, downloadFile, resolveExportTheme, rgbStringToHex };
+  // CSV simple (RFC 4180): separador coma, comillas dobles solo cuando el
+  // valor las necesita (contiene coma, comilla o salto de línea) — evita
+  // encomillar todo el archivo, que lo hace menos legible al abrirlo fuera
+  // de una hoja de cálculo.
+  function csvCell(value) {
+    const text = value == null ? '' : String(value);
+    return /[",\n]/.test(text) ? `"${text.replace(/"/g, '""')}"` : text;
+  }
+
+  function toCsv(headers, rows) {
+    const lines = [headers.map(csvCell).join(',')];
+    rows.forEach((row) => lines.push(row.map(csvCell).join(',')));
+    return lines.join('\r\n');
+  }
+
+  const svgUtil = { svgEl, clear, toSvgPoint, buildRulerGrid, downloadFile, resolveExportTheme, rgbStringToHex, toCsv };
   global.LineDesignSvgUtil = svgUtil;
 })(typeof window !== 'undefined' ? window : globalThis);

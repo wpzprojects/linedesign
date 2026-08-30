@@ -15,7 +15,7 @@
   const kmzImport = window.LineDesignKmzImport;
   const dxfExport = window.LineDesignDxfExport;
   const { el, clear } = window.LineDesignDomUtil;
-  const { downloadFile, resolveExportTheme, rgbStringToHex } = window.LineDesignSvgUtil;
+  const { downloadFile, resolveExportTheme, rgbStringToHex, toCsv } = window.LineDesignSvgUtil;
 
   const planSvg = document.getElementById('plan-svg');
   const planMapContainer = document.getElementById('plan-map');
@@ -43,8 +43,12 @@
   const inspectorToggle = document.getElementById('inspector-toggle');
   const structuresTableBody = document.getElementById('structures-table-body');
   const structuresTableCount = document.getElementById('structures-table-count');
+  const structuresExportJsonBtn = document.getElementById('structures-export-json-btn');
+  const structuresExportCsvBtn = document.getElementById('structures-export-csv-btn');
   const alignmentTableBody = document.getElementById('alignment-table-body');
   const alignmentTableCount = document.getElementById('alignment-table-count');
+  const alignmentExportJsonBtn = document.getElementById('alignment-export-json-btn');
+  const alignmentExportCsvBtn = document.getElementById('alignment-export-csv-btn');
   const newVertexX = document.getElementById('new-vertex-x');
   const newVertexY = document.getElementById('new-vertex-y');
   const newStructureType = document.getElementById('new-structure-type');
@@ -608,17 +612,17 @@
   }
 
   /**
-   * Tabla de estructuras (Resumen): una fila por estructura con su vano,
-   * flecha y distancia al terreno del VANO ADELANTE (hacia la siguiente
-   * estructura) — la última estructura no tiene vano adelante, esas
-   * columnas quedan en "—". Reusa loadTree.computeSpanTensions (misma
-   * tensión/hipótesis de referencia que ya usa el árbol de cargas) en vez
-   * de recalcular la tensión de vano por separado.
+   * Calcula, una vez, las filas de la tabla de estructuras (Resumen): una
+   * fila por estructura con su vano, flecha y distancia al terreno del
+   * VANO ADELANTE (hacia la siguiente estructura) — la última estructura
+   * no tiene vano adelante, esos campos quedan en null. Reusa
+   * loadTree.computeSpanTensions (misma tensión/hipótesis de referencia
+   * que ya usa el árbol de cargas) en vez de recalcular la tensión de vano
+   * por separado. La usan tanto renderStructuresTable (dibuja el <table>)
+   * como sus exportadores JSON/CSV, para no repetir el cálculo en tres
+   * sitios distintos.
    */
-  function renderStructuresTable(project) {
-    structuresTableCount.textContent = `(${project.structures.length})`;
-    clear(structuresTableBody);
-
+  function computeStructuresRowsData(project) {
     const referenceHypothesis = loadTree.getReferenceHypothesis(project);
     const { sorted, spans } = loadTree.computeSpanTensions(project, referenceHypothesis.id);
     const terrainProfile = project.alignment.terrainProfile;
@@ -626,7 +630,7 @@
     const poleCheck = loadTree.checkPoleCapacity(project);
     const hypothesisById = Object.fromEntries(project.hypotheses.map((h) => [h.id, h.name]));
 
-    sorted.forEach((structure, index) => {
+    return sorted.map((structure, index) => {
       const type = project.structureCatalog.find((t) => t.typeId === structure.typeId);
       const span = spans[index]; // vano hacia sorted[index + 1], undefined en la última estructura
       let vanoAdelante = null;
@@ -680,58 +684,115 @@
 
       const check = poleCheck[structure.id];
 
-      let poleCell;
-      if (!check || check.pole.status === 'undefined') {
-        poleCell = el('td', {}, '—');
-      } else {
-        const pole = check.pole;
-        const pct = Math.round(pole.ratio * 100);
-        const hypName = hypothesisById[pole.governingHypothesisId] || pole.governingHypothesisId;
-        poleCell = el('td', {
-          class: pole.status === 'ok' ? 'check-ok' : 'check-fail',
-          title: `Momento demandado ${pole.momentDemandKgfm.toFixed(0)} kgF·m / admisible ${pole.capacityKgfm.toFixed(0)} kgF·m — caso gobernante: ${hypName}`
-        }, `${pole.status === 'ok' ? '✓' : '✗'} ${pct}%`);
+      let pole = { status: 'undefined', text: '—', title: '' };
+      if (check && check.pole.status !== 'undefined') {
+        const p = check.pole;
+        const pct = Math.round(p.ratio * 100);
+        const hypName = hypothesisById[p.governingHypothesisId] || p.governingHypothesisId;
+        pole = {
+          status: p.status,
+          text: `${p.status === 'ok' ? '✓' : '✗'} ${pct}%`,
+          title: `Momento demandado ${p.momentDemandKgfm.toFixed(0)} kgF·m / admisible ${p.capacityKgfm.toFixed(0)} kgF·m — caso gobernante: ${hypName}`
+        };
       }
 
-      let guyCell;
-      const guy = check && check.guy;
-      if (!guy || guy.status === 'not-applicable' || guy.status === 'none') {
-        guyCell = el('td', {}, '—');
-      } else if (guy.status === 'undefined') {
-        guyCell = el('td', { title: 'Contraviento habilitado pero sin resistencia o geometría de anclaje completa' }, '⚠');
-      } else {
-        const pct = Math.round(guy.ratio * 100);
-        const hypName = hypothesisById[guy.governingHypothesisId] || guy.governingHypothesisId;
-        guyCell = el('td', {
-          class: guy.status === 'ok' ? 'check-ok' : 'check-fail',
-          title: `Tracción demandada ${guy.tensionKgf.toFixed(0)} kgF / admisible ${guy.capacityKgf.toFixed(0)} kgF — caso gobernante: ${hypName}`
-        }, `${guy.status === 'ok' ? '✓' : '✗'} ${pct}%`);
+      const guyCheck = check && check.guy;
+      let guy = { status: 'none', text: '—', title: '' };
+      if (guyCheck && guyCheck.status === 'undefined') {
+        guy = { status: 'undefined', text: '⚠', title: 'Contraviento habilitado pero sin resistencia o geometría de anclaje completa' };
+      } else if (guyCheck && guyCheck.status !== 'not-applicable' && guyCheck.status !== 'none') {
+        const pct = Math.round(guyCheck.ratio * 100);
+        const hypName = hypothesisById[guyCheck.governingHypothesisId] || guyCheck.governingHypothesisId;
+        guy = {
+          status: guyCheck.status,
+          text: `${guyCheck.status === 'ok' ? '✓' : '✗'} ${pct}%`,
+          title: `Tracción demandada ${guyCheck.tensionKgf.toFixed(0)} kgF / admisible ${guyCheck.capacityKgf.toFixed(0)} kgF — caso gobernante: ${hypName}`
+        };
       }
 
-      const isSelected = selection && selection.type === 'structure' && selection.id === structure.id;
-      structuresTableBody.appendChild(el('tr', {
-        class: `is-clickable${isSelected ? ' is-active' : ''}`,
-        onClick: rowClickTo('structure', structure.id)
-      }, [
-        el('td', {}, structure.name || structure.id),
-        el('td', {}, type ? type.name : structure.typeId),
-        el('td', {}, fmtNum(structure.station, 1)),
-        el('td', {}, fmtNum(structure.height, 1)),
-        el('td', {}, fmtNum(structure.z, 1)),
+      return {
+        structureId: structure.id,
+        name: structure.name || structure.id,
+        typeName: type ? type.name : structure.typeId,
+        station: structure.station,
+        height: structure.height,
+        terrainZ: structure.z,
         // Cota de la punta LIBRE (sobre el terreno) — descuenta el
         // empotramiento si el tipo lo tiene activado, no structure.height
         // directo (ver loadTree.js#structureAboveGroundHeight). "Altura
         // (m)" arriba sigue siendo la del catálogo tal cual (qué poste se
         // compró), esta es la elevación real de la punta visible.
-        el('td', {}, fmtNum(structure.z + loadTree.structureAboveGroundHeight(project, structure), 1)),
-        el('td', {}, structure.resistance ? fmtNum(structure.resistance, 0) : '—'),
-        el('td', {}, fmtNum(vanoAdelante, 1)),
-        el('td', {}, fmtNum(flecha, 2)),
-        el('td', {}, fmtNum(minClearance, 1)),
-        poleCell,
-        guyCell
+        tipZ: structure.z + loadTree.structureAboveGroundHeight(project, structure),
+        resistance: structure.resistance || null,
+        vanoAdelante,
+        flecha,
+        minClearance,
+        pole,
+        guy
+      };
+    });
+  }
+
+  function renderStructuresTable(project) {
+    structuresTableCount.textContent = `(${project.structures.length})`;
+    clear(structuresTableBody);
+
+    computeStructuresRowsData(project).forEach((row) => {
+      const isSelected = selection && selection.type === 'structure' && selection.id === row.structureId;
+      structuresTableBody.appendChild(el('tr', {
+        class: `is-clickable${isSelected ? ' is-active' : ''}`,
+        onClick: rowClickTo('structure', row.structureId)
+      }, [
+        el('td', {}, row.name),
+        el('td', {}, row.typeName),
+        el('td', {}, fmtNum(row.station, 1)),
+        el('td', {}, fmtNum(row.height, 1)),
+        el('td', {}, fmtNum(row.terrainZ, 1)),
+        el('td', {}, fmtNum(row.tipZ, 1)),
+        el('td', {}, row.resistance ? fmtNum(row.resistance, 0) : '—'),
+        el('td', {}, fmtNum(row.vanoAdelante, 1)),
+        el('td', {}, fmtNum(row.flecha, 2)),
+        el('td', {}, fmtNum(row.minClearance, 1)),
+        el('td', { class: row.pole.status === 'ok' ? 'check-ok' : row.pole.status === 'fail' ? 'check-fail' : '', title: row.pole.title }, row.pole.text),
+        el('td', { class: row.guy.status === 'ok' ? 'check-ok' : row.guy.status === 'fail' ? 'check-fail' : '', title: row.guy.title }, row.guy.text)
       ]));
     });
+  }
+
+  function exportStructuresTableJson(project) {
+    const rows = computeStructuresRowsData(project);
+    const payload = {
+      generatedAt: new Date().toISOString(),
+      project: project.name,
+      units: { length: 'm', force: 'kgF' },
+      structures: rows.map((row) => ({
+        id: row.structureId,
+        nombre: row.name,
+        tipo: row.typeName,
+        estacion: row.station,
+        altura: row.height,
+        cotaTerreno: row.terrainZ,
+        cotaPunta: row.tipZ,
+        resistenciaKgf: row.resistance,
+        vanoAdelante: row.vanoAdelante,
+        flechaVanoAdelante: row.flecha,
+        distanciaMinimaAlPiso: row.minClearance,
+        cumplePoste: row.pole.status,
+        cumpleContraviento: row.guy.status
+      }))
+    };
+    downloadFile(`estructuras_${project.name.replace(/\s+/g, '_')}.json`, JSON.stringify(payload, null, 2));
+  }
+
+  function exportStructuresTableCsv(project) {
+    const rows = computeStructuresRowsData(project);
+    const headers = ['ID', 'Tipo', 'Estación (m)', 'Altura (m)', 'Cota terreno (m)', 'Cota punta (m)', 'Resistencia (kgF)', 'Vano adelante (m)', 'Flecha vano adelante (m)', 'Distancia mínima al piso (m)', 'Cumple poste', 'Cumple contraviento'];
+    const csvRows = rows.map((row) => [
+      row.name, row.typeName, fmtNum(row.station, 1), fmtNum(row.height, 1), fmtNum(row.terrainZ, 1), fmtNum(row.tipZ, 1),
+      row.resistance ? fmtNum(row.resistance, 0) : '', fmtNum(row.vanoAdelante, 1), fmtNum(row.flecha, 2), fmtNum(row.minClearance, 1),
+      row.pole.status, row.guy.status
+    ]);
+    downloadFile(`estructuras_${project.name.replace(/\s+/g, '_')}.csv`, toCsv(headers, csvRows), 'text/csv');
   }
 
   function renderAlignmentTable(project) {
@@ -753,6 +814,30 @@
         el('td', {}, fmtNum(vertex.z, 1))
       ]));
     });
+  }
+
+  function exportAlignmentTableJson(project) {
+    const vertices = project.alignment.vertices;
+    const distances = stationing.cumulativeDistances(vertices);
+    const payload = {
+      generatedAt: new Date().toISOString(),
+      project: project.name,
+      units: { length: 'm' },
+      vertices: vertices.map((vertex, index) => ({
+        id: vertex.id, estacion: distances[index], este: vertex.x, norte: vertex.y, elevacion: vertex.z
+      }))
+    };
+    downloadFile(`alineamiento_${project.name.replace(/\s+/g, '_')}.json`, JSON.stringify(payload, null, 2));
+  }
+
+  function exportAlignmentTableCsv(project) {
+    const vertices = project.alignment.vertices;
+    const distances = stationing.cumulativeDistances(vertices);
+    const headers = ['ID', 'Estación (m)', 'Este (m)', 'Norte (m)', 'Elevación (m)'];
+    const csvRows = vertices.map((vertex, index) => [
+      vertex.id, fmtNum(distances[index], 1), fmtNum(vertex.x, 2), fmtNum(vertex.y, 2), fmtNum(vertex.z, 1)
+    ]);
+    downloadFile(`alineamiento_${project.name.replace(/\s+/g, '_')}.csv`, toCsv(headers, csvRows), 'text/csv');
   }
 
   /** Secciones de tensionamiento vigentes (compartido entre el combo de
@@ -1657,6 +1742,10 @@
   function wireExportButtons() {
     wireExportButton(planExportBtn, 'plan');
     wireExportButton(profileExportBtn, 'profile');
+    structuresExportJsonBtn.addEventListener('click', () => exportStructuresTableJson(store.getProject()));
+    structuresExportCsvBtn.addEventListener('click', () => exportStructuresTableCsv(store.getProject()));
+    alignmentExportJsonBtn.addEventListener('click', () => exportAlignmentTableJson(store.getProject()));
+    alignmentExportCsvBtn.addEventListener('click', () => exportAlignmentTableCsv(store.getProject()));
   }
 
   function init() {
