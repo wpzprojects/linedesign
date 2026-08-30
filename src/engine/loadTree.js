@@ -266,12 +266,14 @@
    * orientado para ello.
    *
    * La tracción que debe resistir el contraviento (kgF) se obtiene
-   * proyectando esa fuerza resistida sobre la geometría real del anclaje:
-   * `guyAnchorHeight` (altura de enganche en el poste) y
-   * `guyAnchorDistance` (distancia horizontal del anclaje en tierra) dan el
-   * ángulo del cable; `tensión_cable = fuerza_horizontal_resistida /
-   * cos(ángulo)`, comparada contra `structure.guyResistance /
-   * project.guySafetyFactor`.
+   * proyectando esa fuerza resistida sobre `guyAnchorAngle` (ángulo del
+   * cable respecto a la VERTICAL del poste, en grados — no depende de la
+   * altura del anclaje, solo del ángulo): `tensión_cable =
+   * fuerza_horizontal_resistida / sen(ángulo)`, comparada contra
+   * `structure.guyResistance / project.guySafetyFactor`. `guyAnchorHeight`
+   * (distancia desde la PUNTA del poste al punto de enganche — mismo
+   * criterio que attachmentPoints[].offsetZ) es solo informativo/geometría
+   * real de referencia, no entra en este cálculo simplificado.
    *
    * Devuelve `structureId -> { pole, guy }`:
    *   pole.status: 'ok' | 'fail' | 'undefined' (sin `resistance` asignada)
@@ -351,13 +353,11 @@
         guy = { status: 'none' };
       } else {
         const worstGuy = worstGuyByStructure.get(structure.id);
-        const { guyResistance, guyAnchorHeight, guyAnchorDistance } = structure;
-        if (guyResistance == null || !guyAnchorHeight || !guyAnchorDistance || !worstGuy) {
+        const { guyResistance, guyAnchorAngle } = structure;
+        if (guyResistance == null || !guyAnchorAngle || !worstGuy) {
           guy = { status: 'undefined' };
         } else {
-          const cableLength = Math.hypot(guyAnchorHeight, guyAnchorDistance);
-          const cosAngle = guyAnchorDistance / cableLength;
-          const tensionKgf = worstGuy.forceKgf / cosAngle;
+          const tensionKgf = worstGuy.forceKgf / Math.sin(guyAnchorAngle * Math.PI / 180);
           const capacityKgf = guyResistance / guySafetyFactor;
           const ratio = capacityKgf > 0 ? tensionKgf / capacityKgf : Infinity;
           guy = {

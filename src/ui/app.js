@@ -862,13 +862,23 @@
       // así el usuario ve que existen aunque no pueda editarlos ahora.
       const isAnchorType = type && (type.type === 'Retención' || type.type === 'Ángulo');
       const hasGuy = isAnchorType && !!structure.hasGuy;
-      // El contraviento se ancla sobre la parte LIBRE del poste (no puede
-      // ir bajo tierra) — el valor sugerido parte de la altura libre, no
-      // de structure.height directo (ver loadTree.js#structureAboveGroundHeight).
-      const previewGuyHeight = structure.guyAnchorHeight != null
-        ? structure.guyAnchorHeight
-        : Math.max(loadTree.structureAboveGroundHeight(project, structure) - 3, 1);
-      const previewGuyDistance = structure.guyAnchorDistance != null ? structure.guyAnchorDistance : previewGuyHeight;
+      // Sugerido: la misma altura de enganche real del conductor en esta
+      // estructura (loadTree.averageAttachmentHeight), pero EXPRESADA como
+      // distancia desde la punta del poste (no desde el piso) — mismo
+      // criterio que attachmentPoints[].offsetZ, así el valor sigue
+      // teniendo sentido sin importar qué heightOption tenga la estructura.
+      // El contraviento amarra naturalmente cerca de donde está el
+      // conductor que se quiere contrarrestar.
+      const suggestedGuyHeightFromTip = Math.max(
+        loadTree.structureAboveGroundHeight(project, structure) - loadTree.averageAttachmentHeight(project, structure), 0
+      );
+      const previewGuyHeight = structure.guyAnchorHeight != null ? structure.guyAnchorHeight : suggestedGuyHeightFromTip;
+      // Ángulo de la retenida respecto a la VERTICAL del poste (no al
+      // piso) — 45° es un valor típico de referencia (ver
+      // loadTree.js#checkPoleCapacity para cómo entra en la tensión del
+      // cable: mientras más cerrado/vertical el ángulo, más tensión
+      // necesita el cable para la misma carga).
+      const previewGuyAngle = structure.guyAnchorAngle != null ? structure.guyAnchorAngle : 45;
       const guyResistanceOptions = (type && type.guyResistanceOptions && type.guyResistanceOptions.length)
         ? type.guyResistanceOptions
         : [structure.guyResistance != null ? structure.guyResistance : 0];
@@ -921,8 +931,8 @@
             const checked = e.target.value === 'si';
             const patch = { hasGuy: checked };
             if (checked && structure.guyAnchorHeight == null) {
-              patch.guyAnchorHeight = Math.max(loadTree.structureAboveGroundHeight(project, structure) - 3, 1);
-              patch.guyAnchorDistance = patch.guyAnchorHeight;
+              patch.guyAnchorHeight = suggestedGuyHeightFromTip;
+              patch.guyAnchorAngle = 45;
               if (type && type.guyResistanceOptions && type.guyResistanceOptions.length) {
                 patch.guyResistance = type.guyResistanceOptions[0];
               }
@@ -939,15 +949,17 @@
         }, guyResistanceOptions.map((r) => el('option', {
           value: r, selected: r === (structure.guyResistance != null ? structure.guyResistance : guyResistanceOptions[0])
         }, `${r} kgF`))), { disabled: !hasGuy }),
-        propRow('Altura de anclaje (m)', el('input', {
-          class: 'prop-control', type: 'number', step: '0.5', min: '0.5', disabled: !hasGuy,
+        propRow('Altura de enganche desde la punta (m)', el('input', {
+          class: 'prop-control', type: 'number', step: '0.5', min: '0', disabled: !hasGuy,
+          title: 'Distancia desde la PUNTA del poste hacia abajo (no altura sobre el piso) — mismo criterio que los puntos de fijación del conductor, sugerido según la altura real de enganche del conductor en esta estructura.',
           value: hasGuy ? structure.guyAnchorHeight : previewGuyHeight,
           onChange: (e) => store.updateStructure(structure.id, { guyAnchorHeight: parseFloat(e.target.value) || 0 })
         }), { disabled: !hasGuy }),
-        propRow('Distancia horiz. de anclaje (m)', el('input', {
-          class: 'prop-control', type: 'number', step: '0.5', min: '0.5', disabled: !hasGuy,
-          value: hasGuy ? structure.guyAnchorDistance : previewGuyDistance,
-          onChange: (e) => store.updateStructure(structure.id, { guyAnchorDistance: parseFloat(e.target.value) || 0 })
+        propRow('Ángulo de la retenida (°, respecto al poste)', el('input', {
+          class: 'prop-control', type: 'number', step: '1', min: '5', max: '85', disabled: !hasGuy,
+          title: 'Ángulo del cable de contraviento respecto a la VERTICAL del poste — mientras más cerrado (más vertical), más tensión necesita el cable para la misma carga.',
+          value: hasGuy ? structure.guyAnchorAngle : previewGuyAngle,
+          onChange: (e) => store.updateStructure(structure.id, { guyAnchorAngle: parseFloat(e.target.value) || 0 })
         }), { disabled: !hasGuy })
       ]));
 
