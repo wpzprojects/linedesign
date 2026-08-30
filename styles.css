@@ -1522,7 +1522,7 @@ svg#plan-svg {
 
 .conductor-line {
   stroke: var(--conductor-color);
-  stroke-width: var(--conductor-line-width, 2.5);
+  stroke-width: var(--conductor-line-width, 1.5);
   fill: none;
   vector-effect: non-scaling-stroke;
 }
@@ -1532,7 +1532,7 @@ svg#plan-svg {
    notando aunque el usuario haya puesto un grosor de conductor grande. */
 .conductor-line.is-selected {
   stroke: var(--primary);
-  stroke-width: calc(var(--conductor-line-width, 2.5) + 1);
+  stroke-width: calc(var(--conductor-line-width, 1.5) + 1);
 }
 
 /* Trazado invisible por encima de .conductor-line, mucho más ancho, solo
@@ -1587,7 +1587,7 @@ svg#plan-svg {
 
 .structure-pole {
   stroke: var(--structure-color);
-  stroke-width: var(--structure-line-width, 4);
+  stroke-width: var(--structure-line-width, 3);
   cursor: grab;
   vector-effect: non-scaling-stroke;
 }

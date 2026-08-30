@@ -370,8 +370,8 @@
   // en styles.css cubriendo el valor por defecto cuando no hay override)
   // — a diferencia del color, el grosor no depende del tema, así que el
   // valor por defecto es una sola constante, no una función condicional.
-  const DEFAULT_CONDUCTOR_WIDTH = 2.5;
-  const DEFAULT_STRUCTURE_WIDTH = 4;
+  const DEFAULT_CONDUCTOR_WIDTH = 1.5;
+  const DEFAULT_STRUCTURE_WIDTH = 3;
   const DEFAULT_ALIGNMENT_WIDTH = 4;
   const DEFAULT_TERRAIN_WIDTH = 3;
 
