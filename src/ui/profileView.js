@@ -310,7 +310,16 @@
           x1: baseScreen.x, y1: baseScreen.y, x2: topScreen.x, y2: topScreen.y, 'data-id': structure.id
         });
         zoomLayer.appendChild(pole);
-        attachStructureDrag(pole, structure.id);
+        // Área de arrastre/clic invisible, más ancha que el trazo visible —
+        // mismo criterio que .conductor-hit más abajo: con el grosor del
+        // poste configurable en Configuración (puede ser tan delgado como
+        // 0.5px), agarrarlo justo sobre el trazo real sería casi imposible.
+        const poleHit = svgEl('line', {
+          class: 'structure-pole-hit',
+          x1: baseScreen.x, y1: baseScreen.y, x2: topScreen.x, y2: topScreen.y, 'data-id': structure.id
+        });
+        zoomLayer.appendChild(poleHit);
+        attachStructureDrag(poleHit, structure.id);
         const marker = svgEl('g');
         const label = svgEl('text', { class: 'annotation-label', x: 8, y: -8 });
         label.textContent = structure.name || structure.id;

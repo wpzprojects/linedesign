@@ -1596,6 +1596,17 @@ svg#plan-svg {
   stroke: var(--warning);
 }
 
+/* Área de arrastre/clic invisible sobre el poste en Perfil, mucho más
+   ancha que el trazo visible — mismo criterio que .conductor-hit arriba,
+   necesario ahora que el grosor del poste es configurable y puede ser
+   muy delgado (Configuración § Colores y grosores del lienzo). */
+.structure-pole-hit {
+  stroke: transparent;
+  stroke-width: 14;
+  cursor: grab;
+  vector-effect: non-scaling-stroke;
+}
+
 .vertex-point {
   fill: var(--panel);
   stroke: var(--alignment-color);
