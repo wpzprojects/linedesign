@@ -1543,6 +1543,11 @@ svg#plan-svg {
   fill: none;
   cursor: pointer;
   vector-effect: non-scaling-stroke;
+  /* Explícito en vez de depender del default (visiblePainted): un stroke
+     "transparent" cuenta como pintado según el spec, pero no todos los
+     motores de render son consistentes con eso — "stroke" fuerza el
+     hit-test sobre el trazo sin ambigüedad. */
+  pointer-events: stroke;
 }
 
 /* Color del conductor (no var(--muted) genérico): a simple vista queda
@@ -1605,6 +1610,8 @@ svg#plan-svg {
   stroke-width: 14;
   cursor: grab;
   vector-effect: non-scaling-stroke;
+  /* Ver el mismo comentario en .conductor-hit — necesario acá también. */
+  pointer-events: stroke;
 }
 
 .vertex-point {
