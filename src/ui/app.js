@@ -31,11 +31,15 @@
   const themeToggle = document.getElementById('theme-toggle');
   const conductorColorInput = document.getElementById('conductor-color-input');
   const structureColorInput = document.getElementById('structure-color-input');
+  const structureColorPlanInput = document.getElementById('structure-color-plan-input');
   const alignmentColorInput = document.getElementById('alignment-color-input');
+  const vertexColorPlanInput = document.getElementById('vertex-color-plan-input');
   const terrainColorInput = document.getElementById('terrain-color-input');
   const conductorWidthInput = document.getElementById('conductor-width-input');
   const structureWidthInput = document.getElementById('structure-width-input');
+  const structureRadiusPlanInput = document.getElementById('structure-radius-plan-input');
   const alignmentWidthInput = document.getElementById('alignment-width-input');
+  const vertexWidthPlanInput = document.getElementById('vertex-width-plan-input');
   const terrainWidthInput = document.getElementById('terrain-width-input');
   const resetColorsBtn = document.getElementById('reset-colors-btn');
   const inspectorPanel = document.getElementById('inspector-body');
@@ -373,6 +377,20 @@
     structureColorInput.value = defaultStructureColor();
   }
 
+  // Postes en Planta: control independiente del de Perfil de arriba (antes
+  // compartían un solo color/grosor, pero el "grosor" de ese control nunca
+  // llegó a afectar el círculo de Planta — solo el trazo del poste en
+  // Perfil). Mismo color por defecto que Perfil (defaultStructureColor)
+  // para que el punto de partida se vea igual que antes de separarlos.
+  try {
+    const savedStructureColorPlan = localStorage.getItem('linedesign-structure-color-plan');
+    if (savedStructureColorPlan) document.documentElement.style.setProperty('--structure-color-plan', savedStructureColorPlan);
+    structureColorPlanInput.value = savedStructureColorPlan || defaultStructureColor();
+  } catch (error) {
+    console.warn('No se pudo leer el color de postes (Planta) guardado:', error);
+    structureColorPlanInput.value = defaultStructureColor();
+  }
+
   try {
     const savedAlignmentColor = localStorage.getItem('linedesign-alignment-color');
     if (savedAlignmentColor) document.documentElement.style.setProperty('--alignment-color', savedAlignmentColor);
@@ -380,6 +398,20 @@
   } catch (error) {
     console.warn('No se pudo leer el color de alineamiento guardado:', error);
     alignmentColorInput.value = defaultAlignmentColor();
+  }
+
+  // Vértices en Planta: antes compartían el color del alineamiento (el
+  // vértice se dibuja con relleno var(--panel) — el fondo del tema, se ve
+  // oscuro en tema oscuro, no es configurable — y un borde de color, que sí
+  // lo es). Mismo color por defecto que el alineamiento (defaultAlignmentColor)
+  // para no cambiar el aspecto actual al separarlos.
+  try {
+    const savedVertexColorPlan = localStorage.getItem('linedesign-vertex-color-plan');
+    if (savedVertexColorPlan) document.documentElement.style.setProperty('--vertex-color-plan', savedVertexColorPlan);
+    vertexColorPlanInput.value = savedVertexColorPlan || defaultAlignmentColor();
+  } catch (error) {
+    console.warn('No se pudo leer el color de vértices (Planta) guardado:', error);
+    vertexColorPlanInput.value = defaultAlignmentColor();
   }
 
   try {
@@ -398,7 +430,18 @@
   // valor por defecto es una sola constante, no una función condicional.
   const DEFAULT_CONDUCTOR_WIDTH = 1.5;
   const DEFAULT_STRUCTURE_WIDTH = 2;
+  // El poste en Planta es un círculo (no una línea): su "grosor" ya
+  // controlaba el radio hardcodeado del círculo (r=7 en planView.js), no
+  // el grosor 2 de arriba (ese solo afectaba el trazo del poste en
+  // Perfil) — el valor por defecto correcto acá es 7, para no encoger los
+  // círculos al separar el control.
+  const DEFAULT_STRUCTURE_RADIUS_PLAN = 7;
   const DEFAULT_ALIGNMENT_WIDTH = 4;
+  // Igual que arriba: el vértice ya tenía su propio grosor de borde
+  // hardcodeado (stroke-width: 3 en .vertex-point), distinto del grosor 4
+  // del alineamiento que hasta ahora compartía el color pero no el
+  // grosor — 3 es el valor por defecto correcto acá.
+  const DEFAULT_VERTEX_WIDTH_PLAN = 3;
   const DEFAULT_TERRAIN_WIDTH = 1.5;
 
   function loadLineWidth(key, cssVar, input, defaultValue) {
@@ -414,7 +457,9 @@
 
   loadLineWidth('linedesign-conductor-width', '--conductor-line-width', conductorWidthInput, DEFAULT_CONDUCTOR_WIDTH);
   loadLineWidth('linedesign-structure-width', '--structure-line-width', structureWidthInput, DEFAULT_STRUCTURE_WIDTH);
+  loadLineWidth('linedesign-structure-radius-plan', '--structure-radius-plan', structureRadiusPlanInput, DEFAULT_STRUCTURE_RADIUS_PLAN);
   loadLineWidth('linedesign-alignment-width', '--alignment-line-width', alignmentWidthInput, DEFAULT_ALIGNMENT_WIDTH);
+  loadLineWidth('linedesign-vertex-width-plan', '--vertex-width-plan', vertexWidthPlanInput, DEFAULT_VERTEX_WIDTH_PLAN);
   loadLineWidth('linedesign-terrain-width', '--terrain-line-width', terrainWidthInput, DEFAULT_TERRAIN_WIDTH);
 
   const catalogView = window.LineDesignCatalogView.createCatalogView(document.getElementById('catalog-container'), store);
@@ -1445,12 +1490,30 @@
       }
     });
 
+    structureColorPlanInput.addEventListener('input', (e) => {
+      document.documentElement.style.setProperty('--structure-color-plan', e.target.value);
+      try {
+        localStorage.setItem('linedesign-structure-color-plan', e.target.value);
+      } catch (error) {
+        console.warn('No se pudo guardar el color de postes (Planta):', error);
+      }
+    });
+
     alignmentColorInput.addEventListener('input', (e) => {
       document.documentElement.style.setProperty('--alignment-color', e.target.value);
       try {
         localStorage.setItem('linedesign-alignment-color', e.target.value);
       } catch (error) {
         console.warn('No se pudo guardar el color de alineamiento:', error);
+      }
+    });
+
+    vertexColorPlanInput.addEventListener('input', (e) => {
+      document.documentElement.style.setProperty('--vertex-color-plan', e.target.value);
+      try {
+        localStorage.setItem('linedesign-vertex-color-plan', e.target.value);
+      } catch (error) {
+        console.warn('No se pudo guardar el color de vértices (Planta):', error);
       }
     });
 
@@ -1478,37 +1541,51 @@
 
     wireLineWidthInput(conductorWidthInput, 'linedesign-conductor-width', '--conductor-line-width');
     wireLineWidthInput(structureWidthInput, 'linedesign-structure-width', '--structure-line-width');
+    wireLineWidthInput(structureRadiusPlanInput, 'linedesign-structure-radius-plan', '--structure-radius-plan');
     wireLineWidthInput(alignmentWidthInput, 'linedesign-alignment-width', '--alignment-line-width');
+    wireLineWidthInput(vertexWidthPlanInput, 'linedesign-vertex-width-plan', '--vertex-width-plan');
     wireLineWidthInput(terrainWidthInput, 'linedesign-terrain-width', '--terrain-line-width');
 
     resetColorsBtn.addEventListener('click', () => {
       document.documentElement.style.removeProperty('--conductor-color');
       document.documentElement.style.removeProperty('--structure-color');
+      document.documentElement.style.removeProperty('--structure-color-plan');
       document.documentElement.style.removeProperty('--alignment-color');
+      document.documentElement.style.removeProperty('--vertex-color-plan');
       document.documentElement.style.removeProperty('--terrain-color');
       document.documentElement.style.removeProperty('--conductor-line-width');
       document.documentElement.style.removeProperty('--structure-line-width');
+      document.documentElement.style.removeProperty('--structure-radius-plan');
       document.documentElement.style.removeProperty('--alignment-line-width');
+      document.documentElement.style.removeProperty('--vertex-width-plan');
       document.documentElement.style.removeProperty('--terrain-line-width');
       try {
         localStorage.removeItem('linedesign-conductor-color');
         localStorage.removeItem('linedesign-structure-color');
+        localStorage.removeItem('linedesign-structure-color-plan');
         localStorage.removeItem('linedesign-alignment-color');
+        localStorage.removeItem('linedesign-vertex-color-plan');
         localStorage.removeItem('linedesign-terrain-color');
         localStorage.removeItem('linedesign-conductor-width');
         localStorage.removeItem('linedesign-structure-width');
+        localStorage.removeItem('linedesign-structure-radius-plan');
         localStorage.removeItem('linedesign-alignment-width');
+        localStorage.removeItem('linedesign-vertex-width-plan');
         localStorage.removeItem('linedesign-terrain-width');
       } catch (error) {
         console.warn('No se pudo restablecer los colores/grosores guardados:', error);
       }
       conductorColorInput.value = defaultConductorColor();
       structureColorInput.value = defaultStructureColor();
+      structureColorPlanInput.value = defaultStructureColor();
       alignmentColorInput.value = defaultAlignmentColor();
+      vertexColorPlanInput.value = defaultAlignmentColor();
       terrainColorInput.value = defaultTerrainColor();
       conductorWidthInput.value = DEFAULT_CONDUCTOR_WIDTH;
       structureWidthInput.value = DEFAULT_STRUCTURE_WIDTH;
+      structureRadiusPlanInput.value = DEFAULT_STRUCTURE_RADIUS_PLAN;
       alignmentWidthInput.value = DEFAULT_ALIGNMENT_WIDTH;
+      vertexWidthPlanInput.value = DEFAULT_VERTEX_WIDTH_PLAN;
       terrainWidthInput.value = DEFAULT_TERRAIN_WIDTH;
     });
 

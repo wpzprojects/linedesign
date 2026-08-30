@@ -20,7 +20,9 @@
      que gana sobre esta referencia sin importar el tema activo. */
   --conductor-color: var(--warning);
   --structure-color: var(--accent);
+  --structure-color-plan: var(--accent);
   --alignment-color: var(--primary);
+  --vertex-color-plan: var(--primary);
   --terrain-color: #7a8f5c;
   --vertex-line-color: #2f3fa8;
   --shadow: 0 8px 24px rgba(16, 16, 16, 0.08);
@@ -1696,10 +1698,16 @@ svg#plan-svg {
   vector-effect: non-scaling-stroke;
 }
 
+/* En Planta el poste es un círculo, no una línea — "grosor" (Configuración)
+   no tiene un trazo al que aplicarse, así que en vez de eso controla el
+   tamaño del círculo (r). El anillo de contraste con el fondo (stroke:
+   var(--panel)) se queda fijo en 2, es un detalle de diseño aparte, no lo
+   que el usuario percibe como "grosor del poste". */
 .structure-point {
-  fill: var(--structure-color);
+  fill: var(--structure-color-plan);
   stroke: var(--panel);
   stroke-width: 2;
+  r: var(--structure-radius-plan, 7);
   cursor: grab;
   vector-effect: non-scaling-stroke;
 }
@@ -1740,10 +1748,14 @@ svg#plan-svg {
   pointer-events: stroke;
 }
 
+/* El vértice se dibuja como un círculo relleno con el fondo del tema
+   (var(--panel) — se ve oscuro en tema oscuro, no es un color propio del
+   vértice) y un borde de color — "color y grosor" de Configuración
+   controlan ese borde (stroke), no el relleno. */
 .vertex-point {
   fill: var(--panel);
-  stroke: var(--alignment-color);
-  stroke-width: 3;
+  stroke: var(--vertex-color-plan);
+  stroke-width: var(--vertex-width-plan, 3);
   cursor: grab;
   vector-effect: non-scaling-stroke;
 }

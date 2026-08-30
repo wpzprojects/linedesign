@@ -367,16 +367,28 @@
                 <input id="conductor-width-input" type="number" min="0.5" max="12" step="0.5" class="line-width-input" />
                 <span class="line-width-unit">px</span>
               </div>
-              <label for="structure-color-input">Color y grosor de postes (Perfil y Planta)</label>
+              <label for="structure-color-input">Color y grosor de postes (Perfil)</label>
               <div class="color-width-row">
                 <input id="structure-color-input" type="color" />
                 <input id="structure-width-input" type="number" min="0.5" max="12" step="0.5" class="line-width-input" />
                 <span class="line-width-unit">px</span>
               </div>
-              <label for="alignment-color-input">Color y grosor del alineamiento y vértices (Planta)</label>
+              <label for="structure-color-plan-input" title="En Planta el poste se dibuja como un círculo (no una línea), así que aquí el grosor controla el tamaño del círculo, no un ancho de trazo.">Color y grosor de postes (Planta)</label>
+              <div class="color-width-row">
+                <input id="structure-color-plan-input" type="color" />
+                <input id="structure-radius-plan-input" type="number" min="0.5" max="12" step="0.5" class="line-width-input" />
+                <span class="line-width-unit">px</span>
+              </div>
+              <label for="alignment-color-input">Color y grosor del alineamiento (Planta)</label>
               <div class="color-width-row">
                 <input id="alignment-color-input" type="color" />
                 <input id="alignment-width-input" type="number" min="0.5" max="12" step="0.5" class="line-width-input" />
+                <span class="line-width-unit">px</span>
+              </div>
+              <label for="vertex-color-plan-input" title="El vértice se dibuja como un círculo con el fondo del tema (se ve oscuro en tema oscuro) y un borde de color — este control cambia el color y grosor de ese borde.">Color y grosor de los vértices (Planta)</label>
+              <div class="color-width-row">
+                <input id="vertex-color-plan-input" type="color" />
+                <input id="vertex-width-plan-input" type="number" min="0.5" max="12" step="0.5" class="line-width-input" />
                 <span class="line-width-unit">px</span>
               </div>
               <label for="terrain-color-input">Color y grosor del terreno (Perfil)</label>
