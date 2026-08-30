@@ -200,7 +200,7 @@
             onClick: () => confirmRemoveConductor(project)
           }, 'Eliminar'),
           el('button', {
-            class: 'btn btn-small toolbar-card-btn btn-fixed-height', type: 'button',
+            class: 'btn btn-small btn-outline-primary btn-fixed-height', type: 'button',
             onClick: () => openAddConductorForm(project)
           }, 'Agregar nuevo')
         ]),
