@@ -695,6 +695,20 @@ input:disabled {
   cursor: not-allowed;
 }
 
+/* "Sistema de coordenadas" (tarjeta Unidades): un valor fijo, no editable,
+   pero que debe VERSE como un campo normal de la tarjeta (mismo fondo que
+   el <select> de "Sistema de unidades" justo arriba), no con el fondo
+   apagado que usa un campo deshabilitado por depender de otro valor (ver
+   input:disabled arriba) — ese gris se leía como "oculto"/error, no como
+   "este valor es fijo". Texto 2px más chico que el resto de los campos
+   (0.92rem base ⇒ 0.8rem) para que el nombre completo del sistema de
+   coordenadas quepa sin recortarse en una tarjeta de 270px. */
+#coordinate-system-input {
+  background: var(--panel);
+  color: var(--text);
+  font-size: 0.8rem;
+}
+
 input[type="color"] {
   width: 56px;
   height: 34px;
