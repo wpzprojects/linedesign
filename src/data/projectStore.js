@@ -608,6 +608,7 @@
   /** Agrega un conductor nuevo al catálogo del proyecto (no lo selecciona
    * como el conductor activo — eso lo decide quien llama, vía setConductor). */
   function addConductor(partial) {
+    const ultimateStrength = partial.ultimateStrength || 0;
     const conductor = {
       id: slugifyConductorId(partial.name),
       name: partial.name || 'Conductor sin nombre',
@@ -616,9 +617,16 @@
       crossSectionArea: partial.crossSectionArea || 0,
       elasticModulus: partial.elasticModulus || 6.9e10,
       thermalExpansionCoef: partial.thermalExpansionCoef != null ? partial.thermalExpansionCoef : 1.9e-5,
-      ultimateStrength: partial.ultimateStrength || 0,
+      ultimateStrength,
       referenceHypothesisId: partial.referenceHypothesisId || (project.hypotheses[0] && project.hypotheses[0].id),
-      referenceHorizontalTension: partial.referenceHorizontalTension || 0
+      // Sin valor propio: 20% de la carga de rotura (RTS) en vez de 0 —
+      // mismo criterio simplificado que ya documenta dataSource.js para el
+      // catálogo base ("valor típico de diseño en ausencia de curva real
+      // de sag-tension"). Un conductor recién creado no tiene fila propia
+      // en "Tensiones de tendido" todavía, así que este es el valor con el
+      // que arranca hasta que el usuario lo ajuste o agregue una fila —
+      // mejor un punto de partida razonable que un 0 sin sentido.
+      referenceHorizontalTension: partial.referenceHorizontalTension || Math.round(ultimateStrength * 0.2)
     };
     project.conductorCatalog.push(conductor);
     persist();

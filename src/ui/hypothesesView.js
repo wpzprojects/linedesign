@@ -210,7 +210,7 @@
         tensionInput,
         usingManualFallback
           ? el('div', { class: 'stringing-warning' },
-            `Se está usando esta tensión de referencia manual: ningún caso climático tiene una fila en "Tensiones de tendido" para "${project.conductor.name}".`)
+            `Se está usando esta tensión de referencia manual: ningún caso climático tiene una fila en "Tensiones de tendido" para "${project.conductor.name}". Si no sabes qué valor poner, un punto de partida típico es 20% de la carga de rotura del conductor (${Math.round(toDisplayForce(project, project.conductor.ultimateStrength * 0.2))} ${forceUnitLabel(project)}) — o mejor, agrega una fila en "Tensiones de tendido" para que se calcule sola.`)
           : null
       ].filter(Boolean));
     }
