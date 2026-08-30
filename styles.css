@@ -645,6 +645,28 @@ input[type="color"] {
   cursor: pointer;
 }
 
+/* Configuración § Colores y grosores del lienzo: el color y el grosor de
+   cada línea van uno al lado del otro (no cada uno en su propio
+   renglón), comparten la misma etiqueta arriba. */
+.color-width-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+/* ".line-width-input" sola (una clase) pierde contra "input[type=number]"
+   (tipo + atributo = más específico) — mismo gotcha de siempre, se ancla
+   a ".color-width-row" para ganarle con certeza (ver .prop-row .prop-control
+   para el mismo patrón). */
+.color-width-row .line-width-input {
+  width: 64px;
+}
+
+.line-width-unit {
+  color: var(--muted);
+  font-size: 0.78rem;
+}
+
 input:focus, select:focus, button:focus-visible {
   outline: none;
   box-shadow: var(--focus-ring);
@@ -1436,7 +1458,7 @@ svg#plan-svg {
 
 .alignment-line {
   stroke: var(--alignment-color);
-  stroke-width: 4;
+  stroke-width: var(--alignment-line-width, 4);
   fill: none;
   stroke-linecap: round;
   stroke-linejoin: round;
@@ -1468,7 +1490,7 @@ svg#plan-svg {
 
 .profile-line {
   stroke: var(--accent);
-  stroke-width: 3;
+  stroke-width: var(--terrain-line-width, 3);
   fill: none;
   vector-effect: non-scaling-stroke;
 }
@@ -1500,14 +1522,17 @@ svg#plan-svg {
 
 .conductor-line {
   stroke: var(--conductor-color);
-  stroke-width: 2.5;
+  stroke-width: var(--conductor-line-width, 2.5);
   fill: none;
   vector-effect: non-scaling-stroke;
 }
 
+/* Siempre 1px más grueso que el base (Configuración § Colores y grosores
+   del lienzo), sea cual sea ese valor — así la selección se sigue
+   notando aunque el usuario haya puesto un grosor de conductor grande. */
 .conductor-line.is-selected {
   stroke: var(--primary);
-  stroke-width: 3.5;
+  stroke-width: calc(var(--conductor-line-width, 2.5) + 1);
 }
 
 /* Trazado invisible por encima de .conductor-line, mucho más ancho, solo
@@ -1562,7 +1587,7 @@ svg#plan-svg {
 
 .structure-pole {
   stroke: var(--structure-color);
-  stroke-width: 4;
+  stroke-width: var(--structure-line-width, 4);
   cursor: grab;
   vector-effect: non-scaling-stroke;
 }

@@ -338,17 +338,33 @@
 
           <section id="screen-config" class="screen">
             <div class="card">
-              <h2>Colores del lienzo</h2>
-              <label for="conductor-color-input">Color de conductores (Perfil)</label>
-              <input id="conductor-color-input" type="color" />
-              <label for="structure-color-input">Color de postes (Perfil y Planta)</label>
-              <input id="structure-color-input" type="color" />
-              <label for="alignment-color-input">Color del alineamiento y vértices (Planta)</label>
-              <input id="alignment-color-input" type="color" />
-              <label for="terrain-color-input">Color del terreno (Perfil)</label>
-              <input id="terrain-color-input" type="color" />
+              <h2>Colores y grosores del lienzo</h2>
+              <label for="conductor-color-input">Color y grosor de conductores (Perfil)</label>
+              <div class="color-width-row">
+                <input id="conductor-color-input" type="color" />
+                <input id="conductor-width-input" type="number" min="0.5" max="12" step="0.5" class="line-width-input" />
+                <span class="line-width-unit">px</span>
+              </div>
+              <label for="structure-color-input">Color y grosor de postes (Perfil y Planta)</label>
+              <div class="color-width-row">
+                <input id="structure-color-input" type="color" />
+                <input id="structure-width-input" type="number" min="0.5" max="12" step="0.5" class="line-width-input" />
+                <span class="line-width-unit">px</span>
+              </div>
+              <label for="alignment-color-input">Color y grosor del alineamiento y vértices (Planta)</label>
+              <div class="color-width-row">
+                <input id="alignment-color-input" type="color" />
+                <input id="alignment-width-input" type="number" min="0.5" max="12" step="0.5" class="line-width-input" />
+                <span class="line-width-unit">px</span>
+              </div>
+              <label for="terrain-color-input">Color y grosor del terreno (Perfil)</label>
+              <div class="color-width-row">
+                <input id="terrain-color-input" type="color" />
+                <input id="terrain-width-input" type="number" min="0.5" max="12" step="0.5" class="line-width-input" />
+                <span class="line-width-unit">px</span>
+              </div>
               <div class="row-actions">
-                <button id="reset-colors-btn" class="btn btn-small" type="button">Restablecer colores por defecto</button>
+                <button id="reset-colors-btn" class="btn btn-small" type="button">Restablecer valores por defecto</button>
               </div>
             </div>
           </section>

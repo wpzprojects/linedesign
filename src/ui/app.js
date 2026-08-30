@@ -30,6 +30,10 @@
   const structureColorInput = document.getElementById('structure-color-input');
   const alignmentColorInput = document.getElementById('alignment-color-input');
   const terrainColorInput = document.getElementById('terrain-color-input');
+  const conductorWidthInput = document.getElementById('conductor-width-input');
+  const structureWidthInput = document.getElementById('structure-width-input');
+  const alignmentWidthInput = document.getElementById('alignment-width-input');
+  const terrainWidthInput = document.getElementById('terrain-width-input');
   const resetColorsBtn = document.getElementById('reset-colors-btn');
   const inspectorPanel = document.getElementById('inspector-body');
   const inspectorAside = document.getElementById('inspector-panel');
@@ -360,6 +364,32 @@
     console.warn('No se pudo leer el color de terreno guardado:', error);
     terrainColorInput.value = defaultTerrainColor();
   }
+
+  // Grosores del lienzo (Configuración): mismo patrón que los colores de
+  // arriba (override inline en <html>, con la propia var(--x, fallback)
+  // en styles.css cubriendo el valor por defecto cuando no hay override)
+  // — a diferencia del color, el grosor no depende del tema, así que el
+  // valor por defecto es una sola constante, no una función condicional.
+  const DEFAULT_CONDUCTOR_WIDTH = 2.5;
+  const DEFAULT_STRUCTURE_WIDTH = 4;
+  const DEFAULT_ALIGNMENT_WIDTH = 4;
+  const DEFAULT_TERRAIN_WIDTH = 3;
+
+  function loadLineWidth(key, cssVar, input, defaultValue) {
+    try {
+      const saved = localStorage.getItem(key);
+      if (saved) document.documentElement.style.setProperty(cssVar, saved);
+      input.value = saved || defaultValue;
+    } catch (error) {
+      console.warn(`No se pudo leer el grosor guardado (${key}):`, error);
+      input.value = defaultValue;
+    }
+  }
+
+  loadLineWidth('linedesign-conductor-width', '--conductor-line-width', conductorWidthInput, DEFAULT_CONDUCTOR_WIDTH);
+  loadLineWidth('linedesign-structure-width', '--structure-line-width', structureWidthInput, DEFAULT_STRUCTURE_WIDTH);
+  loadLineWidth('linedesign-alignment-width', '--alignment-line-width', alignmentWidthInput, DEFAULT_ALIGNMENT_WIDTH);
+  loadLineWidth('linedesign-terrain-width', '--terrain-line-width', terrainWidthInput, DEFAULT_TERRAIN_WIDTH);
 
   const catalogView = window.LineDesignCatalogView.createCatalogView(document.getElementById('catalog-container'), store);
   const hypothesesView = window.LineDesignHypothesesView.createHypothesesView(document.getElementById('hypotheses-container'), store);
@@ -1208,23 +1238,53 @@
       }
     });
 
+    function wireLineWidthInput(input, key, cssVar) {
+      input.addEventListener('input', (e) => {
+        const value = parseFloat(e.target.value);
+        if (!Number.isFinite(value) || value <= 0) return;
+        document.documentElement.style.setProperty(cssVar, String(value));
+        try {
+          localStorage.setItem(key, String(value));
+        } catch (error) {
+          console.warn(`No se pudo guardar el grosor (${key}):`, error);
+        }
+      });
+    }
+
+    wireLineWidthInput(conductorWidthInput, 'linedesign-conductor-width', '--conductor-line-width');
+    wireLineWidthInput(structureWidthInput, 'linedesign-structure-width', '--structure-line-width');
+    wireLineWidthInput(alignmentWidthInput, 'linedesign-alignment-width', '--alignment-line-width');
+    wireLineWidthInput(terrainWidthInput, 'linedesign-terrain-width', '--terrain-line-width');
+
     resetColorsBtn.addEventListener('click', () => {
       document.documentElement.style.removeProperty('--conductor-color');
       document.documentElement.style.removeProperty('--structure-color');
       document.documentElement.style.removeProperty('--alignment-color');
       document.documentElement.style.removeProperty('--terrain-color');
+      document.documentElement.style.removeProperty('--conductor-line-width');
+      document.documentElement.style.removeProperty('--structure-line-width');
+      document.documentElement.style.removeProperty('--alignment-line-width');
+      document.documentElement.style.removeProperty('--terrain-line-width');
       try {
         localStorage.removeItem('linedesign-conductor-color');
         localStorage.removeItem('linedesign-structure-color');
         localStorage.removeItem('linedesign-alignment-color');
         localStorage.removeItem('linedesign-terrain-color');
+        localStorage.removeItem('linedesign-conductor-width');
+        localStorage.removeItem('linedesign-structure-width');
+        localStorage.removeItem('linedesign-alignment-width');
+        localStorage.removeItem('linedesign-terrain-width');
       } catch (error) {
-        console.warn('No se pudo restablecer los colores guardados:', error);
+        console.warn('No se pudo restablecer los colores/grosores guardados:', error);
       }
       conductorColorInput.value = defaultConductorColor();
       structureColorInput.value = defaultStructureColor();
       alignmentColorInput.value = defaultAlignmentColor();
       terrainColorInput.value = defaultTerrainColor();
+      conductorWidthInput.value = DEFAULT_CONDUCTOR_WIDTH;
+      structureWidthInput.value = DEFAULT_STRUCTURE_WIDTH;
+      alignmentWidthInput.value = DEFAULT_ALIGNMENT_WIDTH;
+      terrainWidthInput.value = DEFAULT_TERRAIN_WIDTH;
     });
 
     planMapToggle.addEventListener('click', () => {
