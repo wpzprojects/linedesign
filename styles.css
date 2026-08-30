@@ -375,6 +375,16 @@ body.dark-theme .icon-moon {
   z-index: 100;
 }
 
+/* "display: flex" de arriba le gana en cascada al "display: none" que el
+   navegador aplica por el atributo [hidden] (un estilo de autor siempre
+   gana sobre el stylesheet por defecto del navegador, sin importar
+   especificidad) — mismo bug que ya se dio con .toolbar-card/.toolbar-sep.
+   Sin esto, el modal queda visible (vacío, sin título ni contenido) desde
+   que carga la página, aunque nunca se haya llamado a openModal(). */
+.modal-overlay[hidden] {
+  display: none;
+}
+
 .modal-card {
   background: var(--panel);
   border: 1px solid var(--line);
