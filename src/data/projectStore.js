@@ -286,6 +286,9 @@
       heightOptions: partial.heightOptions && partial.heightOptions.length ? partial.heightOptions : [15],
       resistanceOptions: partial.resistanceOptions || [],
       guyResistanceOptions: partial.guyResistanceOptions || [],
+      // Por defecto Sí (es lo real en la mayoría de postes) — ver
+      // catalogView.js y loadTree.js#structureAboveGroundHeight.
+      considerEmbedment: partial.considerEmbedment !== undefined ? partial.considerEmbedment : true,
       attachmentPoints: partial.attachmentPoints && partial.attachmentPoints.length
         ? partial.attachmentPoints
         : [{ name: 'Fase A', offsetX: 0, offsetZ: 0 }]

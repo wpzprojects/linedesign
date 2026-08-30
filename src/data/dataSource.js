@@ -109,6 +109,10 @@
         name: 'Poste suspensión',
         type: 'Suspensión',
         heightOptions: [12, 14, 16, 20, 24, 30],
+        // Ver loadTree.js#structureAboveGroundHeight: resta la profundidad
+        // de enterramiento (10% de la altura + 0.6 m) de heightOptions —
+        // encendido por defecto, es lo real en la mayoría de postes.
+        considerEmbedment: true,
         // offsetZ es la distancia desde la PUNTA del poste hacia abajo (0 =
         // en la punta), no la altura sobre el piso — así el punto sigue
         // siendo válido sin importar cuál heightOptions se elija para una
@@ -125,6 +129,7 @@
         name: 'Poste ángulo',
         type: 'Ángulo',
         heightOptions: [12, 14, 16, 20, 24, 30],
+        considerEmbedment: true,
         attachmentPoints: [
           { name: 'Fase A', offsetX: -2.6, offsetZ: 0 },
           { name: 'Fase B', offsetX: 0, offsetZ: 0 },
@@ -140,6 +145,7 @@
         name: 'Poste retención',
         type: 'Retención',
         heightOptions: [12, 14, 16, 20, 24, 30],
+        considerEmbedment: true,
         attachmentPoints: [
           { name: 'Fase A', offsetX: -1.4, offsetZ: 0 },
           { name: 'Fase B', offsetX: 0, offsetZ: 0 },

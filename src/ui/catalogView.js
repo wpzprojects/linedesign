@@ -175,11 +175,15 @@
       // queda bajo tierra. Afecta dónde se dibuja la punta del poste en
       // Perfil, dónde cuelga el conductor (attachmentPoints) y el momento
       // admisible de "Cumple poste" — ver loadTree.js#structureAboveGroundHeight.
-      // Por defecto apagado: se sigue asumiendo toda la altura libre, mismo
-      // comportamiento que ya tenía la app.
+      // Por defecto ENCENDIDO para un tipo nuevo (es lo real en la mayoría
+      // de postes) — al editar uno existente se respeta su valor guardado,
+      // aunque no se haya definido explícitamente (proyectos de antes de
+      // esta opción se tratan como "No" para no cambiarles el cálculo de
+      // golpe sin que el usuario lo pida — ver loadTree.js#structureAboveGroundHeight).
+      const defaultConsiderEmbedment = editingType ? !!editingType.considerEmbedment : true;
       const embedmentSelect = el('select', { id: 'catalog-embedment-select' }, [
-        el('option', { value: 'no', selected: !(editingType && editingType.considerEmbedment) }, 'No'),
-        el('option', { value: 'si', selected: !!(editingType && editingType.considerEmbedment) }, 'Sí')
+        el('option', { value: 'no', selected: !defaultConsiderEmbedment }, 'No'),
+        el('option', { value: 'si', selected: defaultConsiderEmbedment }, 'Sí')
       ]);
 
       // Fila de encabezado (mismas columnas que .point-row, ver CSS): antes
