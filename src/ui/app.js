@@ -1534,11 +1534,18 @@
       const hex = (name) => rgbStringToHex(colors[name]);
       const content = kind === 'plan'
         ? dxfExport.buildPlanDxf(project, {
-          colors: { alignment: hex('--alignment-color'), structure: hex('--structure-color'), servidumbre: hex('--muted') }
+          colors: {
+            alignment: hex('--alignment-color'), structure: hex('--structure-color'),
+            servidumbre: hex('--muted'), circuit: hex('--conductor-color'), grid: hex('--muted')
+          },
+          showCircuit: planView.getCircuitVisible()
         })
         : dxfExport.buildProfileDxf(project, planHypothesisId, {
           verticalExaggeration: profileView.getVerticalExaggeration(),
-          colors: { terrain: hex('--terrain-color'), structure: hex('--structure-color'), conductor: hex('--conductor-color'), vertexLine: hex('--vertex-line-color') },
+          colors: {
+            terrain: hex('--terrain-color'), structure: hex('--structure-color'),
+            conductor: hex('--conductor-color'), vertexLine: hex('--vertex-line-color'), grid: hex('--muted')
+          },
           showSag: profileView.getSagLabelsVisible(),
           showClearance: profileView.getClearanceLabelsVisible(),
           showVertexLines: profileView.getVertexLinesVisible()

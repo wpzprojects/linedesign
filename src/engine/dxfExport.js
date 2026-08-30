@@ -6,9 +6,16 @@
  * AutoCAD sí validan estrictamente — de ahí el error "Null object Id" al
  * probar con un HEADER declarando AC1015 sin las tablas que ese formato
  * espera). El color va por índice ACI (código 62, paleta estándar de 255
- * colores) en vez de color verdadero (420, que requiere R2000+).
+ * colores) en vez de color verdadero (420, que requiere R2000+). Sin
+ * TABLES tampoco hay linetypes propios (DASHED, etc.) — la servidumbre se
+ * dibuja "punteada a mano": tramos LINE cortos con huecos entre ellos, en
+ * vez de un linetype real, para no depender de ninguna sección extra.
+ *
  * Coordenadas reales (1 unidad de dibujo = 1 metro) — pensado para
- * overlay/medición en CAD, no para verse "bonito".
+ * overlay/medición en CAD, no para verse "bonito". Cada elemento va en su
+ * propia capa (ALINEAMIENTO, ESTRUCTURAS, CIRCUITO, SERVIDUMBRE, CUADRICULA
+ * en Planta; TERRENO, ESTRUCTURAS, CONDUCTOR, VERTICES, ANOTACIONES,
+ * CUADRICULA en Perfil).
  *
  * Módulo puro (sin DOM), igual que el resto de src/engine — ver stationing.js.
  */
@@ -24,6 +31,10 @@
     return n.toFixed(4);
   }
 
+  function formatTick(value, step) {
+    return value.toFixed(step < 1 ? 1 : 0);
+  }
+
   function escapeDxfText(text) {
     // DXF usa "%%" como prefijo de códigos especiales (%%d = °, etc.) — se
     // duplica cualquier "%" literal para que no se interprete como uno.
@@ -33,7 +44,7 @@
   // Paleta reducida del índice de color de AutoCAD (ACI, código 62) — el
   // valor real de cada índice 1-255 depende de una tabla fija que no vale
   // la pena reproducir entera acá; esta docena cubre razonablemente los
-  // colores de tema de la app (naranja/verde azulado/azul/oliva).
+  // colores de tema de la app (naranja/verde azulado/azul/oliva/gris).
   const ACI_PALETTE = [
     [1, [255, 0, 0]], [2, [255, 255, 0]], [3, [0, 255, 0]], [4, [0, 255, 255]],
     [5, [0, 0, 255]], [6, [255, 0, 255]], [7, [255, 255, 255]], [8, [128, 128, 128]],
@@ -89,15 +100,89 @@
     return lines;
   }
 
+  /** Misma polilínea, pero "punteada a mano" (tramos LINE cortos con huecos
+   * — ver comentario del módulo, no hay linetype propio sin TABLES). */
+  function dashedPolylineAsLines(points, layer, color, dashLen = 2, gapLen = 1.2) {
+    const lines = [];
+    let remaining = dashLen;
+    let drawing = true;
+    for (let i = 0; i < points.length - 1; i += 1) {
+      const x1 = points[i].x;
+      const y1 = points[i].y;
+      const x2 = points[i + 1].x;
+      const y2 = points[i + 1].y;
+      const segLen = Math.hypot(x2 - x1, y2 - y1);
+      if (segLen < 1e-9) continue;
+      const dx = (x2 - x1) / segLen;
+      const dy = (y2 - y1) / segLen;
+      let pos = 0;
+      while (pos < segLen) {
+        const step = Math.min(remaining, segLen - pos);
+        if (drawing) {
+          lines.push(...dxfLine(x1 + dx * pos, y1 + dy * pos, x1 + dx * (pos + step), y1 + dy * (pos + step), layer, color));
+        }
+        pos += step;
+        remaining -= step;
+        if (remaining <= 1e-9) {
+          drawing = !drawing;
+          remaining = drawing ? dashLen : gapLen;
+        }
+      }
+    }
+    return lines;
+  }
+
   function buildDxfDocument(entityGroups) {
     return ['0', 'SECTION', '2', 'ENTITIES', ...entityGroups.flat(), '0', 'ENDSEC', '0', 'EOF'].join('\n');
   }
 
+  /** Cuadrícula de referencia (mismo criterio que buildRulerGrid en
+   * svgUtil.js — ver también ese archivo): marcas "redondas" (niceStep) en
+   * X y en Y, como líneas que cruzan todo el rango, con su valor como
+   * TEXT. `valueBounds` está siempre en el espacio de datos REAL (nunca
+   * escalado) — el paso y las marcas se calculan ahí; `toDrawX`/`toDrawY`
+   * (opcionales, por defecto la identidad) convierten cada posición al
+   * espacio en el que de verdad se dibuja — en Perfil, toDrawY aplica la
+   * exageración vertical (ver scaleY en buildProfileDxf), así el paso
+   * sigue siendo un número de elevación "redondo" aunque su POSICIÓN en
+   * el dibujo esté estirada. */
+  function buildGridEntities(valueBounds, layer, color, toDrawX = (x) => x, toDrawY = (y) => y) {
+    const entities = [];
+    const stepX = stationing.niceStep(valueBounds.maxX - valueBounds.minX);
+    const stepY = stationing.niceStep(valueBounds.maxY - valueBounds.minY);
+    const drawMinX = toDrawX(valueBounds.minX);
+    const drawMaxX = toDrawX(valueBounds.maxX);
+    const drawMinY = toDrawY(valueBounds.minY);
+    const drawMaxY = toDrawY(valueBounds.maxY);
+    const labelHeightX = Math.max(Math.abs(drawMaxY - drawMinY) * 0.03, 0.5);
+    const labelHeightY = Math.max(Math.abs(drawMaxX - drawMinX) * 0.03, 0.5);
+    if (stepX > 0) {
+      const startX = Math.ceil(valueBounds.minX / stepX) * stepX;
+      for (let x = startX; x <= valueBounds.maxX + 1e-9; x += stepX) {
+        const dx = toDrawX(x);
+        entities.push(dxfLine(dx, drawMinY, dx, drawMaxY, layer, color));
+        entities.push(dxfText(dx, drawMinY, labelHeightX, formatTick(x, stepX), layer, color));
+      }
+    }
+    if (stepY > 0) {
+      const startY = Math.ceil(valueBounds.minY / stepY) * stepY;
+      for (let y = startY; y <= valueBounds.maxY + 1e-9; y += stepY) {
+        const dy = toDrawY(y);
+        entities.push(dxfLine(drawMinX, dy, drawMaxX, dy, layer, color));
+        entities.push(dxfText(drawMinX, dy, labelHeightY, formatTick(y, stepY), layer, color));
+      }
+    }
+    return entities;
+  }
+
   /** Planta: coordenadas reales del proyecto (MAGNA-SIRGAS / Origen-Nacional,
-   * EPSG:9377 — ver geo.js), en metros. `colors` (opcional): hex por capa
-   * ({ alignment, structure, servidumbre }) — sin esto, color por defecto
-   * del lector. */
-  function buildPlanDxf(project, { colors = {} } = {}) {
+   * EPSG:9377 — ver geo.js), en metros.
+   * `colors` (opcional, hex): { alignment, structure, servidumbre,
+   * circuit, grid }. `showCircuit` refleja el mismo toggle ya activo en
+   * pantalla (ver planView.js#getCircuitVisible) — el circuito y sus cotas
+   * (distancia entre estructuras consecutivas) solo se agregan si está
+   * activo. */
+  function buildPlanDxf(project, { colors = {}, showCircuit = false } = {}) {
     const vertices = project.alignment.vertices;
     const entities = [];
 
@@ -111,7 +196,7 @@
     if (rightOfWayWidth > 0 && vertices.length >= 2) {
       const half = rightOfWayWidth / 2;
       [half, -half].forEach((offset) => {
-        entities.push(polylineAsLines(stationing.offsetPolyline(vertices, offset), 'SERVIDUMBRE', colors.servidumbre));
+        entities.push(dashedPolylineAsLines(stationing.offsetPolyline(vertices, offset), 'SERVIDUMBRE', colors.servidumbre));
       });
     }
 
@@ -120,6 +205,24 @@
       entities.push(dxfCircle(structure.x, structure.y, 1.5, 'ESTRUCTURAS', colors.structure));
       entities.push(dxfText(structure.x + 2, structure.y + 2, 2.5, structure.name || structure.id, 'ESTRUCTURAS', colors.structure));
     });
+
+    // Circuito entre estructuras consecutivas (recto, no sigue los quiebres
+    // del alineamiento) + la distancia de cada tramo — mismo criterio que
+    // planView.js#updateCircuit.
+    if (showCircuit && resolved.length >= 2) {
+      const sorted = [...resolved].sort((a, b) => a.station - b.station);
+      const points = sorted.map((s) => stationing.pointAtStation(vertices, s.station));
+      entities.push(polylineAsLines(points, 'CIRCUITO', colors.circuit));
+      for (let i = 0; i < points.length - 1; i += 1) {
+        const midX = (points[i].x + points[i + 1].x) / 2;
+        const midY = (points[i].y + points[i + 1].y) / 2;
+        const label = `${(sorted[i + 1].station - sorted[i].station).toFixed(1)} m`;
+        entities.push(dxfText(midX, midY, 2, label, 'CIRCUITO', colors.circuit));
+      }
+    }
+
+    const gridBounds = stationing.padBoundsByStep(stationing.planBounds(vertices, rightOfWayWidth / 2));
+    entities.push(buildGridEntities(gridBounds, 'CUADRICULA', colors.grid));
 
     return buildDxfDocument(entities);
   }
@@ -132,7 +235,11 @@
    * del propio perfil (no se escala en torno a 0, que dejaría todo el
    * dibujo desplazado lejos de sus coordenadas reales sin necesidad).
    *
-   * `colors` (opcional, hex): { terrain, structure, conductor, vertexLine }.
+   * Terreno/cuadrícula se recortan a la station de la primera a la última
+   * estructura — más allá de eso no hay circuito real (el alineamiento
+   * puede seguir, pero ya no hay nada tendido ahí).
+   *
+   * `colors` (opcional, hex): { terrain, structure, conductor, vertexLine, grid }.
    * `showSag`/`showClearance`/`showVertexLines`: reflejan los mismos
    * toggles ya activos en la pantalla de Perfil (ver los getters de
    * profileView.js) — cada uno agrega o no su contenido correspondiente.
@@ -144,9 +251,27 @@
     const terrainProfile = project.alignment.terrainProfile;
     const entities = [];
 
-    const terrainPointsRaw = terrainProfile
+    const resolvedAll = stationing.resolveStructures(vertices, project.structures, terrainProfile)
+      .sort((a, b) => a.station - b.station);
+    const clipStart = resolvedAll.length ? resolvedAll[0].station : 0;
+    const clipEnd = resolvedAll.length ? resolvedAll[resolvedAll.length - 1].station : (distances[distances.length - 1] || 0);
+
+    const terrainPointsFull = terrainProfile
       ? terrainProfile.map((p) => ({ x: p.station, y: p.elevation }))
       : vertices.map((v, i) => ({ x: distances[i], y: v.z }));
+
+    // Recorta el terreno a [clipStart, clipEnd] — con un punto interpolado
+    // exacto en cada extremo (en vez de solo filtrar) para que el corte
+    // quede limpio justo en la station de la primera/última estructura, no
+    // en el punto muestreado más cercano.
+    const elevationAt = (station) => (terrainProfile
+      ? stationing.elevationAtStation(terrainProfile, station)
+      : stationing.pointAtStation(vertices, station).z);
+    const terrainPointsRaw = [
+      { x: clipStart, y: elevationAt(clipStart) },
+      ...terrainPointsFull.filter((p) => p.x > clipStart && p.x < clipEnd),
+      { x: clipEnd, y: elevationAt(clipEnd) }
+    ];
 
     const baseline = Math.min(...terrainPointsRaw.map((p) => p.y));
     const scaleY = (y) => baseline + (y - baseline) * verticalExaggeration;
@@ -158,12 +283,12 @@
       const terrainTopY = scaleY(Math.max(...terrainPointsRaw.map((p) => p.y)));
       const terrainBottomY = scaleY(Math.min(...terrainPointsRaw.map((p) => p.y)));
       vertices.forEach((v, i) => {
+        if (distances[i] < clipStart || distances[i] > clipEnd) return;
         entities.push(dxfLine(distances[i], terrainBottomY, distances[i], terrainTopY, 'VERTICES', colors.vertexLine));
       });
     }
 
-    const resolved = stationing.resolveStructures(vertices, project.structures, terrainProfile)
-      .sort((a, b) => a.station - b.station);
+    const resolved = resolvedAll;
     resolved.forEach((structure) => {
       const baseY = scaleY(structure.z);
       const topY = scaleY(structure.z + structure.height);
@@ -178,6 +303,7 @@
       spanLengthsRaw,
       (s) => stationing.isAnchorStructure(s, project.structureCatalog)
     );
+    let structureTopMax = -Infinity;
     for (let i = 0; i < resolved.length - 1; i += 1) {
       const from = resolved[i];
       const to = resolved[i + 1];
@@ -189,6 +315,7 @@
       const tension = catenary.computeSpanTension(conductor, referenceHypothesis, hypothesis, section.rulingSpan, project.stringingTensions);
       const fromTop = from.z + from.height;
       const toTop = to.z + to.height;
+      structureTopMax = Math.max(structureTopMax, fromTop, toTop);
       const curve = catenary.catenaryCurve({
         span: spanLength, heightDiff: toTop - fromTop, H: tension.horizontalTension, unitWeight: tension.verticalUnitWeight
       });
@@ -204,15 +331,17 @@
         if (showClearance) {
           const minClearance = curve.points.reduce((min, p) => {
             const station = from.station + p.x;
-            const terrainZ = terrainProfile
-              ? stationing.elevationAtStation(terrainProfile, station)
-              : stationing.pointAtStation(vertices, station).z;
+            const terrainZ = elevationAt(station);
             return Math.min(min, (fromTop + p.y) - terrainZ);
           }, Infinity);
           entities.push(dxfText(midStation, midTopY - 2, 1.5, `${minClearance.toFixed(2)} m`, 'ANOTACIONES', colors.terrain));
         }
       }
     }
+
+    const allZ = terrainPointsRaw.map((p) => p.y).concat(resolved.map((s) => s.z), resolved.map((s) => s.z + s.height));
+    const gridBounds = { minX: clipStart, maxX: clipEnd, minY: Math.min(...allZ), maxY: Math.max(...allZ, structureTopMax) };
+    entities.push(buildGridEntities(gridBounds, 'CUADRICULA', colors.grid, (x) => x, scaleY));
 
     return buildDxfDocument(entities);
   }
