@@ -280,11 +280,8 @@
         // Distancia mínima real del conductor al terreno dentro del vano
         // (no la distancia de seguridad configurada — esa es la línea
         // punteada; esto es lo que realmente hay), calculada sobre la fase
-        // más baja. La columna equivalente de la Tabla de estructuras
-        // (Resumen) — ver app.js#renderStructuresTable — todavía usa la
-        // punta del poste sin descontar offsetZ en absoluto (el mismo bug
-        // que este archivo tenía antes de esta ronda de cambios); no se
-        // tocó ahí todavía.
+        // más baja. Mismo criterio que la columna equivalente de la Tabla
+        // de estructuras (Resumen) — ver app.js#renderStructuresTable.
         const minClearance = lowestCurve.points.reduce((min, p) => {
           const station = from.station + p.x;
           const terrainZ = terrainProfile

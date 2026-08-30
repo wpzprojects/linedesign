@@ -616,11 +616,33 @@
 
       if (span) {
         const to = sorted[index + 1];
-        const fromTop = structure.z + structure.height;
-        const toTop = to.z + to.height;
+        // Una curva por fase (mismo criterio que profileView.js/dxfExport.js
+        // — ver el comentario ahí): cada punto de fijación cuelga desde su
+        // propia altura real (structure.height - offsetZ), emparejados por
+        // posición en la lista. Flecha/distancia al terreno se toman de la
+        // fase físicamente más baja, la que de verdad arriesga el "Cumple"
+        // de distancia de seguridad — antes usaba la punta del poste
+        // directo, sin descontar ningún offsetZ.
+        const toType = project.structureCatalog.find((t) => t.typeId === to.typeId);
+        const fromPoints = (type && type.attachmentPoints) || [];
+        const toPoints = (toType && toType.attachmentPoints) || [];
+        const phases = (fromPoints.length && toPoints.length)
+          ? Array.from({ length: Math.min(fromPoints.length, toPoints.length) }, (_, p) => ({
+            fromTop: structure.z + Math.max(structure.height - fromPoints[p].offsetZ, 0),
+            toTop: to.z + Math.max(to.height - toPoints[p].offsetZ, 0)
+          }))
+          : [{
+            fromTop: structure.z + loadTree.averageAttachmentHeight(project, structure),
+            toTop: to.z + loadTree.averageAttachmentHeight(project, to)
+          }];
+        let lowestIndex = 0;
+        phases.forEach((ph, idx) => {
+          if (Math.min(ph.fromTop, ph.toTop) < Math.min(phases[lowestIndex].fromTop, phases[lowestIndex].toTop)) lowestIndex = idx;
+        });
+        const lowest = phases[lowestIndex];
         const curve = catenary.catenaryCurve({
           span: span.length,
-          heightDiff: toTop - fromTop,
+          heightDiff: lowest.toTop - lowest.fromTop,
           H: span.horizontalTension,
           unitWeight: span.verticalUnitWeight
         });
@@ -631,7 +653,7 @@
           const terrainZ = terrainProfile
             ? stationing.elevationAtStation(terrainProfile, station)
             : stationing.pointAtStation(vertices, station).z;
-          return Math.min(min, (fromTop + p.y) - terrainZ);
+          return Math.min(min, (lowest.fromTop + p.y) - terrainZ);
         }, Infinity);
       }
 
