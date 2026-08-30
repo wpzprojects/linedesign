@@ -16,7 +16,7 @@
   // sampleStructureCatalog usa para las resistencias de contraviento de
   // ejemplo) — referencia de qué talla comercial corresponde a cada
   // resistencia típica, para que no sean solo números sueltos.
-  const GUY_RESISTANCE_REFERENCE = 'Valores típicos de cordón EHS galvanizado: 2722 kgF (1/4″) · 4082 kgF (5/16″) · 5987 kgF (3/8″).';
+  const GUY_RESISTANCE_REFERENCE = 'Valores típicos de cordón EHS galvanizado: 2722 kgF (1/4″) · 4082 kgF (5/16″) · 5987 kgF (3/8″) · 10896 kgF (1/2″).';
 
   function createCatalogView(container, store) {
     let editingId = null;
@@ -167,7 +167,7 @@
       const guyResistanceInput = el('input', {
         type: 'text', id: 'catalog-guy-resistances-input',
         value: editingType && editingType.guyResistanceOptions ? editingType.guyResistanceOptions.join(', ') : '',
-        placeholder: 'Ej: 2722, 4082, 5987 (solo aplica a Ángulo/Retención)'
+        placeholder: 'Ej: 2722, 4082, 5987, 10896 (solo aplica a Ángulo/Retención)'
       });
       // Si se activa, la "altura" del catálogo deja de ser toda libre sobre
       // el terreno: se le resta la profundidad de enterramiento/empotramiento

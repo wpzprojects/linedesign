@@ -990,7 +990,7 @@
           value: r, selected: r === (structure.guyResistance != null ? structure.guyResistance : guyResistanceOptions[0])
         }, `${r} kgF`))), {
           disabled: !hasGuy,
-          title: 'Resistencia última a rotura del cable de contraviento (kgF) — opciones definidas en el catálogo de estructuras. Se compara contra la tensión que le exige la carga, dividida entre el "Factor de seguridad de contravientos".'
+          title: 'Resistencia última a rotura del cable de contraviento (kgF) — opciones definidas en el catálogo de estructuras. Se compara contra la tensión que le exige la carga, dividida entre el "Factor de seguridad de contravientos". Valores típicos de cordón EHS galvanizado: 2722 kgF (1/4″) · 4082 kgF (5/16″) · 5987 kgF (3/8″) · 10896 kgF (1/2″) — a mayor diámetro del cable, mayor la resistencia última.'
         }),
         // Bloqueado a propósito (no solo cuando !hasGuy): el valor hoy no
         // entra en ningún cálculo (ver nota de "Fase 1" en loadTree.js y

@@ -137,8 +137,8 @@
         ],
         resistanceOptions: [750, 1050, 1350],
         // Resistencia última de cable de contraviento (kgF) — cordón de
-        // acero galvanizado ASTM A475, tallas comunes EHS 1/4"/5/16"/3/8".
-        guyResistanceOptions: [2722, 4082, 5987]
+        // acero galvanizado ASTM A475, tallas comunes EHS 1/4"/5/16"/3/8"/1/2".
+        guyResistanceOptions: [2722, 4082, 5987, 10896]
       },
       {
         typeId: 'TIPO-C',
@@ -152,7 +152,7 @@
           { name: 'Fase C', offsetX: 1.4, offsetZ: 0 }
         ],
         resistanceOptions: [750, 1050, 1350],
-        guyResistanceOptions: [2722, 4082, 5987]
+        guyResistanceOptions: [2722, 4082, 5987, 10896]
       }
     ];
   }
