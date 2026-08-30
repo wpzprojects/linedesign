@@ -373,6 +373,12 @@
                 <input id="structure-width-input" type="number" min="0.5" max="12" step="0.5" class="line-width-input" />
                 <span class="line-width-unit">px</span>
               </div>
+              <label for="terrain-color-input">Color y grosor del terreno (Perfil)</label>
+              <div class="color-width-row">
+                <input id="terrain-color-input" type="color" />
+                <input id="terrain-width-input" type="number" min="0.5" max="12" step="0.5" class="line-width-input" />
+                <span class="line-width-unit">px</span>
+              </div>
               <label for="structure-color-plan-input" title="En Planta el poste se dibuja como un círculo (no una línea), así que aquí el grosor controla el tamaño del círculo, no un ancho de trazo.">Color y grosor de postes (Planta)</label>
               <div class="color-width-row">
                 <input id="structure-color-plan-input" type="color" />
@@ -389,12 +395,6 @@
               <div class="color-width-row">
                 <input id="vertex-color-plan-input" type="color" />
                 <input id="vertex-width-plan-input" type="number" min="0.5" max="12" step="0.5" class="line-width-input" />
-                <span class="line-width-unit">px</span>
-              </div>
-              <label for="terrain-color-input">Color y grosor del terreno (Perfil)</label>
-              <div class="color-width-row">
-                <input id="terrain-color-input" type="color" />
-                <input id="terrain-width-input" type="number" min="0.5" max="12" step="0.5" class="line-width-input" />
                 <span class="line-width-unit">px</span>
               </div>
               <div class="row-actions">
@@ -488,8 +488,8 @@
               <h3>Propiedades (panel derecho)</h3>
               <p>Muestra y edita la selección vigente en el lienzo (o elegida desde una tabla en Resumen):</p>
               <ul>
-                <li><strong>Vértice</strong>: coordenadas Este/Norte/elevación editables, botón para eliminarlo (mínimo 2 vértices).</li>
-                <li><strong>Estructura</strong>: tipo, altura, resistencia (si el tipo la trae), station, botón "Ajustar al vértice más cercano" y botón para eliminarla.</li>
+                <li><strong>Vértice</strong>: coordenadas Este/Norte/elevación editables, ángulo de deflexión (informativo, no editable — cuánto gira el alineamiento ahí, a izquierda o derecha), botón para eliminarlo (mínimo 2 vértices).</li>
+                <li><strong>Estructura</strong>: nombre, tipo, station, altura, resistencia (si el tipo la trae) y, en Retención/Ángulo, los accesorios de contraviento (ver "Cumple poste / Cumple contraviento" más abajo) — más botón "Ajustar al vértice más cercano" y botón para eliminarla.</li>
                 <li><strong>Sección de tensionamiento</strong>: el conductor de esa sección — "Usar el del proyecto" (por defecto) o cualquiera del catálogo, distinto al resto de la línea.</li>
               </ul>
               <p>El botón de la esquina superior colapsa el panel a una franja angosta cuando no lo necesitas.</p>
@@ -515,7 +515,7 @@
             <div class="card">
               <h2>Cumple poste / Cumple contraviento (validación de resistencia)</h2>
               <p>Dos columnas en la Tabla de estructuras (Resumen) que validan si el poste y, si tiene, su contraviento resisten las cargas calculadas. "Cumple poste" requiere que la estructura tenga una <strong>resistencia</strong> asignada (kgF, la resistencia última a rotura del poste, ensayada por el fabricante a 20 cm de la punta — convención RETIE/NTC); si no la tiene, la columna muestra "—" (sin validar).</p>
-              <p>Sin contraviento, como el poste es de sección circular (sin eje débil/fuerte), lo que lo flecta es la resultante de las fuerzas horizontales del árbol de cargas (transversal + longitudinal) aplicada a la altura promedio de enganche — se evalúa bajo todas las hipótesis climáticas y se toma la peor, no solo la de referencia. Esa demanda se compara contra el momento admisible del poste: la resistencia última × (altura del poste − 0.20 m), dividida entre el "Factor de seguridad de postes" de Parámetros de entrada § Terreno.</p>
+              <p>Sin contraviento, como el poste es de sección circular (sin eje débil/fuerte), lo que lo flecta es la resultante de las fuerzas horizontales del árbol de cargas (transversal + longitudinal) aplicada a la altura promedio de enganche — se evalúa bajo todas las hipótesis climáticas y se toma la peor, no solo la de referencia. Esa demanda se compara contra el momento admisible del poste: la resistencia última × (altura LIBRE del poste − 0.20 m), dividida entre el "Factor de seguridad de postes" de Parámetros de entrada § Terreno. La altura libre es la altura de catálogo tal cual, salvo que el tipo tenga activado "Considera profundidad de enterramiento" (Catálogo de estructuras) — ahí se le resta la profundidad estimada de empotramiento (10% de la altura + 0.6 m), la parte que queda bajo tierra.</p>
               <p><strong>Contravientos</strong> (Propiedades de una estructura Retención o Ángulo — deshabilitado en Suspensión/Paso): "Instalar contravientos" agrega, internamente, uno opuesto a cada vano adyacente en Retención, o uno solo opuesto a la resultante de tensión en Ángulo. Simplificación: se asume que el contraviento cancela POR COMPLETO la componente de carga inducida por el desequilibrio de tensión del conductor, dejando como demanda residual sobre el poste solo el viento — por eso, al activarlo, "Cumple poste" suele mejorar bastante. La tracción que debe resistir el propio cable de contraviento se calcula con el "Ángulo de la retenida" que definas (respecto a la VERTICAL del poste — mientras más cerrado/vertical, mayor la tracción que necesita el cable para la misma carga; 30° es el valor de referencia sugerido por defecto) y se compara contra la "Resistencia de contraviento" del catálogo de estructuras, dividida entre el "Factor de seguridad de contravientos". La "Altura de enganche desde la punta" es solo geometría de referencia (mismo criterio que los puntos de fijación del conductor: se mide desde la punta del poste hacia abajo, no desde el piso) — no entra en este cálculo simplificado. "Cumple contraviento" muestra "—" si no aplica o no está instalado, ⚠ si falta resistencia o ángulo, y ✓/✗ con el % de uso si está completo.</p>
               <p>En ambas columnas: el detalle (demanda, admisible y caso climático gobernante) aparece al pasar el cursor sobre la celda.</p>
             </div>
@@ -530,8 +530,8 @@
 
             <div class="card">
               <h2>Catálogo de estructuras</h2>
-              <p>Tipos de poste/torre reutilizables por las estructuras distribuidas en el alineamiento. Cada tipo tiene: nombre, categoría (Suspensión/Ángulo/Retención/Paso — Retención y Ángulo anclan la línea, delimitan una sección de tensionamiento; Suspensión y Paso no, el conductor las atraviesa), alturas disponibles (m), resistencias disponibles (kgF, opcional) y puntos de fijación del conductor (nombre de fase, desplazamiento lateral y vertical respecto al eje del poste).</p>
-              <p>Los puntos de fijación determinan cuántas fases tiene la estructura para el árbol de cargas (se pondera la fuerza por vano por esa cantidad), aunque en Perfil la catenaria se dibuja como una sola curva representativa por vano (no una por fase).</p>
+              <p>Tipos de poste/torre reutilizables por las estructuras distribuidas en el alineamiento. Cada tipo tiene: nombre, categoría (Suspensión/Ángulo/Retención/Paso — Retención y Ángulo anclan la línea, delimitan una sección de tensionamiento; Suspensión y Paso no, el conductor las atraviesa), alturas disponibles (m), resistencias disponibles (kgF, opcional), resistencias de contraviento disponibles (kgF, opcional, solo Retención/Ángulo), "Considera profundidad de enterramiento" (Sí/No — si está activado, se le resta a la altura de catálogo una profundidad de empotramiento estimada de 10% de la altura + 0.6 m para obtener la altura LIBRE real sobre el terreno, usada para dibujar el poste, la altura de enganche del conductor y "Cumple poste") y puntos de fijación del conductor (nombre de fase, desplazamiento lateral y vertical respecto a la punta del poste).</p>
+              <p>Los puntos de fijación determinan cuántas fases tiene la estructura para el árbol de cargas (se pondera la fuerza por vano por esa cantidad) y, en Perfil/DXF/Resumen, se dibuja/mide <strong>una curva de catenaria por fase real</strong> (no una sola curva promedio) — la flecha y la distancia mínima al piso que se muestran son las de la fase físicamente más baja.</p>
               <p class="muted">Un tipo en uso por alguna estructura distribuida no se puede eliminar hasta reasignar o borrar esas estructuras primero.</p>
             </div>
 
@@ -539,21 +539,21 @@
               <h2>Resumen</h2>
               <ul>
                 <li><strong>Resumen</strong>: conteo de vértices/estructuras/vanos, longitud total, conductor e hipótesis en uso.</li>
-                <li><strong>Tabla de estructuras</strong>: ID, tipo, station, altura, cota de terreno, cota de punta (elevación del enganche), resistencia, y del vano hacia la siguiente estructura — su longitud, la flecha y la distancia mínima al piso (la separación real mínima entre la curva de catenaria y el terreno a lo largo de ese vano), todo bajo la hipótesis de referencia del conductor. Las columnas "Cumple poste"/"Cumple contraviento" validan si la estructura y su contraviento (si tiene) resisten las cargas del árbol de cargas — ver sección propia más abajo.</li>
+                <li><strong>Tabla de estructuras</strong>: ID, station, Este, Norte, cota de terreno, ángulo de deflexión (solo si la estructura está justo en un vértice de ángulo), tipo, altura, resistencia, y del vano hacia la siguiente estructura — su longitud, la flecha y la distancia mínima al piso (la separación real mínima entre la curva de catenaria y el terreno a lo largo de ese vano, de la fase más baja), todo bajo la hipótesis de referencia del conductor. Las columnas "Cumple poste"/"Cumple contraviento" validan si la estructura y su contraviento (si tiene) resisten las cargas del árbol de cargas — ver sección propia más abajo.</li>
                 <li><strong>Alineamiento</strong>: ID, station, Este, Norte y elevación de cada vértice.</li>
               </ul>
-              <p>Clic en cualquier fila selecciona ese elemento y salta a Planta y Perfil.</p>
+              <p>Clic en cualquier fila selecciona ese elemento y salta a Planta y Perfil. Ambas tablas tienen botones "Exportar JSON"/"Exportar CSV" propios, con las mismas columnas que se ven en pantalla — en "Cumple poste"/"Cumple contraviento" el porcentaje y el estado ("Cumple"/"No cumple"/"Sin datos") quedan en columnas separadas, más fáciles de filtrar/ordenar en una hoja de cálculo que en pantalla.</p>
             </div>
 
             <div class="card">
               <h2>Cálculo mecánico (árbol de cargas)</h2>
-              <p>Para cada estructura y cada caso climático: fuerza vertical (peso tributario del conductor de los vanos adyacentes), transversal (viento + desequilibrio de tensión entre vanos, relevante en ángulos) y longitudinal (desequilibrio de tensión — máxima en un remate, donde un solo vano tracciona sin contrapeso), más una estimación simplificada de momento de vuelco en la base. Botón para exportar la tabla completa a JSON.</p>
+              <p>Para cada estructura y cada caso climático: fuerza vertical (peso tributario del conductor de los vanos adyacentes), transversal (viento + desequilibrio de tensión entre vanos, relevante en ángulos) y longitudinal (desequilibrio de tensión — máxima en un remate, donde un solo vano tracciona sin contrapeso), más una estimación simplificada de momento de vuelco en la base. Botones para exportar la tabla completa a JSON o a CSV.</p>
               <p class="muted">Simplificaciones: no incluye peso propio de la estructura ni de herrajes/aisladores; todas las fases se asumen con la misma longitud de vano que el eje de la estructura; no se modela el balanceo de cadenas de aisladores en remates/ángulos.</p>
             </div>
 
             <div class="card">
               <h2>Configuración</h2>
-              <p>Ajustes de la aplicación en sí (no del proyecto): se guardan en tu navegador (localStorage), no viajan en el JSON exportado. Por ahora: color de los conductores en Perfil y color de los postes en Planta y Perfil, con botón para restablecer el color por defecto del tema activo.</p>
+              <p>Ajustes de la aplicación en sí (no del proyecto): se guardan en tu navegador (localStorage), no viajan en el JSON exportado. Color y grosor de: conductores, postes y terreno en Perfil; postes (el grosor controla el tamaño del círculo, no un trazo), alineamiento y vértices (el grosor es el borde del círculo del vértice) en Planta — cada uno por separado. Botón para restablecer todos los valores por defecto del tema activo.</p>
             </div>
 
             <div class="card">
