@@ -294,7 +294,14 @@ button, input, select, textarea {
   position: absolute;
   top: calc(100% + 4px);
   right: 0;
-  z-index: 20;
+  /* svg#plan-svg tiene z-index:300 a propósito (queda por encima de las
+     teselas del mapa base de Leaflet — ver esa regla) y, aunque este menú
+     vive fuera de .plan-canvas-wrap, ambos terminan comparándose en el
+     mismo contexto de apilamiento (ni .panel ni .panel-head crean uno
+     propio) — con menos de 300 acá, el menú desplegable quedaba con el
+     SVG (transparente, así que se seguía viendo) encima interceptando
+     los clics: se veían las opciones pero no respondían a nada. */
+  z-index: 400;
   display: flex;
   flex-direction: column;
   min-width: 160px;

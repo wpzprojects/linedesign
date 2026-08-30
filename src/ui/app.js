@@ -15,7 +15,7 @@
   const kmzImport = window.LineDesignKmzImport;
   const dxfExport = window.LineDesignDxfExport;
   const { el, clear } = window.LineDesignDomUtil;
-  const { downloadFile, exportSvgString, exportSvgAsPng } = window.LineDesignSvgUtil;
+  const { downloadFile, exportSvgString, exportSvgAsPng, resolveExportTheme, rgbStringToHex } = window.LineDesignSvgUtil;
 
   const planSvg = document.getElementById('plan-svg');
   const planMapContainer = document.getElementById('plan-map');
@@ -1558,9 +1558,19 @@
         if (format === 'dxf') {
           const filename = `${baseName}.dxf`;
           if (!confirm(`¿Descargar "${filename}"?`)) return;
+          const { colors } = resolveExportTheme();
+          const hex = (name) => rgbStringToHex(colors[name]);
           const content = kind === 'plan'
-            ? dxfExport.buildPlanDxf(project)
-            : dxfExport.buildProfileDxf(project, planHypothesisId);
+            ? dxfExport.buildPlanDxf(project, {
+              colors: { alignment: hex('--alignment-color'), structure: hex('--structure-color'), servidumbre: hex('--muted') }
+            })
+            : dxfExport.buildProfileDxf(project, planHypothesisId, {
+              verticalExaggeration: profileView.getVerticalExaggeration(),
+              colors: { terrain: hex('--terrain-color'), structure: hex('--structure-color'), conductor: hex('--conductor-color'), vertexLine: hex('--vertex-line-color') },
+              showSag: profileView.getSagLabelsVisible(),
+              showClearance: profileView.getClearanceLabelsVisible(),
+              showVertexLines: profileView.getVertexLinesVisible()
+            });
           downloadFile(filename, content, 'application/dxf');
         } else if (format === 'svg') {
           const filename = `${baseName}.svg`;

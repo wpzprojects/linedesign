@@ -1,9 +1,10 @@
 /**
- * dxfExport.js — Exporta Planta o Perfil a DXF (R12, solo sección ENTITIES —
- * un DXF mínimo válido no necesita HEADER/TABLES/BLOCKS: la capa "0" y los
- * demás valores por defecto ya existen implícitamente en cualquier lector).
- * Coordenadas reales (1 unidad de dibujo = 1 metro), sin exageración vertical
- * en Perfil — pensado para overlay/medición en CAD, no para verse "bonito".
+ * dxfExport.js — Exporta Planta o Perfil a DXF (AutoCAD 2000 / AC1015 —
+ * necesario para el código de color verdadero 420; solo HEADER (para
+ * declarar la versión) + ENTITIES, sin TABLES/BLOCKS: la capa "0" y demás
+ * valores por defecto ya existen implícitamente en cualquier lector).
+ * Coordenadas reales (1 unidad de dibujo = 1 metro) — pensado para
+ * overlay/medición en CAD, no para verse "bonito".
  *
  * Módulo puro (sin DOM), igual que el resto de src/engine — ver stationing.js.
  */
@@ -25,80 +26,126 @@
     return String(text).replace(/%/g, '%%');
   }
 
-  function dxfLine(x1, y1, x2, y2, layer) {
-    return ['0', 'LINE', '8', layer, '10', fmt(x1), '20', fmt(y1), '30', '0', '11', fmt(x2), '21', fmt(y2), '31', '0'];
+  /** Código de color verdadero (420, 24 bits) a partir de un "#rrggbb" —
+   * opcional: sin color, la entidad hereda el color por defecto de su capa
+   * (blanco/negro según el lector, de ahí que antes se viera "en blanco"). */
+  function colorCodes(hex) {
+    if (!hex) return [];
+    const int = parseInt(hex.replace('#', ''), 16);
+    if (!Number.isFinite(int)) return [];
+    return ['420', String(int)];
   }
 
-  function dxfCircle(x, y, r, layer) {
-    return ['0', 'CIRCLE', '8', layer, '10', fmt(x), '20', fmt(y), '30', '0', '40', fmt(r)];
+  function dxfLine(x1, y1, x2, y2, layer, color) {
+    return ['0', 'LINE', '8', layer, ...colorCodes(color), '10', fmt(x1), '20', fmt(y1), '30', '0', '11', fmt(x2), '21', fmt(y2), '31', '0'];
   }
 
-  function dxfText(x, y, height, text, layer) {
-    return ['0', 'TEXT', '8', layer, '10', fmt(x), '20', fmt(y), '30', '0', '40', fmt(height), '1', escapeDxfText(text)];
+  function dxfCircle(x, y, r, layer, color) {
+    return ['0', 'CIRCLE', '8', layer, ...colorCodes(color), '10', fmt(x), '20', fmt(y), '30', '0', '40', fmt(r)];
+  }
+
+  function dxfText(x, y, height, text, layer, color) {
+    return ['0', 'TEXT', '8', layer, ...colorCodes(color), '10', fmt(x), '20', fmt(y), '30', '0', '40', fmt(height), '1', escapeDxfText(text)];
   }
 
   /** Serie de LINE conectando puntos consecutivos — más simple y compatible
    * entre lectores que una POLYLINE/LWPOLYLINE real. */
-  function polylineAsLines(points, layer) {
+  function polylineAsLines(points, layer, color) {
     const lines = [];
     for (let i = 0; i < points.length - 1; i += 1) {
-      lines.push(...dxfLine(points[i].x, points[i].y, points[i + 1].x, points[i + 1].y, layer));
+      lines.push(...dxfLine(points[i].x, points[i].y, points[i + 1].x, points[i + 1].y, layer, color));
     }
     return lines;
   }
 
   function buildDxfDocument(entityGroups) {
-    return ['0', 'SECTION', '2', 'ENTITIES', ...entityGroups.flat(), '0', 'ENDSEC', '0', 'EOF'].join('\n');
+    return [
+      '0', 'SECTION', '2', 'HEADER',
+      '9', '$ACADVER', '1', 'AC1015',
+      '0', 'ENDSEC',
+      '0', 'SECTION', '2', 'ENTITIES',
+      ...entityGroups.flat(),
+      '0', 'ENDSEC',
+      '0', 'EOF'
+    ].join('\n');
   }
 
   /** Planta: coordenadas reales del proyecto (MAGNA-SIRGAS / Origen-Nacional,
-   * EPSG:9377 — ver geo.js), en metros. */
-  function buildPlanDxf(project) {
+   * EPSG:9377 — ver geo.js), en metros. `colors` (opcional): hex por capa
+   * ({ alignment, structure, servidumbre }) — sin esto, color por defecto
+   * del lector. */
+  function buildPlanDxf(project, { colors = {} } = {}) {
     const vertices = project.alignment.vertices;
     const entities = [];
 
-    entities.push(polylineAsLines(vertices, 'ALINEAMIENTO'));
+    entities.push(polylineAsLines(vertices, 'ALINEAMIENTO', colors.alignment));
     vertices.forEach((v) => {
-      entities.push(dxfCircle(v.x, v.y, 1, 'ALINEAMIENTO'));
-      entities.push(dxfText(v.x + 1.5, v.y + 1.5, 2, v.id, 'ALINEAMIENTO'));
+      entities.push(dxfCircle(v.x, v.y, 1, 'ALINEAMIENTO', colors.alignment));
+      entities.push(dxfText(v.x + 1.5, v.y + 1.5, 2, v.id, 'ALINEAMIENTO', colors.alignment));
     });
 
     const rightOfWayWidth = project.rightOfWayWidth || 0;
     if (rightOfWayWidth > 0 && vertices.length >= 2) {
       const half = rightOfWayWidth / 2;
       [half, -half].forEach((offset) => {
-        entities.push(polylineAsLines(stationing.offsetPolyline(vertices, offset), 'SERVIDUMBRE'));
+        entities.push(polylineAsLines(stationing.offsetPolyline(vertices, offset), 'SERVIDUMBRE', colors.servidumbre));
       });
     }
 
     const resolved = stationing.resolveStructures(vertices, project.structures);
     resolved.forEach((structure) => {
-      entities.push(dxfCircle(structure.x, structure.y, 1.5, 'ESTRUCTURAS'));
-      entities.push(dxfText(structure.x + 2, structure.y + 2, 2.5, structure.name || structure.id, 'ESTRUCTURAS'));
+      entities.push(dxfCircle(structure.x, structure.y, 1.5, 'ESTRUCTURAS', colors.structure));
+      entities.push(dxfText(structure.x + 2, structure.y + 2, 2.5, structure.name || structure.id, 'ESTRUCTURAS', colors.structure));
     });
 
     return buildDxfDocument(entities);
   }
 
-  /** Perfil: eje X = station (m), eje Y = elevación real (msnm) — sin la
-   * exageración vertical que usa la vista en pantalla (Configuración/
-   * "Escala vertical"), para que sirva de referencia real en CAD. */
-  function buildProfileDxf(project, hypothesisId) {
+  /**
+   * Perfil: eje X = station (m). Eje Y = elevación, escalada según
+   * `verticalExaggeration` (mismo control "Escala vertical" de la pantalla,
+   * ver profileView.js#getVerticalExaggeration) — 1× = elevación real; con
+   * cualquier otro valor, se estira la elevación RELATIVA a la cota mínima
+   * del propio perfil (no se escala en torno a 0, que dejaría todo el
+   * dibujo desplazado lejos de sus coordenadas reales sin necesidad).
+   *
+   * `colors` (opcional, hex): { terrain, structure, conductor, vertexLine }.
+   * `showSag`/`showClearance`/`showVertexLines`: reflejan los mismos
+   * toggles ya activos en la pantalla de Perfil (ver los getters de
+   * profileView.js) — cada uno agrega o no su contenido correspondiente.
+   */
+  function buildProfileDxf(project, hypothesisId, options = {}) {
+    const { verticalExaggeration = 1, colors = {}, showSag = false, showClearance = false, showVertexLines = false } = options;
     const vertices = project.alignment.vertices;
     const distances = stationing.cumulativeDistances(vertices);
     const terrainProfile = project.alignment.terrainProfile;
     const entities = [];
 
-    const terrainPoints = terrainProfile
+    const terrainPointsRaw = terrainProfile
       ? terrainProfile.map((p) => ({ x: p.station, y: p.elevation }))
       : vertices.map((v, i) => ({ x: distances[i], y: v.z }));
-    entities.push(polylineAsLines(terrainPoints, 'TERRENO'));
+
+    const baseline = Math.min(...terrainPointsRaw.map((p) => p.y));
+    const scaleY = (y) => baseline + (y - baseline) * verticalExaggeration;
+
+    const terrainPoints = terrainPointsRaw.map((p) => ({ x: p.x, y: scaleY(p.y) }));
+    entities.push(polylineAsLines(terrainPoints, 'TERRENO', colors.terrain));
+
+    if (showVertexLines) {
+      const terrainTopY = scaleY(Math.max(...terrainPointsRaw.map((p) => p.y)));
+      const terrainBottomY = scaleY(Math.min(...terrainPointsRaw.map((p) => p.y)));
+      vertices.forEach((v, i) => {
+        entities.push(dxfLine(distances[i], terrainBottomY, distances[i], terrainTopY, 'VERTICES', colors.vertexLine));
+      });
+    }
 
     const resolved = stationing.resolveStructures(vertices, project.structures, terrainProfile)
       .sort((a, b) => a.station - b.station);
     resolved.forEach((structure) => {
-      entities.push(dxfLine(structure.station, structure.z, structure.station, structure.z + structure.height, 'ESTRUCTURAS'));
-      entities.push(dxfText(structure.station + 1, structure.z + structure.height + 1, 2, structure.name || structure.id, 'ESTRUCTURAS'));
+      const baseY = scaleY(structure.z);
+      const topY = scaleY(structure.z + structure.height);
+      entities.push(dxfLine(structure.station, baseY, structure.station, topY, 'ESTRUCTURAS', colors.structure));
+      entities.push(dxfText(structure.station + 1, topY + 1, 2, structure.name || structure.id, 'ESTRUCTURAS', colors.structure));
     });
 
     const hypothesis = project.hypotheses.find((h) => h.id === hypothesisId) || project.hypotheses[0];
@@ -122,8 +169,26 @@
       const curve = catenary.catenaryCurve({
         span: spanLength, heightDiff: toTop - fromTop, H: tension.horizontalTension, unitWeight: tension.verticalUnitWeight
       });
-      const points = curve.points.map((p) => ({ x: from.station + p.x, y: fromTop + p.y }));
-      entities.push(polylineAsLines(points, 'CONDUCTOR'));
+      const points = curve.points.map((p) => ({ x: from.station + p.x, y: scaleY(fromTop + p.y) }));
+      entities.push(polylineAsLines(points, 'CONDUCTOR', colors.conductor));
+
+      if (showSag || showClearance) {
+        const midStation = from.station + spanLength / 2;
+        const midTopY = scaleY(Math.min(fromTop, toTop));
+        if (showSag) {
+          entities.push(dxfText(midStation, midTopY + 1, 1.5, `${curve.sag.toFixed(2)} m`, 'ANOTACIONES', colors.conductor));
+        }
+        if (showClearance) {
+          const minClearance = curve.points.reduce((min, p) => {
+            const station = from.station + p.x;
+            const terrainZ = terrainProfile
+              ? stationing.elevationAtStation(terrainProfile, station)
+              : stationing.pointAtStation(vertices, station).z;
+            return Math.min(min, (fromTop + p.y) - terrainZ);
+          }, Infinity);
+          entities.push(dxfText(midStation, midTopY - 2, 1.5, `${minClearance.toFixed(2)} m`, 'ANOTACIONES', colors.terrain));
+        }
+      }
     }
 
     return buildDxfDocument(entities);

@@ -102,30 +102,66 @@
     return group;
   }
 
-  // Nombres de las variables CSS de tema que de verdad se usan dentro de
-  // #plan-svg/#profile-svg (colores + los grosores configurables en
-  // Configuración) — ver styles.css. Un SVG exportado como archivo se abre
-  // en un documento aparte (o, para el PNG, dentro de un <img> con su
-  // propio contexto de render): ninguno hereda las custom properties de
-  // esta página, así que hay que resolverlas a su valor concreto ACTUAL
-  // (tema claro/oscuro vigente) e incrustarlas.
-  const EXPORT_THEME_VARS = [
-    '--panel', '--muted', '--text', '--line', '--primary', '--danger',
-    '--conductor-color', '--structure-color', '--alignment-color', '--terrain-color', '--vertex-line-color',
-    '--conductor-line-width', '--structure-line-width', '--alignment-line-width', '--terrain-line-width'
+  // Variables de color de tema que usan #plan-svg/#profile-svg — ver
+  // styles.css. Por DEFECTO son indirectas (ej. --conductor-color:
+  // var(--warning)) — solo se vuelven un hex literal si el usuario las
+  // personaliza en Configuración. getComputedStyle().getPropertyValue()
+  // de una custom property devuelve el valor tal cual quedó ESPECIFICADO
+  // (sin expandir var() anidados dentro de ella — así lo define el spec),
+  // así que por defecto esto devolvería el texto literal "var(--warning)",
+  // no un color real. Ver resolveThemeColor más abajo para el arreglo.
+  const EXPORT_COLOR_VARS = [
+    '--panel', '--muted', '--text', '--line', '--primary',
+    '--conductor-color', '--structure-color', '--alignment-color', '--terrain-color', '--vertex-line-color'
   ];
+  // Estas sí son literales siempre — las fija directamente el propio JS de
+  // Configuración (setProperty con un número, nunca otra var) —, no
+  // necesitan el mismo arreglo.
+  const EXPORT_WIDTH_VARS = ['--conductor-line-width', '--structure-line-width', '--alignment-line-width', '--terrain-line-width'];
+
+  /** Valor YA resuelto (nunca "var(--x)" sin expandir) de una custom
+   * property de color: se aplica a un elemento real fuera de pantalla
+   * como "color" (una propiedad normal, que el navegador SÍ resuelve del
+   * todo, var() anidados incluidos) y se lee de vuelta su computed style
+   * — "rgb(r, g, b)". Mismo truco de siempre para leer el valor real de
+   * una custom property que el spec no expande por sí solo. */
+  function resolveThemeColor(varName) {
+    const probe = document.createElement('div');
+    probe.style.display = 'none';
+    probe.style.color = `var(${varName})`;
+    document.body.appendChild(probe);
+    const rgb = getComputedStyle(probe).color;
+    document.body.removeChild(probe);
+    return rgb;
+  }
+
+  function rgbStringToHex(rgbString) {
+    const parts = (rgbString.match(/\d+/g) || ['0', '0', '0']).map(Number);
+    return `#${parts.slice(0, 3).map((n) => n.toString(16).padStart(2, '0')).join('')}`;
+  }
+
+  /** Todos los colores/grosores de tema usados por Planta/Perfil, ya
+   * resueltos a valores concretos ("rgb(...)"/hex y números) — un solo
+   * lugar para armarlos, lo reusan tanto el <style> del SVG exportado
+   * como los colores del DXF (ver app.js). */
+  function resolveExportTheme() {
+    const colors = {};
+    EXPORT_COLOR_VARS.forEach((name) => { colors[name] = resolveThemeColor(name); });
+    const computed = getComputedStyle(document.body);
+    const widths = {};
+    EXPORT_WIDTH_VARS.forEach((name) => { widths[name] = computed.getPropertyValue(name).trim(); });
+    return { colors, widths };
+  }
 
   /** Bloque <style> autocontenido con los valores de tema YA resueltos (no
    * var(--x)) y solo las reglas que usan las vistas de Planta/Perfil —
    * portable: el archivo exportado se ve igual sin la app/el CSS externo. */
   function buildExportStyleBlock() {
-    const computed = getComputedStyle(document.body);
-    const v = {};
-    EXPORT_THEME_VARS.forEach((name) => { v[name] = computed.getPropertyValue(name).trim(); });
-    const cw = v['--conductor-line-width'] || '1.5';
-    const sw = v['--structure-line-width'] || '3';
-    const aw = v['--alignment-line-width'] || '4';
-    const tw = v['--terrain-line-width'] || '1.5';
+    const { colors: v, widths } = resolveExportTheme();
+    const cw = widths['--conductor-line-width'] || '1.5';
+    const sw = widths['--structure-line-width'] || '3';
+    const aw = widths['--alignment-line-width'] || '4';
+    const tw = widths['--terrain-line-width'] || '1.5';
     return `
       .canvas-background { fill: transparent; }
       .ruler-line { stroke: ${v['--line']}; stroke-width: 1; }
@@ -187,7 +223,7 @@
       // El SVG en sí tiene fondo transparente (.canvas-background) — se
       // pinta el panel del tema vigente para que la imagen no quede con
       // fondo transparente/inesperado al abrirla fuera de la app.
-      ctx.fillStyle = getComputedStyle(document.body).getPropertyValue('--panel').trim() || '#ffffff';
+      ctx.fillStyle = resolveThemeColor('--panel') || '#ffffff';
       ctx.fillRect(0, 0, width, height);
       ctx.drawImage(img, 0, 0, width, height);
       URL.revokeObjectURL(url);
@@ -212,6 +248,9 @@
     URL.revokeObjectURL(url);
   }
 
-  const svgUtil = { svgEl, clear, toSvgPoint, buildRulerGrid, downloadFile, exportSvgString, exportSvgAsPng };
+  const svgUtil = {
+    svgEl, clear, toSvgPoint, buildRulerGrid, downloadFile, exportSvgString, exportSvgAsPng,
+    resolveExportTheme, rgbStringToHex
+  };
   global.LineDesignSvgUtil = svgUtil;
 })(typeof window !== 'undefined' ? window : globalThis);
