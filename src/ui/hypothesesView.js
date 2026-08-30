@@ -195,12 +195,12 @@
         conductorSelect,
         el('div', { class: 'row-actions' }, [
           el('button', {
-            class: 'btn btn-small btn-danger', type: 'button',
+            class: 'btn btn-small btn-danger btn-fixed-height', type: 'button',
             title: 'Elimina del catálogo el conductor seleccionado arriba',
             onClick: () => confirmRemoveConductor(project)
           }, 'Eliminar'),
           el('button', {
-            class: 'btn btn-small toolbar-card-btn', type: 'button',
+            class: 'btn btn-small toolbar-card-btn btn-fixed-height', type: 'button',
             onClick: () => openAddConductorForm(project)
           }, 'Agregar nuevo')
         ]),

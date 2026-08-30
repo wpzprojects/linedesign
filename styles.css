@@ -750,6 +750,21 @@ input:focus, select:focus, button:focus-visible {
   font-size: 0.8rem;
 }
 
+/* Fuerza la misma altura exacta en un par de botones que combinan clases
+   de color distintas (ej. Eliminar/Agregar nuevo del catálogo de
+   conductores: btn-danger vs. toolbar-card-btn) — sin esto, cada
+   variante calcula su propia altura a partir de su padding/line-height
+   propios y no coinciden pixel a pixel (mismo problema que ya se dio
+   entre el botón y el <select> del toolbar de Planta y Perfil). */
+.btn-fixed-height {
+  height: 27px;
+  padding: 0 10px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  box-sizing: border-box;
+}
+
 .btn-primary {
   background: var(--primary);
   border-color: var(--primary);
