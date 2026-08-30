@@ -1544,7 +1544,8 @@
           verticalExaggeration: profileView.getVerticalExaggeration(),
           colors: {
             terrain: hex('--terrain-color'), structure: hex('--structure-color'),
-            conductor: hex('--conductor-color'), vertexLine: hex('--vertex-line-color'), grid: hex('--muted')
+            conductor: hex('--conductor-color'), vertexLine: hex('--vertex-line-color'),
+            grid: hex('--muted'), clearance: hex('--muted')
           },
           showSag: profileView.getSagLabelsVisible(),
           showClearance: profileView.getClearanceLabelsVisible(),

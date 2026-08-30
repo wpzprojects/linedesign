@@ -279,6 +279,16 @@
     const terrainPoints = terrainPointsRaw.map((p) => ({ x: p.x, y: scaleY(p.y) }));
     entities.push(polylineAsLines(terrainPoints, 'TERRENO', colors.terrain));
 
+    // Distancia de seguridad al terreno (Parámetros de entrada § Terreno) —
+    // mismo criterio que .clearance-line en profileView.js: la forma del
+    // terreno desplazada esa distancia hacia arriba, punteada. Solo si está
+    // configurada (> 0), igual que en pantalla.
+    const groundClearance = project.groundClearance || 0;
+    if (groundClearance > 0) {
+      const clearancePoints = terrainPointsRaw.map((p) => ({ x: p.x, y: scaleY(p.y + groundClearance) }));
+      entities.push(dashedPolylineAsLines(clearancePoints, 'DISTANCIA_SEGURIDAD', colors.clearance));
+    }
+
     if (showVertexLines) {
       const terrainTopY = scaleY(Math.max(...terrainPointsRaw.map((p) => p.y)));
       const terrainBottomY = scaleY(Math.min(...terrainPointsRaw.map((p) => p.y)));
@@ -339,7 +349,9 @@
       }
     }
 
-    const allZ = terrainPointsRaw.map((p) => p.y).concat(resolved.map((s) => s.z), resolved.map((s) => s.z + s.height));
+    const allZ = terrainPointsRaw.map((p) => p.y)
+      .concat(groundClearance > 0 ? terrainPointsRaw.map((p) => p.y + groundClearance) : [])
+      .concat(resolved.map((s) => s.z), resolved.map((s) => s.z + s.height));
     const gridBounds = { minX: clipStart, maxX: clipEnd, minY: Math.min(...allZ), maxY: Math.max(...allZ, structureTopMax) };
     entities.push(buildGridEntities(gridBounds, 'CUADRICULA', colors.grid, (x) => x, scaleY));
 
