@@ -756,13 +756,13 @@
         onClick: rowClickTo('structure', row.structureId)
       }, [
         el('td', {}, row.name),
-        el('td', {}, row.typeName),
         el('td', {}, fmtNum(row.station, 1)),
         el('td', {}, fmtNum(row.x, 2)),
         el('td', {}, fmtNum(row.y, 2)),
-        el('td', {}, fmtDeflection(row.deflection)),
-        el('td', {}, fmtNum(row.height, 1)),
         el('td', {}, fmtNum(row.terrainZ, 1)),
+        el('td', {}, fmtDeflection(row.deflection)),
+        el('td', {}, row.typeName),
+        el('td', {}, fmtNum(row.height, 1)),
         el('td', {}, row.resistance ? fmtNum(row.resistance, 0) : '—'),
         el('td', {}, fmtNum(row.vanoAdelante, 1)),
         el('td', {}, fmtNum(row.flecha, 2)),
@@ -782,13 +782,13 @@
       structures: rows.map((row) => ({
         id: row.structureId,
         nombre: row.name,
-        tipo: row.typeName,
         estacion: row.station,
         este: row.x,
         norte: row.y,
-        anguloDeflexionGrados: row.deflection,
-        altura: row.height,
         cotaTerreno: row.terrainZ,
+        anguloDeflexionGrados: row.deflection,
+        tipo: row.typeName,
+        altura: row.height,
         resistenciaKgf: row.resistance,
         vanoAdelante: row.vanoAdelante,
         flechaVanoAdelante: row.flecha,
@@ -802,10 +802,10 @@
 
   function exportStructuresTableCsv(project) {
     const rows = computeStructuresRowsData(project);
-    const headers = ['ID', 'Tipo', 'Estación (m)', 'Este (m)', 'Norte (m)', 'Ángulo de deflexión', 'Altura (m)', 'Cota terreno (m)', 'Resistencia (kgF)', 'Vano adelante (m)', 'Flecha vano adelante (m)', 'Distancia mínima al piso (m)', 'Cumple poste', 'Cumple contraviento'];
+    const headers = ['ID', 'Estación (m)', 'Este (m)', 'Norte (m)', 'Cota terreno (m)', 'Ángulo de deflexión', 'Tipo', 'Altura (m)', 'Resistencia (kgF)', 'Vano adelante (m)', 'Flecha vano adelante (m)', 'Distancia mínima al piso (m)', 'Cumple poste', 'Cumple contraviento'];
     const csvRows = rows.map((row) => [
-      row.name, row.typeName, fmtNum(row.station, 1), fmtNum(row.x, 2), fmtNum(row.y, 2), fmtDeflection(row.deflection),
-      fmtNum(row.height, 1), fmtNum(row.terrainZ, 1), row.resistance ? fmtNum(row.resistance, 0) : '',
+      row.name, fmtNum(row.station, 1), fmtNum(row.x, 2), fmtNum(row.y, 2), fmtNum(row.terrainZ, 1), fmtDeflection(row.deflection),
+      row.typeName, fmtNum(row.height, 1), row.resistance ? fmtNum(row.resistance, 0) : '',
       fmtNum(row.vanoAdelante, 1), fmtNum(row.flecha, 2), fmtNum(row.minClearance, 1), row.pole.status, row.guy.status
     ]);
     downloadFile(`estructuras_${project.name.replace(/\s+/g, '_')}.csv`, toCsv(headers, csvRows), 'text/csv');
