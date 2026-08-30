@@ -44,11 +44,11 @@
           el('h2', {}, 'Árbol de cargas'),
           el('div', { class: 'row-actions' }, [
             el('button', {
-              class: 'btn btn-primary btn-small', type: 'button',
+              class: 'btn toolbar-card-btn', type: 'button',
               onClick: () => exportLoadTree(project, rows)
             }, 'Exportar JSON'),
             el('button', {
-              class: 'btn btn-primary btn-small', type: 'button',
+              class: 'btn toolbar-card-btn', type: 'button',
               onClick: () => exportLoadTreeCsv(project, rows, hypothesisById)
             }, 'Exportar CSV')
           ])

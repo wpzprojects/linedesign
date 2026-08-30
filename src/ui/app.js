@@ -629,6 +629,12 @@
     const vertices = project.alignment.vertices;
     const poleCheck = loadTree.checkPoleCapacity(project);
     const hypothesisById = Object.fromEntries(project.hypotheses.map((h) => [h.id, h.name]));
+    // El ángulo de deflexión es una propiedad del VÉRTICE, no de la
+    // estructura — solo tiene sentido mostrarlo cuando la estructura está
+    // ubicada justo en un vértice de ángulo (station coincide, dentro de
+    // una tolerancia de 5 cm por redondeos de punto flotante). Si la
+    // estructura cae en un tramo recto entre vértices, no hay deflexión.
+    const vertexDistances = stationing.cumulativeDistances(vertices);
 
     return sorted.map((structure, index) => {
       const type = project.structureCatalog.find((t) => t.typeId === structure.typeId);
@@ -710,19 +716,19 @@
         };
       }
 
+      const vertexIndex = vertexDistances.findIndex((d) => Math.abs(d - structure.station) < 0.05);
+      const deflection = vertexIndex >= 0 ? vertexDeflectionAngle(vertices, vertexIndex) : null;
+
       return {
         structureId: structure.id,
         name: structure.name || structure.id,
         typeName: type ? type.name : structure.typeId,
         station: structure.station,
+        x: structure.x,
+        y: structure.y,
+        deflection,
         height: structure.height,
         terrainZ: structure.z,
-        // Cota de la punta LIBRE (sobre el terreno) — descuenta el
-        // empotramiento si el tipo lo tiene activado, no structure.height
-        // directo (ver loadTree.js#structureAboveGroundHeight). "Altura
-        // (m)" arriba sigue siendo la del catálogo tal cual (qué poste se
-        // compró), esta es la elevación real de la punta visible.
-        tipZ: structure.z + loadTree.structureAboveGroundHeight(project, structure),
         resistance: structure.resistance || null,
         vanoAdelante,
         flecha,
@@ -731,6 +737,12 @@
         guy
       };
     });
+  }
+
+  function fmtDeflection(deflection) {
+    if (deflection == null) return '—';
+    const dir = deflection > 0 ? 'izq' : deflection < 0 ? 'der' : '';
+    return `${Math.abs(deflection).toFixed(2)}°${dir ? ` ${dir}` : ''}`;
   }
 
   function renderStructuresTable(project) {
@@ -746,9 +758,11 @@
         el('td', {}, row.name),
         el('td', {}, row.typeName),
         el('td', {}, fmtNum(row.station, 1)),
+        el('td', {}, fmtNum(row.x, 2)),
+        el('td', {}, fmtNum(row.y, 2)),
+        el('td', {}, fmtDeflection(row.deflection)),
         el('td', {}, fmtNum(row.height, 1)),
         el('td', {}, fmtNum(row.terrainZ, 1)),
-        el('td', {}, fmtNum(row.tipZ, 1)),
         el('td', {}, row.resistance ? fmtNum(row.resistance, 0) : '—'),
         el('td', {}, fmtNum(row.vanoAdelante, 1)),
         el('td', {}, fmtNum(row.flecha, 2)),
@@ -770,9 +784,11 @@
         nombre: row.name,
         tipo: row.typeName,
         estacion: row.station,
+        este: row.x,
+        norte: row.y,
+        anguloDeflexionGrados: row.deflection,
         altura: row.height,
         cotaTerreno: row.terrainZ,
-        cotaPunta: row.tipZ,
         resistenciaKgf: row.resistance,
         vanoAdelante: row.vanoAdelante,
         flechaVanoAdelante: row.flecha,
@@ -786,11 +802,11 @@
 
   function exportStructuresTableCsv(project) {
     const rows = computeStructuresRowsData(project);
-    const headers = ['ID', 'Tipo', 'Estación (m)', 'Altura (m)', 'Cota terreno (m)', 'Cota punta (m)', 'Resistencia (kgF)', 'Vano adelante (m)', 'Flecha vano adelante (m)', 'Distancia mínima al piso (m)', 'Cumple poste', 'Cumple contraviento'];
+    const headers = ['ID', 'Tipo', 'Estación (m)', 'Este (m)', 'Norte (m)', 'Ángulo de deflexión', 'Altura (m)', 'Cota terreno (m)', 'Resistencia (kgF)', 'Vano adelante (m)', 'Flecha vano adelante (m)', 'Distancia mínima al piso (m)', 'Cumple poste', 'Cumple contraviento'];
     const csvRows = rows.map((row) => [
-      row.name, row.typeName, fmtNum(row.station, 1), fmtNum(row.height, 1), fmtNum(row.terrainZ, 1), fmtNum(row.tipZ, 1),
-      row.resistance ? fmtNum(row.resistance, 0) : '', fmtNum(row.vanoAdelante, 1), fmtNum(row.flecha, 2), fmtNum(row.minClearance, 1),
-      row.pole.status, row.guy.status
+      row.name, row.typeName, fmtNum(row.station, 1), fmtNum(row.x, 2), fmtNum(row.y, 2), fmtDeflection(row.deflection),
+      fmtNum(row.height, 1), fmtNum(row.terrainZ, 1), row.resistance ? fmtNum(row.resistance, 0) : '',
+      fmtNum(row.vanoAdelante, 1), fmtNum(row.flecha, 2), fmtNum(row.minClearance, 1), row.pole.status, row.guy.status
     ]);
     downloadFile(`estructuras_${project.name.replace(/\s+/g, '_')}.csv`, toCsv(headers, csvRows), 'text/csv');
   }
