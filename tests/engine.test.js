@@ -297,6 +297,24 @@ check('estructura extrema tiene carga vertical de un solo vano tributario', () =
   assert.ok(end.forces.vertical < middle.forces.vertical);
 });
 
+check('estructura terminal (última del alineamiento) recibe TODA la tensión de su único vano como longitudinal, no cero', () => {
+  // Regresión: lineFrom/lineRef del eje longitudinal caían en la MISMA
+  // estructura vecina para la última estructura del arreglo (bug real,
+  // corregido) — daban un eje (0,0) y longitudinal siempre 0 ahí, aunque
+  // sea justo la estructura con el desbalance máximo (un solo vano, sin
+  // nada al otro lado que lo cancele).
+  const rows = loadTree.computeLoadTree(project);
+  const end = rows.find((r) => r.structureId === 'EST-03' && r.hypothesisId === 'H1');
+  // H1 (hipótesis de referencia, sin "Tensiones de tendido" configuradas)
+  // usa conductor.referenceHorizontalTension = 8000 N tal cual, sin
+  // resolver la ecuación de cambio de estado — × 3 fases del catálogo.
+  const expectedLongitudinal = 8000 * 3;
+  assert.ok(
+    Math.abs(end.forces.longitudinal - expectedLongitudinal) < 1,
+    `longitudinal=${end.forces.longitudinal}, esperado ~${expectedLongitudinal}`
+  );
+});
+
 check('vanos desbalanceados en hipótesis no-referencia producen longitudinal no nulo', () => {
   // En la hipótesis de referencia (H1) todos los vanos reciben la misma
   // tensión instalada por diseño, así que un desbalance de longitud de vano

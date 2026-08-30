@@ -194,8 +194,15 @@
         windTransversal *= phases;
         tensionVector = { x: tensionVector.x * phases, y: tensionVector.y * phases };
 
-        const lineRef = nextStructure || prevStructure || structure;
+        // Eje "longitudinal" local en esta estructura: la cuerda entre su
+        // vecino anterior y el siguiente (aproxima el bisector del ángulo
+        // ahí) — en un extremo del alineamiento, sin uno de los dos
+        // vecinos, se usa la propia estructura como ese extremo faltante,
+        // NUNCA reutilizar el mismo vecino en lineFrom y lineRef (daría un
+        // vector (0,0) y anularía longitudinal/transversal-por-tensión
+        // justo donde la tensión del único vano está más desbalanceada).
         const lineFrom = prevStructure || structure;
+        const lineRef = nextStructure || structure;
         const longAxis = unitVector(lineFrom, lineRef);
         const transAxis = { x: -longAxis.y, y: longAxis.x };
 
