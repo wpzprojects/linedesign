@@ -1490,7 +1490,7 @@ svg#plan-svg {
 
 .profile-line {
   stroke: var(--accent);
-  stroke-width: var(--terrain-line-width, 3);
+  stroke-width: var(--terrain-line-width, 1.5);
   fill: none;
   vector-effect: non-scaling-stroke;
 }
@@ -1592,7 +1592,7 @@ svg#plan-svg {
 
 .structure-pole {
   stroke: var(--structure-color);
-  stroke-width: var(--structure-line-width, 3);
+  stroke-width: var(--structure-line-width, 2);
   cursor: grab;
   vector-effect: non-scaling-stroke;
 }
