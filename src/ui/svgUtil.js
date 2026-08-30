@@ -102,22 +102,17 @@
     return group;
   }
 
-  // Variables de color de tema que usan #plan-svg/#profile-svg — ver
-  // styles.css. Por DEFECTO son indirectas (ej. --conductor-color:
-  // var(--warning)) — solo se vuelven un hex literal si el usuario las
-  // personaliza en Configuración. getComputedStyle().getPropertyValue()
-  // de una custom property devuelve el valor tal cual quedó ESPECIFICADO
-  // (sin expandir var() anidados dentro de ella — así lo define el spec),
-  // así que por defecto esto devolvería el texto literal "var(--warning)",
-  // no un color real. Ver resolveThemeColor más abajo para el arreglo.
+  // Variables de color de tema que usa el exportador DXF (ver app.js) —
+  // por DEFECTO son indirectas (ej. --conductor-color: var(--warning)) —
+  // solo se vuelven un hex literal si el usuario las personaliza en
+  // Configuración. getComputedStyle().getPropertyValue() de una custom
+  // property devuelve el valor tal cual quedó ESPECIFICADO (sin expandir
+  // var() anidados dentro de ella — así lo define el spec), así que por
+  // defecto esto devolvería el texto literal "var(--warning)", no un
+  // color real. Ver resolveThemeColor más abajo para el arreglo.
   const EXPORT_COLOR_VARS = [
-    '--panel', '--muted', '--text', '--line', '--primary',
-    '--conductor-color', '--structure-color', '--alignment-color', '--terrain-color', '--vertex-line-color'
+    '--muted', '--conductor-color', '--structure-color', '--alignment-color', '--terrain-color', '--vertex-line-color'
   ];
-  // Estas sí son literales siempre — las fija directamente el propio JS de
-  // Configuración (setProperty con un número, nunca otra var) —, no
-  // necesitan el mismo arreglo.
-  const EXPORT_WIDTH_VARS = ['--conductor-line-width', '--structure-line-width', '--alignment-line-width', '--terrain-line-width'];
 
   /** Valor YA resuelto (nunca "var(--x)" sin expandir) de una custom
    * property de color: se aplica a un elemento real fuera de pantalla
@@ -140,100 +135,12 @@
     return `#${parts.slice(0, 3).map((n) => n.toString(16).padStart(2, '0')).join('')}`;
   }
 
-  /** Todos los colores/grosores de tema usados por Planta/Perfil, ya
-   * resueltos a valores concretos ("rgb(...)"/hex y números) — un solo
-   * lugar para armarlos, lo reusan tanto el <style> del SVG exportado
-   * como los colores del DXF (ver app.js). */
+  /** Los colores de tema que usa el exportador DXF, ya resueltos (nunca
+   * "var(--x)" sin expandir) — un solo lugar para armarlos (ver app.js). */
   function resolveExportTheme() {
     const colors = {};
     EXPORT_COLOR_VARS.forEach((name) => { colors[name] = resolveThemeColor(name); });
-    const computed = getComputedStyle(document.body);
-    const widths = {};
-    EXPORT_WIDTH_VARS.forEach((name) => { widths[name] = computed.getPropertyValue(name).trim(); });
-    return { colors, widths };
-  }
-
-  /** Bloque <style> autocontenido con los valores de tema YA resueltos (no
-   * var(--x)) y solo las reglas que usan las vistas de Planta/Perfil —
-   * portable: el archivo exportado se ve igual sin la app/el CSS externo. */
-  function buildExportStyleBlock() {
-    const { colors: v, widths } = resolveExportTheme();
-    const cw = widths['--conductor-line-width'] || '1.5';
-    const sw = widths['--structure-line-width'] || '3';
-    const aw = widths['--alignment-line-width'] || '4';
-    const tw = widths['--terrain-line-width'] || '1.5';
-    return `
-      .canvas-background { fill: transparent; }
-      .ruler-line { stroke: ${v['--line']}; stroke-width: 1; }
-      .ruler-label { fill: ${v['--muted']}; font-size: 10px; font-variant-numeric: tabular-nums; }
-      .row-line { stroke: ${v['--muted']}; stroke-width: 1; stroke-dasharray: 4 3; fill: none; }
-      .alignment-line { stroke: ${v['--alignment-color']}; stroke-width: ${aw}; fill: none; stroke-linecap: round; stroke-linejoin: round; }
-      .circuit-line { stroke: ${v['--conductor-color']}; stroke-width: 1; fill: none; stroke-linecap: round; stroke-linejoin: round; }
-      .vano-label { fill: ${v['--conductor-color']}; font-size: 10px; }
-      .structure-point { fill: ${v['--structure-color']}; stroke: ${v['--panel']}; stroke-width: 2; }
-      .structure-point.is-selected { fill: ${v['--primary']}; }
-      .structure-pole { stroke: ${v['--structure-color']}; stroke-width: ${sw}; }
-      .structure-pole.is-selected { stroke: ${v['--primary']}; stroke-width: calc(${sw} + 1); }
-      .vertex-point { fill: ${v['--panel']}; stroke: ${v['--alignment-color']}; stroke-width: 3; }
-      .annotation-label { fill: ${v['--text']}; font-size: 11px; font-weight: 600; }
-      .vertex-label { font-size: 10px; opacity: 0.8; fill: ${v['--text']}; }
-      .profile-line { stroke: ${v['--terrain-color']}; stroke-width: ${tw}; fill: none; }
-      .profile-line--real { stroke: ${v['--terrain-color']}; }
-      .clearance-line { stroke: ${v['--muted']}; stroke-width: 1; stroke-dasharray: 4 3; fill: none; }
-      .vertex-line { stroke: ${v['--vertex-line-color']}; stroke-width: 1; stroke-dasharray: 5 4; }
-      .conductor-line { stroke: ${v['--conductor-color']}; stroke-width: ${cw}; fill: none; }
-      .conductor-line.is-selected { stroke: ${v['--primary']}; stroke-width: calc(${cw} + 1); }
-      .sag-label { fill: ${v['--conductor-color']}; font-size: 10px; text-anchor: middle; }
-      .clearance-label { fill: ${v['--terrain-color']}; font-size: 10px; text-anchor: middle; }
-      text { font-family: "Segoe UI", "Inter", Roboto, Tahoma, Geneva, Verdana, sans-serif; }
-    `;
-  }
-
-  /** Serializa un <svg> del lienzo (Planta/Perfil) a un string XML
-   * autocontenido y portable — ver buildExportStyleBlock. */
-  function exportSvgString(svgElement) {
-    const clone = svgElement.cloneNode(true);
-    clone.setAttribute('xmlns', SVG_NS);
-    const rect = svgElement.getBoundingClientRect();
-    clone.setAttribute('width', Math.round(rect.width));
-    clone.setAttribute('height', Math.round(rect.height));
-    const style = document.createElementNS(SVG_NS, 'style');
-    style.textContent = buildExportStyleBlock();
-    clone.insertBefore(style, clone.firstChild);
-    const serialized = new XMLSerializer().serializeToString(clone);
-    return `<?xml version="1.0" standalone="no"?>\r\n${serialized}`;
-  }
-
-  /** Convierte el mismo SVG portable a PNG (canvas, @2x por defecto) —
-   * asíncrono porque la carga de la imagen SVG lo es; `callback` recibe el
-   * Blob PNG resultante (o null si algo falla). */
-  function exportSvgAsPng(svgElement, callback, scale = 2) {
-    const rect = svgElement.getBoundingClientRect();
-    const width = Math.round(rect.width * scale);
-    const height = Math.round(rect.height * scale);
-    const svgString = exportSvgString(svgElement);
-    const svgBlob = new Blob([svgString], { type: 'image/svg+xml;charset=utf-8' });
-    const url = URL.createObjectURL(svgBlob);
-    const img = new Image();
-    img.onload = () => {
-      const canvas = document.createElement('canvas');
-      canvas.width = width;
-      canvas.height = height;
-      const ctx = canvas.getContext('2d');
-      // El SVG en sí tiene fondo transparente (.canvas-background) — se
-      // pinta el panel del tema vigente para que la imagen no quede con
-      // fondo transparente/inesperado al abrirla fuera de la app.
-      ctx.fillStyle = resolveThemeColor('--panel') || '#ffffff';
-      ctx.fillRect(0, 0, width, height);
-      ctx.drawImage(img, 0, 0, width, height);
-      URL.revokeObjectURL(url);
-      canvas.toBlob((blob) => callback(blob), 'image/png');
-    };
-    img.onerror = () => {
-      URL.revokeObjectURL(url);
-      callback(null);
-    };
-    img.src = url;
+    return { colors };
   }
 
   function downloadFile(filename, content, mime = 'application/json') {
@@ -248,9 +155,6 @@
     URL.revokeObjectURL(url);
   }
 
-  const svgUtil = {
-    svgEl, clear, toSvgPoint, buildRulerGrid, downloadFile, exportSvgString, exportSvgAsPng,
-    resolveExportTheme, rgbStringToHex
-  };
+  const svgUtil = { svgEl, clear, toSvgPoint, buildRulerGrid, downloadFile, resolveExportTheme, rgbStringToHex };
   global.LineDesignSvgUtil = svgUtil;
 })(typeof window !== 'undefined' ? window : globalThis);

@@ -1,8 +1,12 @@
 /**
- * dxfExport.js — Exporta Planta o Perfil a DXF (AutoCAD 2000 / AC1015 —
- * necesario para el código de color verdadero 420; solo HEADER (para
- * declarar la versión) + ENTITIES, sin TABLES/BLOCKS: la capa "0" y demás
- * valores por defecto ya existen implícitamente en cualquier lector).
+ * dxfExport.js — Exporta Planta o Perfil a DXF R12 (AC1009) mínimo: SOLO
+ * la sección ENTITIES, sin HEADER/TABLES/BLOCKS — la capa "0" y demás
+ * valores por defecto ya existen implícitamente en cualquier lector, y R12
+ * no necesita handles/objetos con id (a diferencia de R2000+, que BricsCAD/
+ * AutoCAD sí validan estrictamente — de ahí el error "Null object Id" al
+ * probar con un HEADER declarando AC1015 sin las tablas que ese formato
+ * espera). El color va por índice ACI (código 62, paleta estándar de 255
+ * colores) en vez de color verdadero (420, que requiere R2000+).
  * Coordenadas reales (1 unidad de dibujo = 1 metro) — pensado para
  * overlay/medición en CAD, no para verse "bonito".
  *
@@ -26,14 +30,41 @@
     return String(text).replace(/%/g, '%%');
   }
 
-  /** Código de color verdadero (420, 24 bits) a partir de un "#rrggbb" —
+  // Paleta reducida del índice de color de AutoCAD (ACI, código 62) — el
+  // valor real de cada índice 1-255 depende de una tabla fija que no vale
+  // la pena reproducir entera acá; esta docena cubre razonablemente los
+  // colores de tema de la app (naranja/verde azulado/azul/oliva).
+  const ACI_PALETTE = [
+    [1, [255, 0, 0]], [2, [255, 255, 0]], [3, [0, 255, 0]], [4, [0, 255, 255]],
+    [5, [0, 0, 255]], [6, [255, 0, 255]], [7, [255, 255, 255]], [8, [128, 128, 128]],
+    [9, [191, 191, 191]], [30, [255, 165, 0]], [92, [0, 128, 128]], [102, [128, 128, 0]]
+  ];
+
+  function hexToRgb(hex) {
+    const int = parseInt(hex.replace('#', ''), 16);
+    return [(int >> 16) & 255, (int >> 8) & 255, int & 255];
+  }
+
+  function nearestAciColor(hex) {
+    const [r, g, b] = hexToRgb(hex);
+    let best = 7;
+    let bestDist = Infinity;
+    ACI_PALETTE.forEach(([aci, [pr, pg, pb]]) => {
+      const dist = (r - pr) ** 2 + (g - pg) ** 2 + (b - pb) ** 2;
+      if (dist < bestDist) {
+        bestDist = dist;
+        best = aci;
+      }
+    });
+    return best;
+  }
+
+  /** Código de color por índice ACI (62) a partir de un "#rrggbb" —
    * opcional: sin color, la entidad hereda el color por defecto de su capa
-   * (blanco/negro según el lector, de ahí que antes se viera "en blanco"). */
+   * (blanco/negro según el lector). */
   function colorCodes(hex) {
     if (!hex) return [];
-    const int = parseInt(hex.replace('#', ''), 16);
-    if (!Number.isFinite(int)) return [];
-    return ['420', String(int)];
+    return ['62', String(nearestAciColor(hex))];
   }
 
   function dxfLine(x1, y1, x2, y2, layer, color) {
@@ -59,15 +90,7 @@
   }
 
   function buildDxfDocument(entityGroups) {
-    return [
-      '0', 'SECTION', '2', 'HEADER',
-      '9', '$ACADVER', '1', 'AC1015',
-      '0', 'ENDSEC',
-      '0', 'SECTION', '2', 'ENTITIES',
-      ...entityGroups.flat(),
-      '0', 'ENDSEC',
-      '0', 'EOF'
-    ].join('\n');
+    return ['0', 'SECTION', '2', 'ENTITIES', ...entityGroups.flat(), '0', 'ENDSEC', '0', 'EOF'].join('\n');
   }
 
   /** Planta: coordenadas reales del proyecto (MAGNA-SIRGAS / Origen-Nacional,

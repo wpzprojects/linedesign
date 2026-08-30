@@ -15,7 +15,7 @@
   const kmzImport = window.LineDesignKmzImport;
   const dxfExport = window.LineDesignDxfExport;
   const { el, clear } = window.LineDesignDomUtil;
-  const { downloadFile, exportSvgString, exportSvgAsPng, resolveExportTheme, rgbStringToHex } = window.LineDesignSvgUtil;
+  const { downloadFile, resolveExportTheme, rgbStringToHex } = window.LineDesignSvgUtil;
 
   const planSvg = document.getElementById('plan-svg');
   const planMapContainer = document.getElementById('plan-map');
@@ -25,9 +25,7 @@
   const splitDivider = document.getElementById('split-divider');
   const profileSvg = document.getElementById('profile-svg');
   const planExportBtn = document.getElementById('plan-export-btn');
-  const planExportMenu = document.getElementById('plan-export-menu');
   const profileExportBtn = document.getElementById('profile-export-btn');
-  const profileExportMenu = document.getElementById('profile-export-menu');
   const summaryList = document.getElementById('summary-list');
   const projectNameInput = document.getElementById('project-name-input');
   const themeToggle = document.getElementById('theme-toggle');
@@ -1510,10 +1508,10 @@
     });
   }
 
-  // Nombre de archivo compartido por los tres formatos: nombre del
-  // proyecto + qué lienzo es, saneado a algo seguro para el sistema de
-  // archivos (sin tildes/espacios/símbolos — un nombre de proyecto con
-  // "/" o ":" rompería la descarga en varios sistemas operativos).
+  // Nombre de archivo: nombre del proyecto + qué lienzo es, saneado a algo
+  // seguro para el sistema de archivos (sin tildes/espacios/símbolos — un
+  // nombre de proyecto con "/" o ":" rompería la descarga en varios
+  // sistemas operativos).
   function exportBaseName(project, kind) {
     const safeName = (project.name || 'proyecto')
       .normalize('NFD') // separa tildes/diéresis de su letra base (é -> e + ´)
@@ -1522,85 +1520,43 @@
     return `${safeName}_${kind === 'plan' ? 'planta' : 'perfil'}`;
   }
 
-  // Menú "Exportar" de Planta/Perfil (DXF/PNG/SVG): un desplegable propio
-  // (no la ventana emergente genérica de hypothesesView.js, pensada para
-  // formularios) — se abre/cierra con el mismo botón, afuera o Escape, y
-  // cada opción pide confirmación (confirm del navegador) antes de
-  // disparar la descarga, para que nunca se descargue nada sin que el
-  // usuario lo confirme explícitamente.
-  function wireExportMenu(btn, menu, svgElement, kind) {
-    function closeMenu() {
-      menu.hidden = true;
-      btn.setAttribute('aria-expanded', 'false');
-    }
-    function openMenu() {
-      menu.hidden = false;
-      btn.setAttribute('aria-expanded', 'true');
-    }
-    btn.addEventListener('click', (e) => {
-      e.stopPropagation();
-      if (menu.hidden) openMenu(); else closeMenu();
-    });
-    document.addEventListener('pointerdown', (e) => {
-      if (!menu.hidden && e.target !== btn && !menu.contains(e.target) && !btn.contains(e.target)) closeMenu();
-    });
-    document.addEventListener('keydown', (e) => {
-      if (e.key === 'Escape' && !menu.hidden) closeMenu();
-    });
-
-    menu.querySelectorAll('button[data-format]').forEach((optionBtn) => {
-      optionBtn.addEventListener('click', () => {
-        closeMenu();
-        const format = optionBtn.dataset.format;
-        const project = store.getProject();
-        const baseName = exportBaseName(project, kind);
-
-        if (format === 'dxf') {
-          const filename = `${baseName}.dxf`;
-          if (!confirm(`¿Descargar "${filename}"?`)) return;
-          const { colors } = resolveExportTheme();
-          const hex = (name) => rgbStringToHex(colors[name]);
-          const content = kind === 'plan'
-            ? dxfExport.buildPlanDxf(project, {
-              colors: { alignment: hex('--alignment-color'), structure: hex('--structure-color'), servidumbre: hex('--muted') }
-            })
-            : dxfExport.buildProfileDxf(project, planHypothesisId, {
-              verticalExaggeration: profileView.getVerticalExaggeration(),
-              colors: { terrain: hex('--terrain-color'), structure: hex('--structure-color'), conductor: hex('--conductor-color'), vertexLine: hex('--vertex-line-color') },
-              showSag: profileView.getSagLabelsVisible(),
-              showClearance: profileView.getClearanceLabelsVisible(),
-              showVertexLines: profileView.getVertexLinesVisible()
-            });
-          downloadFile(filename, content, 'application/dxf');
-        } else if (format === 'svg') {
-          const filename = `${baseName}.svg`;
-          if (!confirm(`¿Descargar "${filename}"?`)) return;
-          downloadFile(filename, exportSvgString(svgElement), 'image/svg+xml');
-        } else if (format === 'png') {
-          const filename = `${baseName}.png`;
-          if (!confirm(`¿Descargar "${filename}"?`)) return;
-          exportSvgAsPng(svgElement, (blob) => {
-            if (!blob) {
-              alert('No se pudo generar la imagen PNG.');
-              return;
-            }
-            downloadFile(filename, blob, 'image/png');
-          });
-        }
-      });
+  // Botón "Exportar" de Planta/Perfil: por ahora solo DXF (se descartó
+  // PNG/SVG — una captura de pantalla ya cubre esa necesidad). Un clic
+  // pide confirmación (confirm del navegador) antes de disparar la
+  // descarga, para que nunca se descargue nada sin que el usuario lo
+  // confirme explícitamente.
+  function wireExportButton(btn, kind) {
+    btn.addEventListener('click', () => {
+      const project = store.getProject();
+      const filename = `${exportBaseName(project, kind)}.dxf`;
+      if (!confirm(`¿Descargar "${filename}"?`)) return;
+      const { colors } = resolveExportTheme();
+      const hex = (name) => rgbStringToHex(colors[name]);
+      const content = kind === 'plan'
+        ? dxfExport.buildPlanDxf(project, {
+          colors: { alignment: hex('--alignment-color'), structure: hex('--structure-color'), servidumbre: hex('--muted') }
+        })
+        : dxfExport.buildProfileDxf(project, planHypothesisId, {
+          verticalExaggeration: profileView.getVerticalExaggeration(),
+          colors: { terrain: hex('--terrain-color'), structure: hex('--structure-color'), conductor: hex('--conductor-color'), vertexLine: hex('--vertex-line-color') },
+          showSag: profileView.getSagLabelsVisible(),
+          showClearance: profileView.getClearanceLabelsVisible(),
+          showVertexLines: profileView.getVertexLinesVisible()
+        });
+      downloadFile(filename, content, 'application/dxf');
     });
   }
 
-  function wireExportMenus() {
-    wireExportMenu(planExportBtn, planExportMenu, planSvg, 'plan');
-    wireExportMenu(profileExportBtn, profileExportMenu, profileSvg, 'profile');
+  function wireExportButtons() {
+    wireExportButton(planExportBtn, 'plan');
+    wireExportButton(profileExportBtn, 'profile');
   }
 
   function init() {
     window.LineDesignTheme.initTheme(themeToggle);
     initInspectorCollapse();
     wireToolbar();
-    wireExportMenus();
+    wireExportButtons();
     wireResize();
     updateStatusZoom();
     store.subscribe(render);
