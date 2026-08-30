@@ -304,7 +304,14 @@ button, input, select, textarea {
 .panel-tools {
   display: flex;
   align-items: center;
+  flex-wrap: wrap;
   gap: 4px;
+  /* Sin esto, los íconos que no caben (panel muy angosto, arrastrando el
+     divisor Planta/Perfil hacia la derecha) no pasaban a un segundo
+     renglón: simplemente se salían del panel por la derecha y quedaban
+     escondidos debajo de Propiedades (pintado encima, con su propio
+     fondo) en vez de seguir siendo visibles/clickeables. */
+  row-gap: 6px;
 }
 
 .panel-tools select {
