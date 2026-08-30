@@ -360,6 +360,49 @@ body.dark-theme .icon-moon {
   box-shadow: var(--shadow);
 }
 
+/* Ventana emergente genérica (ver #modal-overlay en index.html): fondo
+   oscurecido a pantalla completa, tarjeta centrada con scroll propio si
+   el formulario no cabe. Un único overlay reutilizado por cualquier
+   vista, no una instancia por formulario. */
+.modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+  z-index: 100;
+}
+
+.modal-card {
+  background: var(--panel);
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  box-shadow: var(--shadow);
+  padding: 16px;
+  width: 100%;
+  max-width: 420px;
+  max-height: 90vh;
+  overflow-y: auto;
+}
+
+.modal-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  margin-bottom: 10px;
+}
+
+.modal-header h2 {
+  margin: 0;
+  font-size: 0.95rem;
+  color: var(--text);
+  text-transform: none;
+  letter-spacing: normal;
+}
+
 .card h2 {
   margin: 0 0 10px;
   font-size: 0.85rem;

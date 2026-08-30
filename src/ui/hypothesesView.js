@@ -18,6 +18,34 @@
     // alineamiento" — vive fuera de `container` (hypotheses-container).
     const conductorCardContainer = document.getElementById('conductor-card');
 
+    // Ventana emergente genérica (index.html#modal-overlay), compartida —
+    // esta vista es hoy su único consumidor (el formulario de "+ Agregar"
+    // conductor), pero el contenedor en sí no es propio de esta vista.
+    const modalOverlay = document.getElementById('modal-overlay');
+    const modalTitle = document.getElementById('modal-title');
+    const modalBody = document.getElementById('modal-body');
+    const modalCloseBtn = document.getElementById('modal-close-btn');
+
+    function openModal(title, contentNode) {
+      modalTitle.textContent = title;
+      clear(modalBody);
+      modalBody.appendChild(contentNode);
+      modalOverlay.hidden = false;
+    }
+
+    function closeModal() {
+      modalOverlay.hidden = true;
+      clear(modalBody);
+    }
+
+    modalCloseBtn.addEventListener('click', closeModal);
+    modalOverlay.addEventListener('pointerdown', (e) => {
+      if (e.target === modalOverlay) closeModal();
+    });
+    document.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape' && !modalOverlay.hidden) closeModal();
+    });
+
     // Unidad de INTERFAZ (kgF/kg-km o N/N-m) para mostrar y editar fuerza y
     // peso por longitud — puramente de despliegue, ver
     // projectStore.js#setDisplayUnitSystem. Lo guardado en el proyecto y lo
@@ -27,6 +55,74 @@
     function forceUnitLabel(project) { return isSI(project) ? 'N' : 'kgF'; }
     function toDisplayForce(project, kgf) { return isSI(project) ? units.kgfToNewtons(kgf) : kgf; }
     function fromDisplayForce(project, value) { return isSI(project) ? units.newtonsToKgf(value) : value; }
+
+    // Formulario de "+ Agregar" conductor (ventana emergente): los campos
+    // de fuerza/peso por longitud se piden en la unidad de INTERFAZ vigente
+    // (kgF/kg-km o N/N-m, igual que el resto de la tarjeta Conductor) y se
+    // convierten de vuelta a kgF/kg-km al guardar — ver toDisplayForce/
+    // fromDisplayForce arriba. diameter/crossSectionArea/elasticModulus/
+    // thermalExpansionCoef son siempre SI (m/m²/Pa/°C⁻¹), no tienen selector.
+    function openAddConductorForm(project) {
+      const forceUnit = forceUnitLabel(project);
+      const nameInput = el('input', { type: 'text', required: true });
+      const diameterInput = el('input', { type: 'number', step: 'any', min: '0' });
+      const weightInput = el('input', { type: 'number', step: 'any', min: '0' });
+      const areaInput = el('input', { type: 'number', step: 'any', min: '0' });
+      const elasticModulusInput = el('input', { type: 'number', step: 'any', min: '0', value: '69000000000' });
+      const thermalCoefInput = el('input', { type: 'number', step: 'any', value: '0.000019' });
+      const strengthInput = el('input', { type: 'number', step: 'any', min: '0' });
+      const refHypSelect = el('select', {}, project.hypotheses.map((h) => el('option', {
+        value: h.id, selected: h.id === project.conductor.referenceHypothesisId
+      }, h.name)));
+      const tensionInput = el('input', { type: 'number', step: 'any', min: '0' });
+
+      const form = el('form', {
+        onSubmit: (e) => {
+          e.preventDefault();
+          const name = nameInput.value.trim();
+          if (!name) {
+            alert('El conductor necesita un nombre.');
+            return;
+          }
+          const conductor = store.addConductor({
+            name,
+            diameter: parseFloat(diameterInput.value) || 0,
+            weightPerLength: fromDisplayForce(project, parseFloat(weightInput.value) || 0),
+            crossSectionArea: parseFloat(areaInput.value) || 0,
+            elasticModulus: parseFloat(elasticModulusInput.value) || 0,
+            thermalExpansionCoef: parseFloat(thermalCoefInput.value) || 0,
+            ultimateStrength: fromDisplayForce(project, parseFloat(strengthInput.value) || 0),
+            referenceHypothesisId: refHypSelect.value,
+            referenceHorizontalTension: fromDisplayForce(project, parseFloat(tensionInput.value) || 0)
+          });
+          store.setConductor(conductor.id);
+          closeModal();
+        }
+      }, [
+        el('label', {}, 'Nombre'), nameInput,
+        el('label', {}, 'Diámetro (m)'), diameterInput,
+        el('label', {}, `Peso por longitud (${forceUnit}/km)`), weightInput,
+        el('label', {}, 'Área de sección (m²)'), areaInput,
+        el('label', {}, 'Módulo de elasticidad (Pa)'), elasticModulusInput,
+        el('label', {}, 'Coef. de expansión térmica (1/°C)'), thermalCoefInput,
+        el('label', {}, `Carga de rotura (${forceUnit})`), strengthInput,
+        el('label', {}, 'Hipótesis de referencia'), refHypSelect,
+        el('label', {}, `Tensión horizontal de referencia (${forceUnit})`), tensionInput,
+        el('div', { class: 'row-actions' }, [
+          el('button', { class: 'btn toolbar-card-btn', type: 'submit' }, 'Agregar conductor'),
+          el('button', { class: 'btn btn-small', type: 'button', onClick: closeModal }, 'Cancelar')
+        ])
+      ]);
+
+      openModal('Agregar conductor', form);
+      nameInput.focus();
+    }
+
+    function confirmRemoveConductor(project) {
+      if (!confirm(`¿Eliminar el conductor "${project.conductor.name}" del catálogo? Esta acción no se puede deshacer.`)) return;
+      const result = store.removeConductor(project.conductor.id);
+      if (result && !result.ok) alert(result.reason);
+    }
 
     function renderUnitSystemSelect(project) {
       const select = el('select', {
@@ -93,6 +189,17 @@
         el('h2', {}, 'Conductor'),
         el('label', {}, 'Catálogo'),
         conductorSelect,
+        el('div', { class: 'row-actions' }, [
+          el('button', {
+            class: 'btn btn-small btn-danger', type: 'button',
+            title: 'Elimina del catálogo el conductor seleccionado arriba',
+            onClick: () => confirmRemoveConductor(project)
+          }, 'Eliminar'),
+          el('button', {
+            class: 'btn btn-small', type: 'button',
+            onClick: () => openAddConductorForm(project)
+          }, 'Agregar')
+        ]),
         el('label', {}, 'Hipótesis de referencia (tensión instalada)'),
         refHypSelect,
         el('label', {}, `Tensión horizontal de referencia (${forceUnitLabel(project)})`),

@@ -569,6 +569,67 @@
     notify();
   }
 
+  /** ID legible a partir del nombre (p. ej. "ACSR 4/0 Penguin" -> "ACSR-4-0-PENGUIN"),
+   * con sufijo numérico si ya existe — mismo espíritu que los ids del
+   * catálogo de conductores base (dataSource.js), a diferencia del
+   * catálogo de estructuras (secuencial TIPO-01, TIPO-02...). */
+  function slugifyConductorId(name) {
+    const base = (name || 'Conductor')
+      .toUpperCase()
+      .normalize('NFD') // separa tildes/diéresis de su letra base (é -> e + ´)
+      .replace(/[^A-Z0-9]+/g, '-') // el acento separado ya no es A-Z0-9, cae acá igual que cualquier símbolo
+      .replace(/^-+|-+$/g, '') || 'CONDUCTOR';
+    const existingIds = new Set(project.conductorCatalog.map((c) => c.id));
+    let id = base;
+    let suffix = 1;
+    while (existingIds.has(id)) {
+      suffix += 1;
+      id = `${base}-${suffix}`;
+    }
+    return id;
+  }
+
+  /** Agrega un conductor nuevo al catálogo del proyecto (no lo selecciona
+   * como el conductor activo — eso lo decide quien llama, vía setConductor). */
+  function addConductor(partial) {
+    const conductor = {
+      id: slugifyConductorId(partial.name),
+      name: partial.name || 'Conductor sin nombre',
+      diameter: partial.diameter || 0,
+      weightPerLength: partial.weightPerLength || 0,
+      crossSectionArea: partial.crossSectionArea || 0,
+      elasticModulus: partial.elasticModulus || 6.9e10,
+      thermalExpansionCoef: partial.thermalExpansionCoef != null ? partial.thermalExpansionCoef : 1.9e-5,
+      ultimateStrength: partial.ultimateStrength || 0,
+      referenceHypothesisId: partial.referenceHypothesisId || (project.hypotheses[0] && project.hypotheses[0].id),
+      referenceHorizontalTension: partial.referenceHorizontalTension || 0
+    };
+    project.conductorCatalog.push(conductor);
+    persist();
+    notify();
+    return conductor;
+  }
+
+  /** Quita un conductor del catálogo. No permite dejar el catálogo vacío
+   * (mínimo 1, mismo criterio que un vértice — ver removeVertex). Si era
+   * el conductor activo del proyecto, cae al primero que quede; las
+   * secciones que lo tenían asignado como conductor propio (ver
+   * setSectionConductor) vuelven a usar el del proyecto en vez de quedar
+   * apuntando a un id que ya no existe. */
+  function removeConductor(conductorId) {
+    if (project.conductorCatalog.length <= 1) {
+      return { ok: false, reason: 'El catálogo debe tener al menos un conductor.' };
+    }
+    project.conductorCatalog = project.conductorCatalog.filter((c) => c.id !== conductorId);
+    project.sectionConductors = project.sectionConductors.filter((sc) => sc.conductorId !== conductorId);
+    if (project.conductor.id === conductorId) {
+      project.conductor = project.conductorCatalog[0];
+    }
+    persist();
+    notify();
+    return { ok: true };
+  }
+
   // ---------- Proyecto / import-export ----------
 
   function setProjectName(name) {
@@ -631,6 +692,8 @@
     setGuySafetyFactor,
     setConductor,
     updateConductor,
+    addConductor,
+    removeConductor,
     setProjectName,
     exportJSON,
     importJSON
