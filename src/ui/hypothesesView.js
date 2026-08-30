@@ -200,9 +200,9 @@
             onClick: () => confirmRemoveConductor(project)
           }, 'Eliminar'),
           el('button', {
-            class: 'btn btn-small', type: 'button',
+            class: 'btn btn-small toolbar-card-btn', type: 'button',
             onClick: () => openAddConductorForm(project)
-          }, 'Agregar')
+          }, 'Agregar nuevo')
         ]),
         el('label', {}, 'Hipótesis de referencia (tensión instalada)'),
         refHypSelect,
