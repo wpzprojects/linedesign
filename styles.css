@@ -1915,8 +1915,17 @@ circle.sync-marker {
   font-weight: 600;
 }
 
-.data-table input {
+/* #screen-criteria .card usa var(--panel) para destacar contra el fondo
+   de la ventana — pero los input/select de la tabla heredaban ese MISMO
+   var(--panel) como su propio fondo (la regla global de inputs no lo
+   sobreescribía), así que quedaban sin contraste contra la tarjeta que
+   los contiene y se "perdían" visualmente. Mismo criterio que ya usan
+   los campos del toolbar de Planta y Perfil: casillero más oscuro
+   (var(--toolbar-bg)) dentro de una tarjeta más clara. */
+.data-table input,
+.data-table select {
   padding: 4px 6px;
+  background: var(--toolbar-bg);
 }
 
 .data-table tr.is-reference {

@@ -219,7 +219,6 @@
       const rows = project.hypotheses.map((h) => renderRow(h, project));
       return el('div', { class: 'card' }, [
         el('h2', {}, 'Casos climáticos'),
-        el('p', { class: 'muted' }, 'Mínimo 1 hipótesis.'),
         el('div', { class: 'table-wrap' }, [
           el('table', { class: 'data-table' }, [
             el('thead', {}, el('tr', {}, [
@@ -241,6 +240,16 @@
 
     function renderRow(hypothesis, project) {
       const isReference = project.conductor.referenceHypothesisId === hypothesis.id;
+      // Mismas dos condiciones que ya bloquea projectStore.js#removeHypothesis
+      // (no dejar el catálogo vacío, no borrar la hipótesis de referencia del
+      // conductor) — acá se anticipan para deshabilitar el botón de una vez
+      // en vez de dejar que el usuario haga clic y recién ahí se entere con
+      // una alerta.
+      const blockReason = project.hypotheses.length <= 1
+        ? 'Debe existir al menos una hipótesis de carga.'
+        : isReference
+          ? 'Es la hipótesis de referencia del conductor — cambia la referencia antes de eliminarla.'
+          : '';
       return el('tr', { class: isReference ? 'is-reference' : '' }, [
         el('td', {}, el('input', {
           type: 'text', value: hypothesis.name,
@@ -260,6 +269,8 @@
         })),
         el('td', { class: 'col-actions' }, el('button', {
           class: 'btn btn-small btn-danger', type: 'button',
+          disabled: !!blockReason,
+          title: blockReason,
           onClick: () => {
             const result = store.removeHypothesis(hypothesis.id);
             if (result && !result.ok) alert(result.reason);
