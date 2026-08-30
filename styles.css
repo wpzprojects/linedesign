@@ -1597,8 +1597,14 @@ svg#plan-svg {
   vector-effect: non-scaling-stroke;
 }
 
+/* var(--warning) (naranja) se confundía con el propio color de
+   conductores, que por defecto también referencia --warning — se usa
+   var(--primary) (el mismo acento de selección que .conductor-line.is-selected
+   y .structure-point.is-selected en Planta), 1px más grueso que el base
+   mientras esté seleccionado. */
 .structure-pole.is-selected {
-  stroke: var(--warning);
+  stroke: var(--primary);
+  stroke-width: calc(var(--structure-line-width, 2) + 1);
 }
 
 /* Área de arrastre/clic invisible sobre el poste en Perfil, mucho más
