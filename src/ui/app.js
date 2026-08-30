@@ -862,7 +862,7 @@
           ? propRowStatic('Ángulo de deflexión', '— (extremo del alineamiento)')
           : propRowStatic(
             'Ángulo de deflexión',
-            `${Math.abs(deflection).toFixed(1)}° ${deflection > 0 ? 'a la izquierda' : deflection < 0 ? 'a la derecha' : '(recto)'}`,
+            `${Math.abs(deflection).toFixed(2)}° ${deflection > 0 ? 'a la izquierda' : deflection < 0 ? 'a la derecha' : '(recto)'}`,
             { title: 'Cuánto gira el alineamiento en este vértice para pasar de la dirección de llegada a la de salida — informativo, no editable.' }
           )
       ]));
