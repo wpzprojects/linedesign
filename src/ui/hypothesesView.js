@@ -359,7 +359,14 @@
         el('td', {}, applicableCableSelect),
         el('td', { class: 'col-actions' }, el('button', {
           class: 'btn btn-small btn-danger', type: 'button',
-          onClick: () => store.removeStringingTension(item.id)
+          disabled: isReference,
+          title: isReference
+            ? 'Esta fila está fijando la tensión instalada del conductor (coincide con su hipótesis de referencia) — cambia la referencia antes de eliminarla.'
+            : '',
+          onClick: () => {
+            const result = store.removeStringingTension(item.id);
+            if (result && !result.ok) alert(result.reason);
+          }
         }, '×'))
       ]);
     }

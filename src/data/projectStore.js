@@ -478,10 +478,26 @@
     notify();
   }
 
+  /* A diferencia de removeHypothesis, no hay un mínimo de filas (la tabla
+   * puede quedar vacía del todo — ver DATA_MODEL.md/Ayuda). Lo único que
+   * se bloquea es borrar la fila que coincide con la hipótesis de
+   * referencia del conductor (item.weatherCase === nombre de esa
+   * hipótesis) — es la que realmente está fijando la tensión instalada
+   * (ver catenary.resolveReferenceTension); aunque la app se recupera
+   * sola si desaparece (cae a otra hipótesis con fila, o al valor manual
+   * con aviso — ver hypothesesView.js), se evita el borrado accidental de
+   * la fila marcada como "en uso" en la tabla. */
   function removeStringingTension(id) {
+    const item = project.stringingTensions.find((t) => t.id === id);
+    if (!item) return { ok: false, reason: 'No se encontró esa fila.' };
+    const referenceHypothesis = project.hypotheses.find((h) => h.id === project.conductor.referenceHypothesisId);
+    if (referenceHypothesis && item.weatherCase === referenceHypothesis.name) {
+      return { ok: false, reason: 'Esta fila está fijando la tensión instalada del conductor (coincide con su hipótesis de referencia). Cambia la referencia primero.' };
+    }
     project.stringingTensions = project.stringingTensions.filter((t) => t.id !== id);
     persist();
     notify();
+    return { ok: true };
   }
 
   // ---------- Conductor por sección de tensionamiento ----------
