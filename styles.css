@@ -1928,8 +1928,12 @@ circle.sync-marker {
   background: var(--toolbar-bg);
 }
 
-.data-table tr.is-reference {
-  background: var(--primary-soft);
+/* Antes teñía toda la fila (var(--primary-soft)) — versión menos
+   invasiva: una barrita de acento a la izquierda, sobre la primera
+   celda (un <tr> con border-collapse: collapse ignora sus propios
+   bordes, tienen que ir en la celda). */
+.data-table tr.is-reference td:first-child {
+  border-left: 3px solid var(--primary);
 }
 
 /* ---------- Barra de estado ---------- */
