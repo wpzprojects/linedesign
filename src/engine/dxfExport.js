@@ -323,30 +323,57 @@
       const conductor = loadTree.resolveSectionConductor(project, section.fromId, section.toId);
       const referenceHypothesis = project.hypotheses.find((h) => h.id === conductor.referenceHypothesisId) || project.hypotheses[0];
       const tension = catenary.computeSpanTension(conductor, referenceHypothesis, hypothesis, section.rulingSpan, project.stringingTensions);
-      // Mismo criterio que profileView.js: el conductor cuelga del punto de
-      // fijación real (descuenta attachmentPoints[].offsetZ desde la punta
-      // del poste), no de la punta misma — el poste en sí sigue
-      // dibujándose hasta su punta real más arriba, eso no cambia.
-      const fromTop = from.z + loadTree.averageAttachmentHeight(project, from);
-      const toTop = to.z + loadTree.averageAttachmentHeight(project, to);
-      structureTopMax = Math.max(structureTopMax, fromTop, toTop);
-      const curve = catenary.catenaryCurve({
-        span: spanLength, heightDiff: toTop - fromTop, H: tension.horizontalTension, unitWeight: tension.verticalUnitWeight
+
+      // Una curva por FASE, igual que en pantalla (ver profileView.js) —
+      // cada punto de fijación del catálogo cuelga desde su propia altura
+      // real (structure.height - offsetZ), emparejados por posición en la
+      // lista. Si a algún extremo le falta esa info, se cae a una sola
+      // curva con la altura promedio de siempre.
+      const fromType = project.structureCatalog.find((t) => t.typeId === from.typeId);
+      const toType = project.structureCatalog.find((t) => t.typeId === to.typeId);
+      const fromPoints = (fromType && fromType.attachmentPoints) || [];
+      const toPoints = (toType && toType.attachmentPoints) || [];
+      const phases = (fromPoints.length && toPoints.length)
+        ? Array.from({ length: Math.min(fromPoints.length, toPoints.length) }, (v, p) => ({
+          fromTop: from.z + Math.max(from.height - fromPoints[p].offsetZ, 0),
+          toTop: to.z + Math.max(to.height - toPoints[p].offsetZ, 0)
+        }))
+        : [{
+          fromTop: from.z + loadTree.averageAttachmentHeight(project, from),
+          toTop: to.z + loadTree.averageAttachmentHeight(project, to)
+        }];
+
+      let lowestIndex = 0;
+      phases.forEach((ph, idx) => {
+        if (Math.min(ph.fromTop, ph.toTop) < Math.min(phases[lowestIndex].fromTop, phases[lowestIndex].toTop)) lowestIndex = idx;
       });
-      const points = curve.points.map((p) => ({ x: from.station + p.x, y: scaleY(fromTop + p.y) }));
-      entities.push(polylineAsLines(points, 'CONDUCTOR', colors.conductor));
+
+      let lowestCurve = null;
+      let lowestFromTop = null;
+      phases.forEach((ph, idx) => {
+        structureTopMax = Math.max(structureTopMax, ph.fromTop, ph.toTop);
+        const curve = catenary.catenaryCurve({
+          span: spanLength, heightDiff: ph.toTop - ph.fromTop, H: tension.horizontalTension, unitWeight: tension.verticalUnitWeight
+        });
+        const points = curve.points.map((p) => ({ x: from.station + p.x, y: scaleY(ph.fromTop + p.y) }));
+        entities.push(polylineAsLines(points, 'CONDUCTOR', colors.conductor));
+        if (idx === lowestIndex) {
+          lowestCurve = curve;
+          lowestFromTop = ph.fromTop;
+        }
+      });
 
       if (showSag || showClearance) {
         const midStation = from.station + spanLength / 2;
-        const midTopY = scaleY(Math.min(fromTop, toTop));
+        const midTopY = scaleY(Math.min(phases[lowestIndex].fromTop, phases[lowestIndex].toTop));
         if (showSag) {
-          entities.push(dxfText(midStation, midTopY + 1, 1.5, `${curve.sag.toFixed(2)} m`, 'ANOTACIONES', colors.conductor));
+          entities.push(dxfText(midStation, midTopY + 1, 1.5, `${lowestCurve.sag.toFixed(2)} m`, 'ANOTACIONES', colors.conductor));
         }
         if (showClearance) {
-          const minClearance = curve.points.reduce((min, p) => {
+          const minClearance = lowestCurve.points.reduce((min, p) => {
             const station = from.station + p.x;
             const terrainZ = elevationAt(station);
-            return Math.min(min, (fromTop + p.y) - terrainZ);
+            return Math.min(min, (lowestFromTop + p.y) - terrainZ);
           }, Infinity);
           entities.push(dxfText(midStation, midTopY - 2, 1.5, `${minClearance.toFixed(2)} m`, 'ANOTACIONES', colors.terrain));
         }

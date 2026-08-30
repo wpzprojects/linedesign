@@ -199,23 +199,37 @@
         const conductor = loadTree.resolveSectionConductor(project, section.fromId, section.toId);
         const referenceHypothesis = project.hypotheses.find((h) => h.id === conductor.referenceHypothesisId) || project.hypotheses[0];
         const tension = catenary.computeSpanTension(conductor, referenceHypothesis, hypothesis, section.rulingSpan, project.stringingTensions);
-        // El conductor cuelga del punto de fijación real (loadTree.js#
-        // averageAttachmentHeight, que descuenta attachmentPoints[].offsetZ
-        // desde la punta del poste), no de la punta misma — antes usaba
-        // "from.height"/"to.height" directo, así que cambiar el offsetZ de
-        // un tipo de estructura en el catálogo no tenía ningún efecto
-        // visible acá (el poste en sí sí sigue dibujándose hasta su punta
-        // real más abajo, eso no cambia).
-        const fromTop = from.z + loadTree.averageAttachmentHeight(project, from);
-        const toTop = to.z + loadTree.averageAttachmentHeight(project, to);
-        const curve = catenary.catenaryCurve({
-          span: spanLength,
-          heightDiff: toTop - fromTop,
-          H: tension.horizontalTension,
-          unitWeight: tension.verticalUnitWeight
-        });
 
-        const screenPoints = curve.points.map((p) => projector.toScreen(from.station + p.x, fromTop + p.y));
+        // Una curva por FASE (no una sola promediada): cada punto de
+        // fijación del catálogo (attachmentPoints) cuelga del conductor
+        // desde su propia altura real (structure.height - offsetZ), así se
+        // ve en el perfil cuándo una disposición deja una fase más abajo
+        // que las otras. Se emparejan por posición en la lista (no por
+        // nombre — dos tipos de estructura distintos podrían nombrar sus
+        // fases distinto). Si a cualquiera de los dos extremos le falta
+        // esa info (tipo sin attachmentPoints), se cae a una sola curva
+        // con la altura promedio de siempre (loadTree.js#averageAttachmentHeight).
+        const fromType = project.structureCatalog.find((t) => t.typeId === from.typeId);
+        const toType = project.structureCatalog.find((t) => t.typeId === to.typeId);
+        const fromPoints = (fromType && fromType.attachmentPoints) || [];
+        const toPoints = (toType && toType.attachmentPoints) || [];
+        const phases = (fromPoints.length && toPoints.length)
+          ? Array.from({ length: Math.min(fromPoints.length, toPoints.length) }, (v, p) => ({
+            fromTop: from.z + Math.max(from.height - fromPoints[p].offsetZ, 0),
+            toTop: to.z + Math.max(to.height - toPoints[p].offsetZ, 0)
+          }))
+          : [{
+            fromTop: from.z + loadTree.averageAttachmentHeight(project, from),
+            toTop: to.z + loadTree.averageAttachmentHeight(project, to)
+          }];
+
+        // La fase físicamente más baja es la que manda para flecha/
+        // distancia al terreno (la que de verdad arriesga el "Cumple") —
+        // el resto se dibuja pero sin repetir esas etiquetas 3 veces.
+        let lowestIndex = 0;
+        phases.forEach((ph, idx) => {
+          if (Math.min(ph.fromTop, ph.toTop) < Math.min(phases[lowestIndex].fromTop, phases[lowestIndex].toTop)) lowestIndex = idx;
+        });
 
         // Un clic sobre CUALQUIER vano de la sección selecciona la sección
         // COMPLETA (todos sus vanos se resaltan juntos) — así se puede
@@ -223,41 +237,60 @@
         // vez desde Propiedades, no vano por vano.
         const isSectionSelected = selection && selection.type === 'section'
           && selection.fromId === section.fromId && selection.toId === section.toId;
-        const pathD = pathFromPoints(screenPoints);
-
-        // Área de clic invisible (más ancha que el trazo visible, que es
-        // delgado y difícil de acertar): mismo trazado, sin color, encima
-        // de la línea real. Ambas comparten el mismo listener.
-        const conductorHit = svgEl('path', { class: 'conductor-hit', d: pathD });
-        const conductorLine = svgEl('path', {
-          class: `conductor-line${isSectionSelected ? ' is-selected' : ''}`,
-          d: pathD
-        });
-        conductorHit.addEventListener('pointerdown', (evt) => {
+        const onConductorPointerdown = (evt) => {
           evt.stopPropagation();
           callbacks.onSelect({ type: 'section', fromId: section.fromId, toId: section.toId });
-        });
-        zoomLayer.appendChild(conductorLine);
-        zoomLayer.appendChild(conductorHit);
+        };
 
-        const midScreen = projector.toScreen(from.station + spanLength / 2, Math.min(fromTop, toTop));
+        let lowestCurve = null;
+        let lowestFromTop = null;
+        phases.forEach((ph, idx) => {
+          const curve = catenary.catenaryCurve({
+            span: spanLength, heightDiff: ph.toTop - ph.fromTop, H: tension.horizontalTension, unitWeight: tension.verticalUnitWeight
+          });
+          const screenPoints = curve.points.map((p) => projector.toScreen(from.station + p.x, ph.fromTop + p.y));
+          const pathD = pathFromPoints(screenPoints);
+
+          // Área de clic invisible (más ancha que el trazo visible, que es
+          // delgado y difícil de acertar) sobre cada fase — cualquiera
+          // selecciona la misma sección.
+          const conductorHit = svgEl('path', { class: 'conductor-hit', d: pathD });
+          const conductorLine = svgEl('path', {
+            class: `conductor-line${isSectionSelected ? ' is-selected' : ''}`,
+            d: pathD
+          });
+          conductorHit.addEventListener('pointerdown', onConductorPointerdown);
+          zoomLayer.appendChild(conductorLine);
+          zoomLayer.appendChild(conductorHit);
+
+          if (idx === lowestIndex) {
+            lowestCurve = curve;
+            lowestFromTop = ph.fromTop;
+          }
+        });
+
+        const lowest = phases[lowestIndex];
+        const midScreen = projector.toScreen(from.station + spanLength / 2, Math.min(lowest.fromTop, lowest.toTop));
         const sagMarker = svgEl('g', { class: 'sag-marker' });
         const sagLabel = svgEl('text', { class: 'sag-label', x: 0, y: 16 });
-        sagLabel.textContent = `${curve.sag.toFixed(2)} m`;
+        sagLabel.textContent = `${lowestCurve.sag.toFixed(2)} m`;
         if (!current.showSag) sagLabel.style.display = 'none';
         sagMarker.appendChild(sagLabel);
 
         // Distancia mínima real del conductor al terreno dentro del vano
         // (no la distancia de seguridad configurada — esa es la línea
-        // punteada; esto es lo que realmente hay). Mismo cálculo que la
-        // columna "Distancia mínima al piso" de la Tabla de estructuras
-        // (Resumen) — ver app.js#renderStructuresTable.
-        const minClearance = curve.points.reduce((min, p) => {
+        // punteada; esto es lo que realmente hay), calculada sobre la fase
+        // más baja. La columna equivalente de la Tabla de estructuras
+        // (Resumen) — ver app.js#renderStructuresTable — todavía usa la
+        // punta del poste sin descontar offsetZ en absoluto (el mismo bug
+        // que este archivo tenía antes de esta ronda de cambios); no se
+        // tocó ahí todavía.
+        const minClearance = lowestCurve.points.reduce((min, p) => {
           const station = from.station + p.x;
           const terrainZ = terrainProfile
             ? stationing.elevationAtStation(terrainProfile, station)
             : stationing.pointAtStation(vertices, station).z;
-          return Math.min(min, (fromTop + p.y) - terrainZ);
+          return Math.min(min, (lowestFromTop + p.y) - terrainZ);
         }, Infinity);
         const clearanceLabel = svgEl('text', { class: 'clearance-label', x: 0, y: 32 });
         clearanceLabel.textContent = `${minClearance.toFixed(2)} m`;
