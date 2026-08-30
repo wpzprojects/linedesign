@@ -53,6 +53,12 @@
     // propia, sin importar esta preferencia.
     function isSI(project) { return project.displayUnitSystem === 'si'; }
     function forceUnitLabel(project) { return isSI(project) ? 'N' : 'kgF'; }
+    // Mismo campo/conversión que forceUnitLabel (weightPerLength es, en
+    // rigor, un peso-fuerza por longitud, no una masa — así entra a las
+    // ecuaciones de catenaria), pero se rotula "kg" sin la F en modo
+    // kgF/kg-km: escribir "kgF/km" generaba dudas sin aportar nada en la
+    // práctica (el número es el mismo que si dijeras kg/km).
+    function weightUnitLabel(project) { return isSI(project) ? 'N' : 'kg'; }
     function toDisplayForce(project, kgf) { return isSI(project) ? units.kgfToNewtons(kgf) : kgf; }
     function fromDisplayForce(project, value) { return isSI(project) ? units.newtonsToKgf(value) : value; }
 
@@ -71,10 +77,6 @@
       const elasticModulusInput = el('input', { type: 'number', step: 'any', min: '0', value: '69000000000' });
       const thermalCoefInput = el('input', { type: 'number', step: 'any', value: '0.000019' });
       const strengthInput = el('input', { type: 'number', step: 'any', min: '0' });
-      const refHypSelect = el('select', {}, project.hypotheses.map((h) => el('option', {
-        value: h.id, selected: h.id === project.conductor.referenceHypothesisId
-      }, h.name)));
-      const tensionInput = el('input', { type: 'number', step: 'any', min: '0' });
 
       const form = el('form', {
         onSubmit: (e) => {
@@ -84,6 +86,12 @@
             alert('El conductor necesita un nombre.');
             return;
           }
+          // Hipótesis de referencia y tensión horizontal de referencia NO
+          // se piden acá: quedan con su valor por defecto (ver
+          // projectStore.js#addConductor) y se terminan de configurar en
+          // la propia tarjeta Conductor justo después de crear — este
+          // conductor queda seleccionado ahí mismo (setConductor abajo),
+          // así que pedirlas dos veces sería redundante.
           const conductor = store.addConductor({
             name,
             diameter: parseFloat(diameterInput.value) || 0,
@@ -91,9 +99,7 @@
             crossSectionArea: parseFloat(areaInput.value) || 0,
             elasticModulus: parseFloat(elasticModulusInput.value) || 0,
             thermalExpansionCoef: parseFloat(thermalCoefInput.value) || 0,
-            ultimateStrength: fromDisplayForce(project, parseFloat(strengthInput.value) || 0),
-            referenceHypothesisId: refHypSelect.value,
-            referenceHorizontalTension: fromDisplayForce(project, parseFloat(tensionInput.value) || 0)
+            ultimateStrength: fromDisplayForce(project, parseFloat(strengthInput.value) || 0)
           });
           store.setConductor(conductor.id);
           closeModal();
@@ -101,13 +107,11 @@
       }, [
         el('label', {}, 'Nombre'), nameInput,
         el('label', {}, 'Diámetro (m)'), diameterInput,
-        el('label', {}, `Peso por longitud (${forceUnit}/km)`), weightInput,
+        el('label', {}, `Peso por longitud (${weightUnitLabel(project)}/km)`), weightInput,
         el('label', {}, 'Área de sección (m²)'), areaInput,
         el('label', {}, 'Módulo de elasticidad (Pa)'), elasticModulusInput,
         el('label', {}, 'Coef. de expansión térmica (1/°C)'), thermalCoefInput,
         el('label', {}, `Carga de rotura (${forceUnit})`), strengthInput,
-        el('label', {}, 'Hipótesis de referencia'), refHypSelect,
-        el('label', {}, `Tensión horizontal de referencia (${forceUnit})`), tensionInput,
         el('div', { class: 'row-actions' }, [
           el('button', { class: 'btn toolbar-card-btn', type: 'submit' }, 'Agregar conductor'),
           el('button', { class: 'btn btn-small', type: 'button', onClick: closeModal }, 'Cancelar')
