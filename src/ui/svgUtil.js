@@ -102,6 +102,104 @@
     return group;
   }
 
+  // Nombres de las variables CSS de tema que de verdad se usan dentro de
+  // #plan-svg/#profile-svg (colores + los grosores configurables en
+  // Configuración) — ver styles.css. Un SVG exportado como archivo se abre
+  // en un documento aparte (o, para el PNG, dentro de un <img> con su
+  // propio contexto de render): ninguno hereda las custom properties de
+  // esta página, así que hay que resolverlas a su valor concreto ACTUAL
+  // (tema claro/oscuro vigente) e incrustarlas.
+  const EXPORT_THEME_VARS = [
+    '--panel', '--muted', '--text', '--line', '--primary', '--danger',
+    '--conductor-color', '--structure-color', '--alignment-color', '--terrain-color', '--vertex-line-color',
+    '--conductor-line-width', '--structure-line-width', '--alignment-line-width', '--terrain-line-width'
+  ];
+
+  /** Bloque <style> autocontenido con los valores de tema YA resueltos (no
+   * var(--x)) y solo las reglas que usan las vistas de Planta/Perfil —
+   * portable: el archivo exportado se ve igual sin la app/el CSS externo. */
+  function buildExportStyleBlock() {
+    const computed = getComputedStyle(document.body);
+    const v = {};
+    EXPORT_THEME_VARS.forEach((name) => { v[name] = computed.getPropertyValue(name).trim(); });
+    const cw = v['--conductor-line-width'] || '1.5';
+    const sw = v['--structure-line-width'] || '3';
+    const aw = v['--alignment-line-width'] || '4';
+    const tw = v['--terrain-line-width'] || '1.5';
+    return `
+      .canvas-background { fill: transparent; }
+      .ruler-line { stroke: ${v['--line']}; stroke-width: 1; }
+      .ruler-label { fill: ${v['--muted']}; font-size: 10px; font-variant-numeric: tabular-nums; }
+      .row-line { stroke: ${v['--muted']}; stroke-width: 1; stroke-dasharray: 4 3; fill: none; }
+      .alignment-line { stroke: ${v['--alignment-color']}; stroke-width: ${aw}; fill: none; stroke-linecap: round; stroke-linejoin: round; }
+      .circuit-line { stroke: ${v['--conductor-color']}; stroke-width: 1; fill: none; stroke-linecap: round; stroke-linejoin: round; }
+      .vano-label { fill: ${v['--conductor-color']}; font-size: 10px; }
+      .structure-point { fill: ${v['--structure-color']}; stroke: ${v['--panel']}; stroke-width: 2; }
+      .structure-point.is-selected { fill: ${v['--primary']}; }
+      .structure-pole { stroke: ${v['--structure-color']}; stroke-width: ${sw}; }
+      .structure-pole.is-selected { stroke: ${v['--primary']}; stroke-width: calc(${sw} + 1); }
+      .vertex-point { fill: ${v['--panel']}; stroke: ${v['--alignment-color']}; stroke-width: 3; }
+      .annotation-label { fill: ${v['--text']}; font-size: 11px; font-weight: 600; }
+      .vertex-label { font-size: 10px; opacity: 0.8; fill: ${v['--text']}; }
+      .profile-line { stroke: ${v['--terrain-color']}; stroke-width: ${tw}; fill: none; }
+      .profile-line--real { stroke: ${v['--terrain-color']}; }
+      .clearance-line { stroke: ${v['--muted']}; stroke-width: 1; stroke-dasharray: 4 3; fill: none; }
+      .vertex-line { stroke: ${v['--vertex-line-color']}; stroke-width: 1; stroke-dasharray: 5 4; }
+      .conductor-line { stroke: ${v['--conductor-color']}; stroke-width: ${cw}; fill: none; }
+      .conductor-line.is-selected { stroke: ${v['--primary']}; stroke-width: calc(${cw} + 1); }
+      .sag-label { fill: ${v['--conductor-color']}; font-size: 10px; text-anchor: middle; }
+      .clearance-label { fill: ${v['--terrain-color']}; font-size: 10px; text-anchor: middle; }
+      text { font-family: "Segoe UI", "Inter", Roboto, Tahoma, Geneva, Verdana, sans-serif; }
+    `;
+  }
+
+  /** Serializa un <svg> del lienzo (Planta/Perfil) a un string XML
+   * autocontenido y portable — ver buildExportStyleBlock. */
+  function exportSvgString(svgElement) {
+    const clone = svgElement.cloneNode(true);
+    clone.setAttribute('xmlns', SVG_NS);
+    const rect = svgElement.getBoundingClientRect();
+    clone.setAttribute('width', Math.round(rect.width));
+    clone.setAttribute('height', Math.round(rect.height));
+    const style = document.createElementNS(SVG_NS, 'style');
+    style.textContent = buildExportStyleBlock();
+    clone.insertBefore(style, clone.firstChild);
+    const serialized = new XMLSerializer().serializeToString(clone);
+    return `<?xml version="1.0" standalone="no"?>\r\n${serialized}`;
+  }
+
+  /** Convierte el mismo SVG portable a PNG (canvas, @2x por defecto) —
+   * asíncrono porque la carga de la imagen SVG lo es; `callback` recibe el
+   * Blob PNG resultante (o null si algo falla). */
+  function exportSvgAsPng(svgElement, callback, scale = 2) {
+    const rect = svgElement.getBoundingClientRect();
+    const width = Math.round(rect.width * scale);
+    const height = Math.round(rect.height * scale);
+    const svgString = exportSvgString(svgElement);
+    const svgBlob = new Blob([svgString], { type: 'image/svg+xml;charset=utf-8' });
+    const url = URL.createObjectURL(svgBlob);
+    const img = new Image();
+    img.onload = () => {
+      const canvas = document.createElement('canvas');
+      canvas.width = width;
+      canvas.height = height;
+      const ctx = canvas.getContext('2d');
+      // El SVG en sí tiene fondo transparente (.canvas-background) — se
+      // pinta el panel del tema vigente para que la imagen no quede con
+      // fondo transparente/inesperado al abrirla fuera de la app.
+      ctx.fillStyle = getComputedStyle(document.body).getPropertyValue('--panel').trim() || '#ffffff';
+      ctx.fillRect(0, 0, width, height);
+      ctx.drawImage(img, 0, 0, width, height);
+      URL.revokeObjectURL(url);
+      canvas.toBlob((blob) => callback(blob), 'image/png');
+    };
+    img.onerror = () => {
+      URL.revokeObjectURL(url);
+      callback(null);
+    };
+    img.src = url;
+  }
+
   function downloadFile(filename, content, mime = 'application/json') {
     const blob = new Blob([content], { type: mime });
     const url = URL.createObjectURL(blob);
@@ -114,6 +212,6 @@
     URL.revokeObjectURL(url);
   }
 
-  const svgUtil = { svgEl, clear, toSvgPoint, buildRulerGrid, downloadFile };
+  const svgUtil = { svgEl, clear, toSvgPoint, buildRulerGrid, downloadFile, exportSvgString, exportSvgAsPng };
   global.LineDesignSvgUtil = svgUtil;
 })(typeof window !== 'undefined' ? window : globalThis);
