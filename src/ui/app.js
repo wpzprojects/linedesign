@@ -755,9 +755,13 @@
   /** Fila etiqueta:valor de la grilla de Propiedades. `disabled` solo
    * atenúa/marca en cursiva (el control ya trae su propio `disabled`
    * nativo pasado por quien lo crea) — no aplica pointer-events:none. */
-  function propRow(labelText, control, { disabled = false } = {}) {
+  // `title` (opcional): tooltip de la etiqueta — por defecto, el propio
+  // texto completo de la etiqueta (".prop-row-label" trunca con "…" si no
+  // cabe en el panel angosto de Propiedades, y sin esto no había forma de
+  // ver el texto completo salvo ensanchar el panel).
+  function propRow(labelText, control, { disabled = false, title = '' } = {}) {
     return el('div', { class: `prop-row${disabled ? ' is-disabled' : ''}` }, [
-      el('span', { class: 'prop-row-label' }, labelText),
+      el('span', { class: 'prop-row-label', title: title || labelText }, labelText),
       control
     ]);
   }
@@ -869,16 +873,19 @@
       // teniendo sentido sin importar qué heightOption tenga la estructura.
       // El contraviento amarra naturalmente cerca de donde está el
       // conductor que se quiere contrarrestar.
-      const suggestedGuyHeightFromTip = Math.max(
+      // Redondeado a 2 decimales — la resta de dos alturas calculadas
+      // (structureAboveGroundHeight - averageAttachmentHeight) arrastra
+      // más precisión de la que tiene sentido mostrar/editar acá.
+      const suggestedGuyHeightFromTip = Math.round(Math.max(
         loadTree.structureAboveGroundHeight(project, structure) - loadTree.averageAttachmentHeight(project, structure), 0
-      );
+      ) * 100) / 100;
       const previewGuyHeight = structure.guyAnchorHeight != null ? structure.guyAnchorHeight : suggestedGuyHeightFromTip;
       // Ángulo de la retenida respecto a la VERTICAL del poste (no al
-      // piso) — 45° es un valor típico de referencia (ver
+      // piso) — 30° es el valor de referencia por defecto (ver
       // loadTree.js#checkPoleCapacity para cómo entra en la tensión del
       // cable: mientras más cerrado/vertical el ángulo, más tensión
       // necesita el cable para la misma carga).
-      const previewGuyAngle = structure.guyAnchorAngle != null ? structure.guyAnchorAngle : 45;
+      const previewGuyAngle = structure.guyAnchorAngle != null ? structure.guyAnchorAngle : 30;
       const guyResistanceOptions = (type && type.guyResistanceOptions && type.guyResistanceOptions.length)
         ? type.guyResistanceOptions
         : [structure.guyResistance != null ? structure.guyResistance : 0];
@@ -932,7 +939,7 @@
             const patch = { hasGuy: checked };
             if (checked && structure.guyAnchorHeight == null) {
               patch.guyAnchorHeight = suggestedGuyHeightFromTip;
-              patch.guyAnchorAngle = 45;
+              patch.guyAnchorAngle = 30;
               if (type && type.guyResistanceOptions && type.guyResistanceOptions.length) {
                 patch.guyResistance = type.guyResistanceOptions[0];
               }
@@ -942,25 +949,37 @@
         }, [
           el('option', { value: 'no', selected: !structure.hasGuy }, 'No'),
           el('option', { value: 'si', selected: !!structure.hasGuy }, 'Sí')
-        ]), { disabled: !isAnchorType }),
+        ]), {
+          disabled: !isAnchorType,
+          title: 'Agrega, internamente, un cable de contraviento opuesto a la tensión del conductor — solo disponible en estructuras de Retención o Ángulo (que anclan la línea).'
+        }),
         propRow('Resistencia contraviento (kgF)', el('select', {
           class: 'prop-control', disabled: !hasGuy,
           onChange: (e) => store.updateStructure(structure.id, { guyResistance: parseFloat(e.target.value) })
         }, guyResistanceOptions.map((r) => el('option', {
           value: r, selected: r === (structure.guyResistance != null ? structure.guyResistance : guyResistanceOptions[0])
-        }, `${r} kgF`))), { disabled: !hasGuy }),
+        }, `${r} kgF`))), {
+          disabled: !hasGuy,
+          title: 'Resistencia última a rotura del cable de contraviento (kgF) — opciones definidas en el catálogo de estructuras. Se compara contra la tensión que le exige la carga, dividida entre el "Factor de seguridad de contravientos".'
+        }),
         propRow('Altura de enganche desde la punta (m)', el('input', {
           class: 'prop-control', type: 'number', step: '0.5', min: '0', disabled: !hasGuy,
           title: 'Distancia desde la PUNTA del poste hacia abajo (no altura sobre el piso) — mismo criterio que los puntos de fijación del conductor, sugerido según la altura real de enganche del conductor en esta estructura.',
-          value: hasGuy ? structure.guyAnchorHeight : previewGuyHeight,
+          value: hasGuy ? Math.round(structure.guyAnchorHeight * 100) / 100 : previewGuyHeight,
           onChange: (e) => store.updateStructure(structure.id, { guyAnchorHeight: parseFloat(e.target.value) || 0 })
-        }), { disabled: !hasGuy }),
+        }), {
+          disabled: !hasGuy,
+          title: 'Distancia desde la PUNTA del poste hacia abajo (no altura sobre el piso) — geometría de referencia; no entra en el cálculo de tensión del cable, que depende solo del ángulo.'
+        }),
         propRow('Ángulo de la retenida (°, respecto al poste)', el('input', {
           class: 'prop-control', type: 'number', step: '1', min: '5', max: '85', disabled: !hasGuy,
-          title: 'Ángulo del cable de contraviento respecto a la VERTICAL del poste — mientras más cerrado (más vertical), más tensión necesita el cable para la misma carga.',
+          title: 'Ángulo del cable de contraviento respecto a la VERTICAL del poste — mientras más cerrado (más vertical), más tensión necesita el cable para la misma carga. Sugerido: 30°.',
           value: hasGuy ? structure.guyAnchorAngle : previewGuyAngle,
           onChange: (e) => store.updateStructure(structure.id, { guyAnchorAngle: parseFloat(e.target.value) || 0 })
-        }), { disabled: !hasGuy })
+        }), {
+          disabled: !hasGuy,
+          title: 'Ángulo del cable respecto a la VERTICAL del poste — determina la tensión que debe resistir el cable (tensión = fuerza / sen(ángulo)).'
+        })
       ]));
 
       inspectorPanel.appendChild(el('div', { class: 'prop-actions' }, [
