@@ -690,27 +690,29 @@
 
       const check = poleCheck[structure.id];
 
-      let pole = { status: 'undefined', text: '—', title: '' };
+      let pole = { status: 'undefined', pct: null, text: '—', title: '' };
       if (check && check.pole.status !== 'undefined') {
         const p = check.pole;
         const pct = Math.round(p.ratio * 100);
         const hypName = hypothesisById[p.governingHypothesisId] || p.governingHypothesisId;
         pole = {
           status: p.status,
+          pct,
           text: `${p.status === 'ok' ? '✓' : '✗'} ${pct}%`,
           title: `Momento demandado ${p.momentDemandKgfm.toFixed(0)} kgF·m / admisible ${p.capacityKgfm.toFixed(0)} kgF·m — caso gobernante: ${hypName}`
         };
       }
 
       const guyCheck = check && check.guy;
-      let guy = { status: 'none', text: '—', title: '' };
+      let guy = { status: 'none', pct: null, text: '—', title: '' };
       if (guyCheck && guyCheck.status === 'undefined') {
-        guy = { status: 'undefined', text: '⚠', title: 'Contraviento habilitado pero sin resistencia o geometría de anclaje completa' };
+        guy = { status: 'undefined', pct: null, text: '⚠', title: 'Contraviento habilitado pero sin resistencia o geometría de anclaje completa' };
       } else if (guyCheck && guyCheck.status !== 'not-applicable' && guyCheck.status !== 'none') {
         const pct = Math.round(guyCheck.ratio * 100);
         const hypName = hypothesisById[guyCheck.governingHypothesisId] || guyCheck.governingHypothesisId;
         guy = {
           status: guyCheck.status,
+          pct,
           text: `${guyCheck.status === 'ok' ? '✓' : '✗'} ${pct}%`,
           title: `Tracción demandada ${guyCheck.tensionKgf.toFixed(0)} kgF / admisible ${guyCheck.capacityKgf.toFixed(0)} kgF — caso gobernante: ${hypName}`
         };
@@ -743,6 +745,18 @@
     if (deflection == null) return '—';
     const dir = deflection > 0 ? 'izq' : deflection < 0 ? 'der' : '';
     return `${Math.abs(deflection).toFixed(2)}°${dir ? ` ${dir}` : ''}`;
+  }
+
+  // Etiqueta de texto plano para "Cumple poste"/"Cumple contraviento" en
+  // los exportadores — en pantalla la columna combina símbolo+porcentaje
+  // en un solo texto (✓ 85%), pero eso no se filtra/ordena bien como
+  // número en una hoja de cálculo, así que JSON/CSV separan el porcentaje
+  // (row.pole.pct/row.guy.pct, numérico) de este texto de estado.
+  function checkStatusLabel(status) {
+    if (status === 'ok') return 'Cumple';
+    if (status === 'fail') return 'No cumple';
+    if (status === 'undefined') return 'Sin datos';
+    return '—';
   }
 
   function renderStructuresTable(project) {
@@ -793,8 +807,10 @@
         vanoAdelante: row.vanoAdelante,
         flechaVanoAdelante: row.flecha,
         distanciaMinimaAlPiso: row.minClearance,
-        cumplePoste: row.pole.status,
-        cumpleContraviento: row.guy.status
+        cumplePostePorcentaje: row.pole.pct,
+        cumplePoste: checkStatusLabel(row.pole.status),
+        cumpleContravientoPorcentaje: row.guy.pct,
+        cumpleContraviento: checkStatusLabel(row.guy.status)
       }))
     };
     downloadFile(`estructuras_${project.name.replace(/\s+/g, '_')}.json`, JSON.stringify(payload, null, 2));
@@ -802,11 +818,17 @@
 
   function exportStructuresTableCsv(project) {
     const rows = computeStructuresRowsData(project);
-    const headers = ['ID', 'Estación (m)', 'Este (m)', 'Norte (m)', 'Cota terreno (m)', 'Ángulo de deflexión', 'Tipo', 'Altura (m)', 'Resistencia (kgF)', 'Vano adelante (m)', 'Flecha vano adelante (m)', 'Distancia mínima al piso (m)', 'Cumple poste', 'Cumple contraviento'];
+    const headers = [
+      'ID', 'Estación (m)', 'Este (m)', 'Norte (m)', 'Cota terreno (m)', 'Ángulo de deflexión', 'Tipo', 'Altura (m)', 'Resistencia (kgF)',
+      'Vano adelante (m)', 'Flecha vano adelante (m)', 'Distancia mínima al piso (m)',
+      'Cumple poste (%)', 'Cumple poste', 'Cumple contraviento (%)', 'Cumple contraviento'
+    ];
     const csvRows = rows.map((row) => [
       row.name, fmtNum(row.station, 1), fmtNum(row.x, 2), fmtNum(row.y, 2), fmtNum(row.terrainZ, 1), fmtDeflection(row.deflection),
       row.typeName, fmtNum(row.height, 1), row.resistance ? fmtNum(row.resistance, 0) : '',
-      fmtNum(row.vanoAdelante, 1), fmtNum(row.flecha, 2), fmtNum(row.minClearance, 1), row.pole.status, row.guy.status
+      fmtNum(row.vanoAdelante, 1), fmtNum(row.flecha, 2), fmtNum(row.minClearance, 1),
+      row.pole.pct != null ? row.pole.pct : '', checkStatusLabel(row.pole.status),
+      row.guy.pct != null ? row.guy.pct : '', checkStatusLabel(row.guy.status)
     ]);
     downloadFile(`estructuras_${project.name.replace(/\s+/g, '_')}.csv`, toCsv(headers, csvRows), 'text/csv');
   }
