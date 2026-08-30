@@ -62,21 +62,49 @@
   }
 
   /**
+   * Profundidad de empotramiento/enterramiento (m) de un poste, criterio
+   * estándar de postes de distribución/transmisión: 10% de la altura
+   * total (de catálogo) + 0.6 m.
+   */
+  function embedmentDepth(totalHeight) {
+    return totalHeight * 0.1 + 0.6;
+  }
+
+  /**
+   * Altura libre sobre el terreno de una estructura: por defecto,
+   * structure.height completo (mismo comportamiento histórico de la app —
+   * se asume todo el poste del catálogo libre sobre el piso). Si el tipo
+   * tiene "considerEmbedment" activado (Catálogo de estructuras), se le
+   * resta la profundidad de empotramiento — esa parte queda bajo tierra,
+   * no disponible como altura libre. Todo lo que en el resto de la app
+   * representa "la punta real del poste visible" (dónde cuelga el
+   * conductor, dónde termina el trazo en Perfil/DXF, el brazo de palanca
+   * de "Cumple poste") debe usar ESTA función, no structure.height directo.
+   */
+  function structureAboveGroundHeight(project, structure) {
+    const type = project.structureCatalog.find((t) => t.typeId === structure.typeId);
+    if (!type || !type.considerEmbedment) return structure.height;
+    return Math.max(structure.height - embedmentDepth(structure.height), 0);
+  }
+
+  /**
    * `attachmentPoints[].offsetZ` se referencia desde la PUNTA del poste
    * hacia abajo (0 = en la punta), no desde el piso — así el punto de
    * fijación sigue siendo válido sin importar cuál de las heightOptions
    * del catálogo se elija para una estructura en particular (si se
    * referenciara desde el piso, cambiar la altura del poste dejaría el
    * offset apuntando a un punto distinto en la realidad). La altura real
-   * sobre el piso, para el cálculo de momento, es structure.height menos
-   * ese offset — ver catalogView.js para el editor/esquema.
+   * sobre el piso, para el cálculo de momento, es la altura libre
+   * (structureAboveGroundHeight, que ya descuenta el empotramiento si
+   * aplica) menos ese offset — ver catalogView.js para el editor/esquema.
    */
   function averageAttachmentHeight(project, structure) {
     const type = project.structureCatalog.find((t) => t.typeId === structure.typeId);
     const points = (type && type.attachmentPoints) || [];
-    if (!points.length) return structure.height;
+    const tipHeight = structureAboveGroundHeight(project, structure);
+    if (!points.length) return tipHeight;
     const avgOffsetZ = points.reduce((sum, p) => sum + p.offsetZ, 0) / points.length;
-    return Math.max(structure.height - avgOffsetZ, 0);
+    return Math.max(tipHeight - avgOffsetZ, 0);
   }
 
   /**
@@ -304,7 +332,7 @@
       if (structure.resistance == null || !worstPole) {
         pole = { status: 'undefined' };
       } else {
-        const lever = Math.max(structure.height - RESISTANCE_TEST_OFFSET_FROM_TIP, 0);
+        const lever = Math.max(structureAboveGroundHeight(project, structure) - RESISTANCE_TEST_OFFSET_FROM_TIP, 0);
         const capacityKgfm = (structure.resistance * lever) / poleSafetyFactor;
         const ratio = capacityKgfm > 0 ? worstPole.momentDemandKgfm / capacityKgfm : Infinity;
         pole = {
@@ -349,7 +377,7 @@
 
   const loadTree = {
     computeSpanTensions, computeLoadTree, checkPoleCapacity, getReferenceHypothesis, resolveSectionConductor,
-    averageAttachmentHeight
+    averageAttachmentHeight, structureAboveGroundHeight
   };
 
   if (typeof module !== 'undefined' && module.exports) {

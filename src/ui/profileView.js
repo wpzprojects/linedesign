@@ -213,10 +213,15 @@
         const toType = project.structureCatalog.find((t) => t.typeId === to.typeId);
         const fromPoints = (fromType && fromType.attachmentPoints) || [];
         const toPoints = (toType && toType.attachmentPoints) || [];
+        // Altura LIBRE sobre el terreno (descuenta empotramiento si el tipo
+        // lo tiene activado — ver loadTree.js#structureAboveGroundHeight),
+        // no structure.height directo: esa parte queda bajo tierra.
+        const fromFreeHeight = loadTree.structureAboveGroundHeight(project, from);
+        const toFreeHeight = loadTree.structureAboveGroundHeight(project, to);
         const phases = (fromPoints.length && toPoints.length)
           ? Array.from({ length: Math.min(fromPoints.length, toPoints.length) }, (v, p) => ({
-            fromTop: from.z + Math.max(from.height - fromPoints[p].offsetZ, 0),
-            toTop: to.z + Math.max(to.height - toPoints[p].offsetZ, 0)
+            fromTop: from.z + Math.max(fromFreeHeight - fromPoints[p].offsetZ, 0),
+            toTop: to.z + Math.max(toFreeHeight - toPoints[p].offsetZ, 0)
           }))
           : [{
             fromTop: from.z + loadTree.averageAttachmentHeight(project, from),
@@ -339,7 +344,10 @@
 
       resolved.forEach((structure) => {
         const baseScreen = projector.toScreen(structure.station, structure.z);
-        const topScreen = projector.toScreen(structure.station, structure.z + structure.height);
+        // Altura libre sobre el terreno, no structure.height directo — si
+        // el tipo tiene empotramiento activado, la parte enterrada no se
+        // dibuja (ver loadTree.js#structureAboveGroundHeight).
+        const topScreen = projector.toScreen(structure.station, structure.z + loadTree.structureAboveGroundHeight(project, structure));
         const isSelected = selection && selection.type === 'structure' && selection.id === structure.id;
 
         const pole = svgEl('line', {

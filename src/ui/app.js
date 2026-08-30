@@ -626,10 +626,12 @@
         const toType = project.structureCatalog.find((t) => t.typeId === to.typeId);
         const fromPoints = (type && type.attachmentPoints) || [];
         const toPoints = (toType && toType.attachmentPoints) || [];
+        const fromFreeHeight = loadTree.structureAboveGroundHeight(project, structure);
+        const toFreeHeight = loadTree.structureAboveGroundHeight(project, to);
         const phases = (fromPoints.length && toPoints.length)
           ? Array.from({ length: Math.min(fromPoints.length, toPoints.length) }, (_, p) => ({
-            fromTop: structure.z + Math.max(structure.height - fromPoints[p].offsetZ, 0),
-            toTop: to.z + Math.max(to.height - toPoints[p].offsetZ, 0)
+            fromTop: structure.z + Math.max(fromFreeHeight - fromPoints[p].offsetZ, 0),
+            toTop: to.z + Math.max(toFreeHeight - toPoints[p].offsetZ, 0)
           }))
           : [{
             fromTop: structure.z + loadTree.averageAttachmentHeight(project, structure),
@@ -697,7 +699,12 @@
         el('td', {}, fmtNum(structure.station, 1)),
         el('td', {}, fmtNum(structure.height, 1)),
         el('td', {}, fmtNum(structure.z, 1)),
-        el('td', {}, fmtNum(structure.z + structure.height, 1)),
+        // Cota de la punta LIBRE (sobre el terreno) — descuenta el
+        // empotramiento si el tipo lo tiene activado, no structure.height
+        // directo (ver loadTree.js#structureAboveGroundHeight). "Altura
+        // (m)" arriba sigue siendo la del catálogo tal cual (qué poste se
+        // compró), esta es la elevación real de la punta visible.
+        el('td', {}, fmtNum(structure.z + loadTree.structureAboveGroundHeight(project, structure), 1)),
         el('td', {}, structure.resistance ? fmtNum(structure.resistance, 0) : '—'),
         el('td', {}, fmtNum(vanoAdelante, 1)),
         el('td', {}, fmtNum(flecha, 2)),
@@ -855,7 +862,12 @@
       // así el usuario ve que existen aunque no pueda editarlos ahora.
       const isAnchorType = type && (type.type === 'Retención' || type.type === 'Ángulo');
       const hasGuy = isAnchorType && !!structure.hasGuy;
-      const previewGuyHeight = structure.guyAnchorHeight != null ? structure.guyAnchorHeight : Math.max(structure.height - 3, 1);
+      // El contraviento se ancla sobre la parte LIBRE del poste (no puede
+      // ir bajo tierra) — el valor sugerido parte de la altura libre, no
+      // de structure.height directo (ver loadTree.js#structureAboveGroundHeight).
+      const previewGuyHeight = structure.guyAnchorHeight != null
+        ? structure.guyAnchorHeight
+        : Math.max(loadTree.structureAboveGroundHeight(project, structure) - 3, 1);
       const previewGuyDistance = structure.guyAnchorDistance != null ? structure.guyAnchorDistance : previewGuyHeight;
       const guyResistanceOptions = (type && type.guyResistanceOptions && type.guyResistanceOptions.length)
         ? type.guyResistanceOptions
@@ -909,7 +921,7 @@
             const checked = e.target.value === 'si';
             const patch = { hasGuy: checked };
             if (checked && structure.guyAnchorHeight == null) {
-              patch.guyAnchorHeight = Math.max(structure.height - 3, 1);
+              patch.guyAnchorHeight = Math.max(loadTree.structureAboveGroundHeight(project, structure) - 3, 1);
               patch.guyAnchorDistance = patch.guyAnchorHeight;
               if (type && type.guyResistanceOptions && type.guyResistanceOptions.length) {
                 patch.guyResistance = type.guyResistanceOptions[0];

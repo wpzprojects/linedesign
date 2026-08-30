@@ -270,7 +270,10 @@
     const resolved = resolvedAll;
     resolved.forEach((structure) => {
       const baseY = scaleY(structure.z);
-      const topY = scaleY(structure.z + structure.height);
+      // Altura libre sobre el terreno, no structure.height directo — si el
+      // tipo tiene empotramiento activado, la parte enterrada no se dibuja
+      // (ver loadTree.js#structureAboveGroundHeight).
+      const topY = scaleY(structure.z + loadTree.structureAboveGroundHeight(project, structure));
       entities.push(dxfLine(structure.station, baseY, structure.station, topY, 'ESTRUCTURAS', colors.structure));
       entities.push(dxfText(structure.station + 1, topY + 1, 2, structure.name || structure.id, 'ESTRUCTURAS', colors.structure));
     });
@@ -302,10 +305,12 @@
       const toType = project.structureCatalog.find((t) => t.typeId === to.typeId);
       const fromPoints = (fromType && fromType.attachmentPoints) || [];
       const toPoints = (toType && toType.attachmentPoints) || [];
+      const fromFreeHeight = loadTree.structureAboveGroundHeight(project, from);
+      const toFreeHeight = loadTree.structureAboveGroundHeight(project, to);
       const phases = (fromPoints.length && toPoints.length)
         ? Array.from({ length: Math.min(fromPoints.length, toPoints.length) }, (v, p) => ({
-          fromTop: from.z + Math.max(from.height - fromPoints[p].offsetZ, 0),
-          toTop: to.z + Math.max(to.height - toPoints[p].offsetZ, 0)
+          fromTop: from.z + Math.max(fromFreeHeight - fromPoints[p].offsetZ, 0),
+          toTop: to.z + Math.max(toFreeHeight - toPoints[p].offsetZ, 0)
         }))
         : [{
           fromTop: from.z + loadTree.averageAttachmentHeight(project, from),
@@ -351,7 +356,7 @@
 
     const allZ = terrainPointsRaw.map((p) => p.y)
       .concat(groundClearance > 0 ? terrainPointsRaw.map((p) => p.y + groundClearance) : [])
-      .concat(resolved.map((s) => s.z), resolved.map((s) => s.z + s.height));
+      .concat(resolved.map((s) => s.z), resolved.map((s) => s.z + loadTree.structureAboveGroundHeight(project, s)));
     const gridBounds = { minX: clipStart, maxX: clipEnd, minY: Math.min(...allZ), maxY: Math.max(...allZ, structureTopMax) };
     entities.push(buildGridEntities(gridBounds, 'CUADRICULA', colors.grid, (x) => x, scaleY));
 

@@ -60,6 +60,7 @@
           ? el('p', {}, `Resistencias de contraviento: ${type.guyResistanceOptions.join(', ')} kgF`)
           : null,
         el('p', {}, `Puntos de fijación: ${type.attachmentPoints.length}`),
+        type.considerEmbedment ? el('p', { class: 'muted' }, 'Considera profundidad de enterramiento') : null,
         el('div', { class: 'row-actions' }, [
           el('button', { class: 'btn btn-small', type: 'button', onClick: () => startEdit(type) }, 'Editar'),
           el('button', {
@@ -168,6 +169,18 @@
         value: editingType && editingType.guyResistanceOptions ? editingType.guyResistanceOptions.join(', ') : '',
         placeholder: 'Ej: 2722, 4082, 5987 (solo aplica a Ángulo/Retención)'
       });
+      // Si se activa, la "altura" del catálogo deja de ser toda libre sobre
+      // el terreno: se le resta la profundidad de enterramiento/empotramiento
+      // (criterio estándar de postes: 10% de la altura + 0.6 m) — esa parte
+      // queda bajo tierra. Afecta dónde se dibuja la punta del poste en
+      // Perfil, dónde cuelga el conductor (attachmentPoints) y el momento
+      // admisible de "Cumple poste" — ver loadTree.js#structureAboveGroundHeight.
+      // Por defecto apagado: se sigue asumiendo toda la altura libre, mismo
+      // comportamiento que ya tenía la app.
+      const embedmentSelect = el('select', { id: 'catalog-embedment-select' }, [
+        el('option', { value: 'no', selected: !(editingType && editingType.considerEmbedment) }, 'No'),
+        el('option', { value: 'si', selected: !!(editingType && editingType.considerEmbedment) }, 'Sí')
+      ]);
 
       // Fila de encabezado (mismas columnas que .point-row, ver CSS): antes
       // solo el placeholder decía qué campo era cuál, y desaparecía en
@@ -207,6 +220,7 @@
             heightOptions,
             resistanceOptions,
             guyResistanceOptions,
+            considerEmbedment: embedmentSelect.value === 'si',
             attachmentPoints: draftPoints.map((p) => ({ ...p }))
           };
           if (editingId) {
@@ -217,7 +231,7 @@
           startNew();
         }
       }, [
-        el('h2', {}, editingId ? `Editar ${editingId}` : 'Nuevo tipo de estructura'),
+        el('h2', {}, editingType ? `Editar ${editingType.name}` : 'Nuevo tipo de estructura'),
         el('div', { class: 'catalog-form-split' }, [
           el('div', { class: 'catalog-form-fields' }, [
             el('label', {}, 'Nombre'),
@@ -226,6 +240,10 @@
             typeSelect,
             el('label', {}, 'Alturas disponibles (m, separadas por coma)'),
             heightInput,
+            el('label', {
+              title: 'Resta la profundidad de enterramiento (10% de la altura + 0.6 m) de la altura disponible — esa parte del poste queda bajo tierra, no libre sobre el terreno. Afecta cómo se dibuja en Perfil y el cálculo de "Cumple poste".'
+            }, 'Tener en cuenta profundidad de enterramiento/empotramiento'),
+            embedmentSelect,
             el('label', {}, 'Resistencias disponibles (kgF, separadas por coma)'),
             resistanceInput,
             el('label', {}, 'Resistencias de contraviento disponibles (kgF, separadas por coma)'),
